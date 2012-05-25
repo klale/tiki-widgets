@@ -1,0 +1,291 @@
+
+/* ================= */
+/* = Miniscrollbar = */
+/* ================= */
+.miniscrollbar {
+    position: absolute;
+    display: none;
+    width: 5px;
+    right: 0px;
+    top: 0px;
+    bottom: 0px;
+    border-radius: 5px;
+}
+.miniscrollbar .vhandle {
+    background-color: #999;
+    opacity: 0.8;
+    border-radius: 3px;
+    position: absolute;
+    left: 0px;    
+    top: 0px;
+    min-height: 20px !important;
+    width: 5px;
+}
+
+
+
+
+/* ============ */
+/* = Dropdown = */
+/* ============ */
+/* Generic dropdown layer of list items, autofits on height, 
+adds nice scrollbars on overflow */
+.dropdownlist {
+    display: block;
+    width: 220px;
+    position: absolute; 
+    display: none;
+    color: #444;
+    font-size: 11px;
+    text-align: left;
+
+    min-width: 150px;    
+    padding: 3px 0px;
+    line-height: 13px;
+    
+    border-radius: 3px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);    
+    z-index: 100;
+}
+.dropdownlist ul { 
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+.dropdownlist li { 
+    cursor: default;
+    /* No selection */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;        
+}
+.dropdownlist li.disabled a {
+    color: #aaa;
+}
+
+.dropdownlist.maxheight,
+.dropdownlist .maxheight {
+    overflow: hidden;
+    background-color: #fff;
+    max-height: 100px;  /*any small number lesser than window height*/
+    border-top: 3px solid #fff;
+    border-bottom: 3px solid #fff; 
+}
+.dropdownlist.maxheight:focus,
+.dropdownlist .maxheight:focus {
+    outline: none;
+}
+
+.dropshadow.floater {
+    display: none;
+    overflow: visible;
+    width: 220px;
+    position: absolute;
+}
+.dropshadow.floater .dropdownlist {
+    width: auto;
+    display: block;
+    position: relative;
+    background-color: transparent;
+    padding: 0;
+}
+.dropshadow.floater .miniscrollbar {
+    right: 3px;
+}
+
+.dropdownlist > div a,
+.dropdownlist .group h3 span {
+    padding: 4px 20px;    
+    line-height: 12px;
+}
+
+.dropdownlist .group h3 span {
+    display: block;
+    color: #000;
+    text-transform: uppercase;
+    font-weight: bold;    
+    background: url(../../xtable/view/html/images/arrows.png) no-repeat 6px -38px;    
+    cursor: pointer;    
+}
+.dropdownlist .group.collapsed h3 span  {
+/*    padding-left: 10px;*/
+    background-position: 6px 0px;        
+}
+.dropdownlist .group.collapsed ul {
+    display: none;
+}
+
+
+/* Some workspace-menu customizations */
+.dropdownlist.workspaces .open_reports {
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+}
+/*.dropdownlist.workspaces .open_reports h3 {
+    padding: 4px 20px;        
+    color: #000;
+    text-transform: uppercase;
+    font-weight: bold;
+}*/
+
+/* Some livesearch customizations */
+.dropdownlist.livesearch {
+    width: 185px;
+}
+
+.dropdownlist:focus {
+    outline: none;
+/*    border: 2px solid #EB821B !important;*/
+/*    padding: 0;*/
+}
+.dropdownlist li {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+.dropdownlist a {
+    color: #444;
+    display: block;
+    padding: 4px 15px;
+    text-decoration: none;
+}
+
+.dropdownlist .selected a,
+.dropdownlist h3.selected { 
+/*    background-color: #2a65f6;*/
+    background: #215ff6 url(../img/menu_selected.gif) repeat-x;
+    color: #fff;
+}
+.dropdownlist.blur .selected a,
+.dropdownlist.blur h3.selected { 
+/*    background-color: #2a65f6;*/
+    background: #ddd repeat-x;
+    color: #555;
+}
+
+.dropdownlist .group h3.selected span {
+    color: #fff;
+    background-position: 6px -133px;    
+}
+.dropdownlist .group.collapsed h3.selected span {
+    background-position: 6px -114px;
+}
+
+
+
+/* ==================== */
+/* = disableSelection = */
+/* ==================== */
+.disableSelection {
+    user-select: none; 
+    -o-user-select: none; 
+    -moz-user-select: none; 
+    -khtml-user-select: none; 
+    -webkit-user-select: none;
+}
+
+
+
+
+
+/* ============ */
+/* = Calendar = */
+/* ============ */
+.calendar table {
+    border-collapse:collapse;
+    width: 100%;
+}
+.calendar thead th {
+    text-align: center;
+}
+.calendar thead .monthname {
+    font-size: 14px;
+}
+.calendar td {
+    border: 1px solid #ddd;
+    white-space: nowrap;    
+}
+.calendar td div ul {
+/*    display: none;*/
+}
+.calendar td div {
+/*    width: 60px;
+    height: 80px;*/
+/*    line-height: 30px;*/
+    overflow: hidden;
+    position: relative;
+}
+.calendar td div .date {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 15px;
+    height: 13px;
+    text-align: right;
+    color: #999;
+    font-size: 11px;
+}
+.calendar td.gray div {
+    color: #aaa;
+}
+.calendar td.over {
+    outline: 3px solid #A7BAC6;
+}
+.calendar td.today div {
+    background-color: #FFEFB9 !important;
+}
+.calendar td.weekend div {
+    background-color: #f8f8f8;
+}
+
+/* ====================== */
+/* = DatePickerCalendar = */
+/* ====================== */
+.calendar.datepicker {
+    width: 310px;
+    position: absolute;
+    background-color: #fff;
+/*    padding: 10px;*/
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    -webkit-box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    -moz-box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    left: 200px;
+    top: 150px;
+    z-index: 1000;
+}
+.calendar td {
+    padding: 0;
+}
+.calendar td > div {
+    padding: 1px;
+}
+
+/* ================== */
+/* = PropertiesForm = */
+/* ================== */
+.dialog .properties ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    line-height: 18px;
+    overflow: hidden;
+}
+.dialog .properties label {
+    clear: left;
+    float: left;
+    width: 65px;
+    color: #000;
+}
+.dialog .properties li > div {
+    padding-left: 80px;
+    padding-right: 4px;
+}
+
+
+
