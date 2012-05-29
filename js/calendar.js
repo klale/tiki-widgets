@@ -17,13 +17,15 @@ gui.MonthCalendar = Backbone.View.extend({
     template: _.template(''+
         '<table>'+
             '<thead>'+
-                '<tr class="monthname">'+
-                    '<th colspan="7"><%= monthname %></th>'+
-                '</tr>'+
-                '<tr class="weekdays"></tr>'+
+                '<tr><td class="header" colspan="7"></td></tr>'+
             '</thead>'+
             '<tbody></tbody>'+
         '</table>'
+    ),
+    templateHeader: _.template(''+
+        '<div class="monthname"><%= monthname %></div>'+
+        '<div class="prevmonth"></div>'+
+        '<div class="nextmonth"></div>'        
     ),
     templateDay: _.template(''+
         '<td class="<%= cls %>" data-ymd="<%= ymd %>">'+
@@ -35,7 +37,9 @@ gui.MonthCalendar = Backbone.View.extend({
     ),
     events: {
         'keydown': 'onKeyDown',
-        'mouseover': 'onMouseOver'
+        'mouseover': 'onMouseOver',
+        'click .prevmonth': 'showPrevMonth',
+        'click .nextmonth': 'showNextMonth',
     },
     // templateTask: _.template('' +
     //     '<li style="height: <% print((obj.hours_reserved || 0.5) * 10) %>px">'+
@@ -46,27 +50,21 @@ gui.MonthCalendar = Backbone.View.extend({
     // ),
     
     initialize: function(conf) {
-        // Backbone.View.prototype.initialize.call(this, conf);
         conf = conf || {};
-        var now = moment();
-        this.month = conf.month || now.month(); // zero-based
-        this.year = conf.year || now.year();
+        this.date = moment(conf.date || new Date());
         this.fill = conf.fill;
-
-        // // Create a tasks-collection
-        // this.collection = new babble.Collection({
-        //     // This collection ever only contains Comment objects, so just use 
-        //     // the default Collection.prototype.make_model
-        //     model: babble.Comment,
-        //     // REST request verbs goes here
-        //     url: conf.url,
-        //     // A bunch of comments as bootstrapped plain javascript objects
-        //     data: conf.data
-        // });
-        // this.collection.on('all', this.onCollectionAll, this);        
-
-
-        // this.render();
+    },
+    showNextMonth: function() {
+        var m = this.date.add({months: 1});
+        this.render();
+    },
+    showPrevMonth: function() {
+        var m = this.date.subtract({months: 1});
+        this.render();
+    },
+    showMonth: function(date) {
+        this.date = moment(date);
+        this.render()
     },
     onMouseOver: function(e) {
     },
@@ -79,38 +77,45 @@ gui.MonthCalendar = Backbone.View.extend({
         return new Date(year, month, 0).getDate();
     },    
     render: function() {
-        var month = moment(new Date(this.year, this.month));
-        var today = moment(new Date());
-        var today_month = today.month(),
-            today_date = today.date();
+        var m = this.date.clone(),
+            month = m.month(),
+            today = moment(new Date()),
+            today_month = today.month(),
+            today_date = today.date(),
+            firstWeekdayOfMonth = m.day();
         
-        var m = moment(new Date(this.year, this.month));
-        var firstWeekdayOfMonth = m.day();
+        // Start at first day of month
+        m.date(1);
         m.subtract('days', firstWeekdayOfMonth);
 
+        console.log('firstWeekdayOfMonth', firstWeekdayOfMonth)
+
         // Create the main table
-        var table = $(this.template({monthname: month.format('MMMM')}));
+        var table = $(this.template({monthname: this.date.format('MMMM')}));
         var tbody = table.children('tbody');
-        var weekdaysRow = table.find('thead tr.weekdays');        
-        
+
+        // Render the header
+        table.find('thead .header').html(this.templateHeader({monthname: this.date.format('MMMM')}));
+
         // Add the weekday names
+        var tr = table.find('thead').append('<tr class="weekdays"></tr>');                
         for(var i=0,days=[1,2,3,4,5,6,0]; i<days.length; i++) {
-            weekdaysRow.append($('<th>'+moment.weekdaysShort[days[i]]+'</th>'));
+            tr.append($('<th>'+moment.weekdaysShort[days[i]]+'</th>'));
         }
         
         // Add all the days
-
         for(var i=0; i<42; i++) {
             if(i % 7 == 0) {
                var tr = $('<tr></tr>').appendTo(tbody);
             }
-            
+
             // Add optional cell styling
-            var cls = ['day'];
-            if(m.month() !== this.month) {
+            var cls = ['day'],
+                day = m.day();
+            if(m.month() !== month) {
                 cls.push('gray');
             }
-            if(m.day() >= 5) {
+            if(day == 6 || day == 0) { // saturday or sunday
                 cls.push('weekend');
             }
             if(m.date() == today_date && m.month() == today_month) {
@@ -118,7 +123,7 @@ gui.MonthCalendar = Backbone.View.extend({
             }
 
             // Draw the cell
-            if(!this.fill && m.month() !== this.month) {
+            if(!this.fill && m.month() !== month) {
                 // Only show days in this month
                 tr.append('<td class="empty"><div>&nbsp;</div></td>');
             } else {
@@ -130,27 +135,11 @@ gui.MonthCalendar = Backbone.View.extend({
                 });
                 tr.append(html);
             }
-                        
-            
             m.add('days', 1);
         }
         
-
-        
-        // // Draw any tasks of the cell
-        // // TODO: move this into a TaskCalendar or something
-        // var el = this.el;
-        // $.each(window.scheduledTasks, function(k, v) {
-        //     var height = (v.hours_reserved * 8) || 4;
-        //     tbody.find('td[data-ymd="'+v.date_ymd+'"] .tasks').append('<li><a href="'+v.uri+'" title="('+v.hours_reserved+') '+v.title+'" style="height:'+height+'px"></a></li>');
-        //     
-        // });
-
-        
-        $(this.el).append(table);
-        
-        return this;
-            
+        $(this.el).empty().append(table);    
+        return this;    
     }
 
     

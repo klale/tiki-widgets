@@ -203,8 +203,28 @@ adds nice scrollbars on overflow */
 .calendar thead th {
     text-align: center;
 }
-.calendar thead .monthname {
+.calendar thead .header {
+    position: relative;
+    height: 30px;
+}
+.calendar thead .header .monthname {
     font-size: 14px;
+    text-align: center;
+}
+.calendar thead .header .nextmonth,
+.calendar thead .header .prevmonth {
+    width: 15px;
+    height: 15px;
+    position: absolute;
+    background-color: #ddd;
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
+    top: 5px;
+    left: 5px;
+} 
+.calendar thead .header .nextmonth {
+    left: auto;
+    right: 5px;
 }
 .calendar td {
     border: 1px solid #ddd;

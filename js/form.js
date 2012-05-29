@@ -112,6 +112,7 @@ gui.TextField = gui.Field.extend({
         var v = value.replace('<br>', ''); // contenteditable
         if(v === '') 
             return undefined;
+        return v
     },
     render: function() {
         $(this.el).attr(this.attributes);
@@ -140,6 +141,7 @@ gui.TextField = gui.Field.extend({
     },     
     onBlur: function(e) {
         var v = this.interpret($(this.el).html());
+        console.log('AAA', $(this.el).html(), v)
         if(v === undefined)
             this.unsetValue();
         else
@@ -177,6 +179,23 @@ gui.TextField = gui.Field.extend({
 });
 
 
+gui.AmountField = gui.TextField.extend({
+    initialize: function(config) {
+        gui.TextField.prototype.initialize.call(config);
+    },
+    format: function(v) {
+        // make value pretty
+        return accounting.formatMoney(v);
+    },
+    interpret: function(v) {
+        // Todo: code dup of gui.TextField.interpret
+        var v = value.replace('<br>', ''); // contenteditable
+        if(v === '') 
+            return undefined;
+        
+        
+    }
+});
 
 gui.DateField = gui.TextField.extend({
     tagName: 'div',
@@ -251,6 +270,14 @@ gui.DateField = gui.TextField.extend({
         if(this.calendar) 
             $(this.calendar.el).remove()
     },
+    showDatePicker: function() {
+        this.calendar = new gui.DatePickerCalendar({
+            
+        });
+        
+        $(document.body).append(this.calendar.render().el);
+        this.calendar.focus();
+    },
     onKeyDown: function(e) {
         if(e.keyCode == gui.keys.ENTER) {
             e.preventDefault();
@@ -258,32 +285,57 @@ gui.DateField = gui.TextField.extend({
         } else if(e.keyCode == gui.keys.ESC) {
             this.abort();
         } else if(e.keyCode == gui.keys.DOWN) {
-            this.calendar = new gui.DatePickerCalendar();
-            $(document.body).append(this.calendar.render().el);
+            this.showDatePicker();
         }
         e.stopPropagation();
-        
-        
     }    
 });
 
 gui.DatePickerCalendar = gui.MonthCalendar.extend({
     className: 'calendar datepicker',
     events: _.extend(gui.MonthCalendar.prototype.events, {
-        'mouseenter': 'onMouseEnter'
-    },
+        'mouseenter tbody td.day': 'onMouseEnterDay',
+        'mouseenter': 'focus',
+        'keydown': 'onKeyDown'
+    }),
+    
     
     initialize: function(conf) {
         gui.MonthCalendar.prototype.initialize.call(this, conf);
+        
     },
     render: function() {
         gui.MonthCalendar.prototype.render.call(this);
         $(this.el).attr('tabIndex', 0);
         return this;
     },
-    onMouseEnter: function(e) {
-        console.log('yeee')
-        this.el.focus();
+    focus: function() {
+        this.el.focus();        
+    },
+    onMouseEnterDay: function(e) {
+        var td = $(e.target).parents('*').andSelf().filter('td:first');
+        this.$('.selected').removeClass('selected');
+        td.addClass('selected');
+    },
+    onKeyDown: function(e) {
+        // Support keyboard navigation for selecting a day
+        var curr = $('.selected'),
+            tr = curr.parents('tr:first'),
+            select;
+        
+        if(e.keyCode == gui.keys.RIGHT) {
+            select = curr.nextAll('td:first');
+        } else if (e.keyCode == gui.keys.LEFT) {
+            select = curr.prevAll('td:first');
+        } else if (e.keyCode == gui.keys.UP && tr.prev()[0]) {
+            select = tr.prev().find('td:nth-child('+(curr.index()+1)+')');
+        } else if (e.keyCode == gui.keys.DOWN && tr.next()[0]) {
+            select = tr.next().find('td:nth-child('+(curr.index()+1)+')');
+        }
+        if(select && select.hasClass('day')) {
+            curr.removeClass('selected');
+            select.addClass('selected');
+        }
     }
     
 });
