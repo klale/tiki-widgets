@@ -22,7 +22,7 @@ _.extend(gui.Form.prototype, Backbone.Events, {
     getValues: function() {
         var values = {};
         _.each(this.fields, function(f) {
-            values[f.name] = f.getValue();
+            values[f.name] = f.getValue() || '';
         });
         return values;        
     },
@@ -165,7 +165,7 @@ gui.Field = {
                 this.trigger('change', {field: this, value: value});            
         }        
     },
-    getValue: function() {
+    getValue: function() {      
         return $(this.el).data('value');
     }
 };
@@ -261,17 +261,18 @@ gui.TextField = Backbone.View.extend({
         if($.browser.ltie9) 
             this.$el.iefocus();        
     },  
+    getValue: function() {         
+        return gui.Field.getValue.call(this) || '';
+    },
     format: function(value) {
         // make the value pretty
         return value;
     },
     interpret: function(value) {
         // make a pretty value real
-        value = value.replace(/(<br>)+$/g, ''); // contenteditable effect
-        if(value == '<br>') value = ''; 
         if(value === '') 
             return undefined;
-        return value;
+        return value.replace(/\n/g, '');
     },
     render: function() {
         var v = this.getValue();
@@ -290,7 +291,7 @@ gui.TextField = Backbone.View.extend({
             $(this.el).removeClass('empty').html('');            
     },     
     onBlur: function(e) {
-        var v = this.interpret($(this.el).html());
+        var v = this.interpret(this.$el.getPreText());        
         if(v !== this.getValue()) {
             this.setValue(v);
             this.render();            
@@ -319,11 +320,23 @@ gui.TextArea = gui.TextField.extend({
     initialize: function(config) {
         gui.TextField.prototype.initialize.call(this, config);
     },
+    interpret: function(value) {
+        // make a pretty value real
+        if(value === '') 
+            return undefined;
+        return value.replace(/\n+$/, '');
+    },    
+    getValue: function() {         
+        return gui.Field.getValue.call(this) || '';
+    },
     onKeyDown: function(e) {
         if(e.keyCode == gui.keys.ESC) {
             this.abort();
         }
         e.stopPropagation();
+    },
+    onKeyUp: function() {
+        
     },
     onFocus: function(e) {
         if(this.$el.is('.empty')) {
