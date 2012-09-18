@@ -316,6 +316,8 @@ gui.Drag = gui.Observable.extend({
         
         this.prefix = conf.prefix || '';
 
+
+
         // offset relative to first positioned parent (margins, borders, ..)
         var left = 0,
             top = 0,
@@ -323,23 +325,27 @@ gui.Drag = gui.Observable.extend({
         selector.each(function() {
             var pos = $(this).position();
             left += pos.left || 0;
-            top += pos.top || 0;
         });
 
         // FF: ev.clientX === undefined, #8523
         var ev = conf.ev;
+        
+        // Disatance for left edge to mouse impact
         var offsetX = (ev.offsetX || ev.clientX - $(ev.target).offset().left);
         var offsetY = (ev.offsetY || ev.clientY - $(ev.target).offset().top);        
+
+        // Add any padding
+        offsetX += left;
+        offsetY += top;
 
         // Update the drag metadata object
         conf = _.extend(conf, {
             clientX: conf.ev.clientX, 
             clientY: conf.ev.clientY,
-            offsetX: offsetX + left,
-            offsetY: offsetY + top
+            offsetX: offsetX,
+            offsetY: offsetY
         });
         this.conf = conf;
-
         this.dragging = true;
 
         // no text selection while dragging        
@@ -351,57 +357,10 @@ gui.Drag = gui.Observable.extend({
         // var distance = this.conf.distance || 0;
         // var startDrag = !this.conf.distance || (this.dragging ? false : (Math.abs(e.clientX - this._init.clientX) > distance || Math.abs(e.clientY - this._init.y) > distance))
         
-        var conf = this.conf,
-            el = $(this.conf.el);
-        if(el[0]) {
-            
-            el[0].style.left = (e.pageX - this.conf.offsetX) + 'px';
-            el[0].style.top = (e.pageY - this.conf.offsetY) + 'px';        
-        }
-        else if(conf.ondrag) {
+        var conf = this.conf
+        if(conf.ondrag) {
             conf.ondrag(e, conf);
         }
-        
-        // if(startDrag || this.dragging) {
-        //     if(startDrag) {
-        //         this.scrollLeft = $(window).scrollLeft()
-        //         this.scrollTop = $(window).scrollTop()
-        //         // `conf.ev` is the mousedown event
-        //         var e = this.conf.ev;
-        //     }
-        //     // Add some extra drag-related attributes to the `mousemove` event
-        //     e.pageX = e.clientX + this.scrollLeft;
-        //     e.pageY = e.clientY + this.scrollTop;
-        // 
-        //     console.log('aa:', e.clientX + this.scrollLeft, e.pageX)
-        //     e.conf = this.conf;
-        //     if(startDrag) {
-        //         var conf = this.conf;
-        //         if(conf.onstart)
-        //             conf.onstart(e, this.conf);
-        //         this.dragging = true;
-        //         
-        //         if(this.conf.el) {
-        //             // move the proxy el
-        //             console.log('MOVE!', e.clientX, this._init.offsetX)
-        //             this.conf.el.css({
-        //                 left: e.pageX - this._init.offsetX, 
-        //                 top: e.pageY - this._init.offsetY
-        //             });
-        //             this.conf.el.show();                
-        //         }  
-        //     } else if(this.dragging) {
-        //         if(this.conf.el) {
-        //             // move the proxy el
-        //             this.conf.el.css({
-        //                 left: e.pageX - this._init.offsetX, 
-        //                 top: e.pageY - this._init.offsetY
-        //             });
-        //         }
-        //         if(this.conf.ondrag)
-        //             this.conf.ondrag(e, this.conf);
-        //     }            
-        // }
     },
     onBodyMouseOver: function(e) {
         if(this.dragging && this.prefix) {
@@ -540,3 +499,73 @@ jQuery.fn.getPreText = function () {
         ce.find("br").replaceWith("\n");
     return ce.text();
 };
+
+
+
+/*
+* Collision Check Plugin v1.1
+* Copyright (c) Constantin Groß, 48design.de
+* v1.2 rewrite with thanks to Daniel
+*
+* @requires jQuery v1.3.2
+* @description Checks single or groups of objects (divs, images or any other block element) for collission / overlapping
+* @returns an object collection with all colliding / overlapping html objects
+*
+* Dual licensed under the MIT and GPL licenses:
+*   http://www.opensource.org/licenses/mit-license.php
+*   http://www.gnu.org/licenses/gpl.html
+*
+
+if ($('.cursorBlock').collidesWith('.staticBlock')) {
+    // objects are colliding
+} else {
+    // objects are not colliding
+}
+
+
+*/
+(function($) {
+ $.fn.collidesWith = function(elements) {
+  var rects = this;
+  var checkWith = $(elements);
+  var c = $([]);
+
+  if (!rects || !checkWith) { return false; }
+
+  rects.each(function() {            
+   var rect = $(this);
+
+   // define minimum and maximum coordinates
+   var rectOff = rect.offset();
+   var rectMinX = rectOff.left;
+   var rectMinY = rectOff.top;
+   var rectMaxX = rectMinX + rect.outerWidth();
+   var rectMaxY = rectMinY + rect.outerHeight();
+
+   checkWith.not(rect).each(function() {
+    var otherRect = $(this);
+    var otherRectOff = otherRect.offset();
+    var otherRectMinX = otherRectOff.left;
+    var otherRectMinY = otherRectOff.top;
+    var otherRectMaxX = otherRectMinX + otherRect.outerWidth();
+    var otherRectMaxY = otherRectMinY + otherRect.outerHeight();
+	
+    // check for intersection
+    if ( rectMinX >= otherRectMaxX ||
+         rectMaxX <= otherRectMinX ||
+         rectMinY >= otherRectMaxY ||
+         rectMaxY <= otherRectMinY ) {
+           return true; // no intersection, continue each-loop
+    } else {
+		// intersection found, add only once
+		if(c.length == c.not(this).length) { c.push(this); }
+    }
+   });
+        });
+   // return collection
+        return c;
+ }
+})(jQuery);
+
+
+
