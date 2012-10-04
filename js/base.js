@@ -20,6 +20,16 @@ gui.keys = {
 };
 
 
+$(function() {
+    $(document.body).bind('keydown', function(e) {
+        gui._keyDownEvent = e;
+    });
+    $(document.body).bind('keyup', function(e) {
+        gui._keyDownEvent = null;
+    })    
+});
+
+
 // ==============
 // = Observable =
 // ==============

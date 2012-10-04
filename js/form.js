@@ -293,6 +293,10 @@ gui.TextField = Backbone.View.extend({
     onFocus: function(e) {
         if($(this.el).is('.empty'))
             $(this.el).removeClass('empty').html('');            
+
+        var keydown = gui._keyDownEvent;
+        if(keydown && keydown.keyCode == gui.keys.TAB)
+            this.$el.moveCursorToEnd();            
     },     
     onBlur: function(e) {
         var v = this.interpret(this.$el.getPreText());        
@@ -308,6 +312,7 @@ gui.TextField = Backbone.View.extend({
         } else if(e.keyCode == gui.keys.ESC) {
             this.abort();
         }
+        gui._keyDownEvent = e;
         e.stopPropagation();
     },
     onKeyUp: function(e) {
@@ -315,6 +320,7 @@ gui.TextField = Backbone.View.extend({
             e.preventDefault();
             e.stopPropagation();
         }
+        gui._keyDownEvent = null;        
     }
 });
 
@@ -497,6 +503,17 @@ gui.DateField = Backbone.View.extend({
         datepicker.alignTo(this.el);
         datepicker.el.focus();
     },
+    focus: function(e) {
+        var textfield = this.$('.textfield');
+        if(!textfield.is(':focus'))
+            textfield.focus().selectAll();
+    },    
+    onFocus: function(e) {
+        var evt = gui._keyDownEvent;
+        if(evt && evt.keyCode == gui.keys.TAB) {
+            this.$('.textfield').selectAll();
+        }
+    },
     hideDatePicker: function() {
         if($.browser.ltie9)
             this.datepicker.$el.hide();
@@ -504,12 +521,6 @@ gui.DateField = Backbone.View.extend({
             this.datepicker.$el.fadeOut(150);
         this.focus();
     },
-    focus: function() {
-        var textfield = this.$('.textfield');
-        if(!textfield.is(':focus'))
-            textfield.focus().moveCursorToEnd();
-    },
-    
     onBlur: function(e) {
         this._setValue();
     },
@@ -555,9 +566,6 @@ gui.DateField = Backbone.View.extend({
         }
     }
 });
-
-
-
 
 
 
@@ -675,6 +683,7 @@ gui.ComboBox = Backbone.View.extend({
     },
     render: function() {
         // Find the text of the selected option, if any
+        
         $(this.el).html(this.template({text: this.getText()}));
         var span = this.$('>span');
         span.on('focus', this.onSpanFocus);
