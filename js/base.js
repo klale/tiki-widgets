@@ -540,3 +540,148 @@ jQuery.fn.getPreText = function () {
         ce.find("br").replaceWith("\n");
     return ce.text();
 };
+
+
+
+// ==========
+// = Colors =
+// ==========
+
+gui.color = new function() {
+
+    function rgbToHsl(r, g, b){
+        r /= 255, g /= 255, b /= 255;
+        var max = Math.max(r, g, b), min = Math.min(r, g, b);
+        var h, s, l = (max + min) / 2;
+
+        if(max == min) {
+            h = s = 0; // achromatic
+        } else {
+            var d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch(max){
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return [h, s, l];
+    }
+
+    function hslToRgb(h, s, l) {
+        var r, g, b;
+        if(s == 0) {
+            r = g = b = l; // achromatic
+        } else {
+            function hue2rgb(p, q, t) {
+                if(t < 0) t += 1;
+                if(t > 1) t -= 1;
+                if(t < 1/6) return p + (q - p) * 6 * t;
+                if(t < 1/2) return q;
+                if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                return p;
+            }
+            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            var p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1/3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1/3);
+        }
+        return [r * 255, g * 255, b * 255];
+    }
+
+    function lpad(str, padString, length) {
+        while (str.length < length)
+            str = padString + str;
+        return str;
+    }
+    
+    function hex(num) {
+        return lpad(parseInt(num).toString(16), '0', 2);
+    }
+    
+    this.brightness = function(color, amount) {
+        var r = parseInt(color.substr(1, 2), 16);
+        var g = parseInt(color.substr(3, 2), 16);
+        var b = parseInt(color.substr(5, 2), 16);
+        hsl = rgbToHsl(r, g, b);
+        // ensure lightness+amount is between 0 and 1 
+        l = Math.max(Math.min(hsl[2] + amount, 1), 0)
+
+        rgb = hslToRgb(hsl[0], hsl[1], l);
+        
+        return '#' + hex(rgb[0]) + hex(rgb[1]) + hex(rgb[2]);
+    };
+    
+    
+};
+
+
+gui.stylesheet = new function() {
+    
+    this.addClass = function(selector, style) {
+        if(!document.styleSheets)
+            return;
+        if(document.getElementsByTagName("head").length == 0) 
+            return;
+ 
+        var stylesheet;
+        var mediaType;
+        if(document.styleSheets.length > 0) {
+            for(i = 0; i < document.styleSheets.length; i++) {
+                if(document.styleSheets[i].disabled) {
+                    continue;
+                }
+                var media = document.styleSheets[i].media;
+                mediaType = typeof media;
+ 
+                if(mediaType == "string") {
+                    if (media == "" || (media.indexOf("screen") != -1))
+                        styleSheet = document.styleSheets[i];
+                } else if (mediaType == "object") {
+                    if (media.mediaText == "" || (media.mediaText.indexOf("screen") != -1)) 
+                        styleSheet = document.styleSheets[i];
+                }
+ 
+                if(typeof styleSheet != "undefined")
+                    break;
+            }
+        }
+        if(typeof styleSheet == "undefined") {
+            var styleSheetElement = document.createElement("style");
+            styleSheetElement.type = "text/css";
+ 
+            document.getElementsByTagName("head")[0].appendChild(styleSheetElement);
+ 
+            for (i = 0; i < document.styleSheets.length; i++) {
+                if (document.styleSheets[i].disabled)
+                    continue;
+                styleSheet = document.styleSheets[i];
+            }
+            var media = styleSheet.media;
+            mediaType = typeof media;
+        }
+ 
+        if (mediaType == "string") {
+            for (i = 0; i < styleSheet.rules.length; i++) {
+                if (styleSheet.rules[i].selectorText.toLowerCase() == selector.toLowerCase()) {
+                    styleSheet.rules[i].style.cssText = style;
+                    return;
+                }
+            }
+ 
+            styleSheet.addRule(selector, style);
+        } else if (mediaType == "object") {
+            for (i = 0; i < styleSheet.cssRules.length; i++) {
+                if (styleSheet.cssRules[i].selectorText.toLowerCase() == selector.toLowerCase()) {
+                    styleSheet.cssRules[i].style.cssText = style;
+                    return;
+                }
+            }
+ 
+            styleSheet.insertRule(selector + "{" + style + "}", 0);
+        }
+    };    
+};
+
