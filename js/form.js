@@ -153,17 +153,21 @@ gui.Field = {
                 $(this.el).removeData('value', value);
             else 
                 $(this.el).data('value', value);
-            if(!options.silent)
+            if(!options.silent) {
                 this.trigger('change', {field: this, value: value});
+                this.$el.trigger('fieldchange', {field: this, value: value, name: this.name})
+            }
         }
     },
     unsetValue: function() {
         var old = this.data('value');
         if(old !== undefined) {
             $(this.el).removeData('value');
-            if(!options.silent)
+            if(!options.silent) {
                 this.trigger('change', {field: this, value: value});            
-        }        
+                this.$el.trigger('fieldchange', {field: this, value: value, name: this.name})
+            }
+        }
     },
     getValue: function() {      
         return $(this.el).data('value');
