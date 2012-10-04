@@ -1132,6 +1132,7 @@ gui.Dialog = Backbone.View.extend({
         gui.drag.start({
             ev: e,
             ondrag: this.onResizeDrag,
+            onend: this.onResizeDragEnd,
             startX: curr.left,
             startY: curr.top
         });
@@ -1141,6 +1142,13 @@ gui.Dialog = Backbone.View.extend({
         var w = e.pageX - conf.startX,
             h = e.pageY - conf.startY;
         this.$el.css({'width': w, 'height': h});
+    },
+    ieRepaintScrollbars: function() {
+        this.$('.tabs > div').css('overflow', 'hidden').css('overflow', 'auto');
+    },
+    onResizeDragEnd: function(e) {
+        if($.browser.ltie9)
+            this.ieRepaintScrollbars();
     },
     onHeaderMouseDown: function(e) {
         gui.drag.start({
@@ -1156,7 +1164,7 @@ gui.Dialog = Backbone.View.extend({
     initialize: function(conf) {
         this.config = conf;
         this.title = conf.title;
-        _.bindAll(this, 'onResizeDrag');            
+        _.bindAll(this, 'onResizeDrag', 'onResizeDragEnd');            
     },    
     render: function() {
         this.$el.html(this.template({title: this.title}));
