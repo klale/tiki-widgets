@@ -284,6 +284,26 @@
 
 
 
+/* ========== */
+/* = Fields = */
+/* ========== */
+.textfield.empty,
+.textarea.empty {
+    font-style: italic;
+    color: #999;
+}
+.textfield,
+.textarea {
+    cursor: text;
+    border: 1px solid #ccc;
+    padding: 2px 5px;   
+    outline: none;
+}
+.textarea {
+    min-height: 34px;
+}
+
+
 
 
 /* ========= */
@@ -485,6 +505,7 @@
 /* ============= */
 .datefield {
     position: relative;
+    outline: none;
 }
 .datefield > button {
     position: absolute;
@@ -499,6 +520,7 @@
     line-height: 20px;
     text-indent: 22px;    
     padding: 0;
+    background-color: #fff;
 }
 
 
