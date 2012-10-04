@@ -456,6 +456,8 @@ gui.DateField = Backbone.View.extend({
     },
     format: function(value) {
         // Make the value pretty. value = millis since epoch
+        if(!value)
+            return '';
         try {
             return moment(value).format(this._format);
         } catch(e) {}
@@ -488,7 +490,8 @@ gui.DateField = Backbone.View.extend({
     showDatePicker: function() {
         var datepicker = this.getDatePicker();
         datepicker.setValue(this.getValue(), {silent: true});
-        datepicker.date = moment(this.getValue());
+        // show today's date if no date is set
+        datepicker.date = moment(this.getValue() || new Date());
         datepicker.render();
         datepicker.$el.show();
         datepicker.alignTo(this.el);
