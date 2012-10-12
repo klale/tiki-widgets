@@ -1,0 +1,91 @@
+
+
+@mixin gradient($start: #EEE, $stop: #FFF) {
+    background: -webkit-gradient(
+        linear,
+        left bottom,
+        left top,
+        color-stop(0, $stop),
+        color-stop(1, $start));
+    background: -ms-linear-gradient(
+        top,
+        $start 0%,
+        $stop 100%);
+    background: -moz-linear-gradient(
+        top,
+        $start 0%,
+        $stop 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='$start', endColorstr='$end') chroma(color=#000000);                                   
+    background-color: $start;    
+}
+
+@mixin noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;    
+}
+
+@mixin box-shadow($hepp) {
+    box-shadow: $hepp;
+    -moz-box-shadow: $hepp;
+    -webkit-box-shadow: $hepp;
+}
+
+@mixin border-radius ($size) {
+    -webkit-border-radius: $size;
+    -moz-border-radius: $size;
+    border-radius: $size;    
+}
+
+
+@mixin buttonstyle($padvert: 3px, $padhor: 8px, $color: #ececec, $textcolor: #333) {
+    display: inline-block;
+    padding: $padvert $padhor;
+    cursor: default;
+    color: $textcolor;
+    border: 1px solid darken($color, 50%);
+    overflow: visible; /* Removes crazy padding in IE7 */
+    @include border-radius(3px);    
+    @include gradient(lighten($color, 10%), darken($color, 10%));
+
+    /* Hack until the border bug is fixed */
+    @media screen and (-webkit-min-device-pixel-ratio: 0) { 
+        border: none;
+        padding: $padvert+1 $padhor+1; /* compensate for missing border */
+        box-shadow: 0px 0px 0px 1px darken($color, 50%);
+    }
+    
+    &:active {
+        @include gradient(darken($color, 10%), lighten($color, 10%));
+    }
+}
+
+
+@mixin buttonstyle2($padvert: 3px, $padhor: 8px, $start: #e1e1e1, $end:#fdfdfd, $textcolor: #333, $negative: false) {
+    display: inline-block;
+    padding: $padvert $padhor;
+    cursor: default;
+    color: $textcolor;
+    @if $negative {
+        text-shadow: darken($end, 70%) 0px -1px;            
+    }
+
+    border: 1px solid darken($end, 50%);
+    overflow: visible; /* Removes crazy padding in IE7 */
+    @include border-radius(3px);    
+    @include gradient($start, $end);
+
+    /* Hack until the border bug is fixed */
+    @media screen and (-webkit-min-device-pixel-ratio: 0) { 
+        border: none;
+        padding: $padvert+1 $padhor+1; /* compensate for missing border */
+        box-shadow: 0px 0px 0px 1px darken($end, 50%);
+    }
+    
+    &:active {
+        @include gradient($end, $start);
+    }
+}
