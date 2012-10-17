@@ -298,9 +298,11 @@
     border: 1px solid #ccc;
     padding: 2px 5px;   
     outline: none;
+    background-color: #fff;
 }
 .textarea {
     min-height: 34px;
+    white-space: pre-wrap;          
 }
 
 
@@ -547,7 +549,12 @@ button:focus,button.focus,
     box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);   
     outline: none;
 }
-
+/* Webkit work-around until the rounded border bug is fixed */
+@media screen and (-webkit-min-device-pixel-ratio: 0) { 
+    button:focus {
+        box-shadow: 0 0 0 1px rgba(14, 158, 211, 1), 0 0 8px rgba(14, 158, 211, 0.4);   
+    }
+}
 
 
 
