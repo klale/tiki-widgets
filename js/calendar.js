@@ -1,3 +1,13 @@
+define([
+    'jquery', 
+    'underscore',
+    'backbone',
+    'gui',
+    'moment'
+], function($, _, Backbone, gui, moment) {
+
+var calendar = {};    
+
 
 // =================
 // = MonthCalendar =
@@ -6,7 +16,7 @@
 /**
  * A month calendar.
  */
-gui.MonthCalendar = Backbone.View.extend({
+calendar.MonthCalendar = Backbone.View.extend({
     tagName: 'div',
     className: 'calendar',
     
@@ -130,3 +140,5 @@ gui.MonthCalendar = Backbone.View.extend({
 });
 
 
+return calendar;
+});

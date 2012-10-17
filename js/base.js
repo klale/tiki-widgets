@@ -1,3 +1,10 @@
+define([
+    'jquery',
+    'underscore',
+    'backbone'
+], function($, _, Backbone) {
+    
+    
 // =============
 // = Namespace =
 // =============
@@ -27,6 +34,61 @@ $(function() {
     $(document.body).bind('keyup', function(e) {
         gui._keyDownEvent = null;
     })    
+    /*
+    $("li:has(ul.popUpMenu)").focusin(function(e) {
+        $(this).children().fadeIn('slow');
+    });
+    
+    $('body').focusin(function(e) {
+        if (!$(e.target).parent().is('ul.popUpMenu li')) {
+          $('ul.popUpMenu').fadeOut('slow');
+        }
+      });
+    */
+    var prevFocused, 
+        justLostFocus;
+    $(document.body).bind('focusout', function(e) {
+        // something that had focus, lost it, but we don't now to what yet
+        // console.log('FOCUS lost', e.target)
+        justLostFocus = e.target;
+        // console.log('TARGET (focusout): ', e.target, ', hepp: ', document.activeElement);
+    });
+    $(document.body).bind('focusin', function(e) {
+        newFocused = e.target;
+        // Now the new thing has received the focus, and we can compare the two
+        
+        // a focusleave should be triggered starting at justLostFocus, 
+        // continuing up to the common ancestor shared with newFocus. 
+        // (or one level above the common ancestor to be correct)
+        // Maybe add: any element with tabindex=0 along the way will have
+        // a focusin class toggled accoringly
+        if(!justLostFocus)
+            return // first ever focus, thus no focusleave
+
+        // var commonAncestor; 
+        // andSelf() reverses parents for some reason, restore order 
+        // with another reverse()
+        // console.log('focusleave: ', justLostFocus);        
+        // $(justLostFocus).triggerHandler('focusleave');
+        $(justLostFocus).parents().andSelf().reverse().each(function(i, parent) {
+            // if($(newFocused).attr('name') == 'start_at') {
+            //     debugger;
+            // }
+            if($(parent).contains(newFocused) || parent === newFocused) {
+                // we have traversed up to a common ancestor
+                // commonAncestor = parent;
+                // console.log('COMMON ancestor', parent)
+                return false; // break
+            }
+            else {
+                // fire a non-bubbling focusleave
+                // console.log('focusleave: ', parent, 'newFocused: ', newFocused)
+                // $(parent).triggerHandler('focusleave');
+                $(parent).trigger('focusleave');                
+            }
+        });
+    });
+    $(document.body).attr('tabindex', '-1');
 });
 
 
@@ -132,7 +194,21 @@ jQuery.fn.insertAt = function(i, el) {
         else
             $(this).children(':nth-child('+i+')').after(el);
     });
-}
+};
+jQuery.fn.containedBy = function(parent) {
+    var isContainedBy = false;
+    var parent = $(parent)[0];
+    
+    this.parents().each(function(i, par) {
+        if(par === parent) {
+            isContainedBy = true
+            return false; // break
+        }
+    });
+    return isContainedBy;
+};
+
+
 jQuery.browser.ltie9 = jQuery.browser.msie && parseInt(jQuery.browser.version) < 9;
 jQuery.browser.ltie10 = jQuery.browser.msie && parseInt(jQuery.browser.version) < 10;
 
@@ -153,6 +229,9 @@ jQuery.extend($.expr[':'], {
     containsre: function(el, index, meta, stack) {
         var re = meta[3].replace(/^\/+|\/+$/, '').split('/'); // strip slashes, then split
         return new RegExp(re[0], re[1]).test($(el).text());
+    },
+    focusable: function(el) {
+        return el.tabIndex !== -1;
     }
 });
 
@@ -550,7 +629,7 @@ jQuery.fn.getPreText = function () {
         ce.find("br").replaceWith("\n");
     return ce.text();
 };
-
+jQuery.fn.reverse = [].reverse;
 
 
 // ==========
@@ -695,3 +774,6 @@ gui.stylesheet = new function() {
     };    
 };
 
+
+return gui;
+});

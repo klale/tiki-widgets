@@ -1,8 +1,19 @@
+define('form', [
+    'jquery', 
+    'underscore',
+    'backbone',
+    'gui',
+    'calendar',
+    'dropdown'
+], function($, _, Backbone, gui, calendar, dropdown) {
+
+
+var form = {};
 
 /**
     A collection of gui.Field objects
 */
-gui.Form = function(conf) {
+form.Form = function(conf) {
     conf = conf || {};
     this.fields = {};
     
@@ -18,7 +29,7 @@ gui.Form = function(conf) {
         }
     }
 };
-_.extend(gui.Form.prototype, Backbone.Events, {    
+_.extend(form.Form.prototype, Backbone.Events, {    
     getValues: function() {
         var values = {};
         _.each(this.fields, function(f) {
@@ -33,7 +44,8 @@ _.extend(gui.Form.prototype, Backbone.Events, {
         });        
     }
 });
-gui.Form.extend = Backbone.View.extend;
+form.Form.extend = Backbone.View.extend;
+
 
 function pasteHtmlAtCaret(html) {
     var sel, range;
@@ -70,7 +82,7 @@ function pasteHtmlAtCaret(html) {
 }
 
 
-gui.Field = {
+form.Field = {
     /**
     A field is an input point for the user. Its value is stored in $(this.el).data('value').
     The stored value is always in a json-transportable format. eg "test", 123, {a:1, b:2}, 
@@ -199,7 +211,7 @@ var KalleTextField = gui.TextField.extend({
 
 
 */
-gui.InterceptPaste = {
+form.InterceptPaste = {
     initialize: function() {
         this.$el.bind('paste', $.proxy(this._onPaste, this));
     },
@@ -242,7 +254,7 @@ A TextField
    ..model changes..
    --> this.render()
 */ 
-gui.TextField = Backbone.View.extend({
+form.TextField = Backbone.View.extend({
     tagName: 'div',
     className: 'textfield',
     attributes: {
@@ -255,18 +267,18 @@ gui.TextField = Backbone.View.extend({
         'focus': 'onFocus',
         'blur': 'onBlur'
     },
-    mixins: [gui.Field],
+    mixins: [form.Field],
     
     initialize: function(config) {
         config = config || {};
-        gui.Field.initialize.call(this, config);
+        form.Field.initialize.call(this, config);
         this.emptytext = config.emptytext || '';
 
         if($.browser.ltie9) 
             this.$el.iefocus();        
     },  
     getValue: function() {         
-        return gui.Field.getValue.call(this) || '';
+        return form.Field.getValue.call(this) || '';
     },
     format: function(value) {
         // make the value pretty
@@ -324,20 +336,30 @@ gui.TextField = Backbone.View.extend({
     }
 });
 
-gui.TextArea = gui.TextField.extend({
+form.TextArea = form.TextField.extend({
     className: 'textarea',
     
     initialize: function(config) {
-        gui.TextField.prototype.initialize.call(this, config);
+        form.TextField.prototype.initialize.call(this, config);
     },
     interpret: function(value) {
         // make a pretty value real
         if(value === '') 
             return undefined;
-        return value.replace(/\n+$/, '');
-    },    
+        
+        // value = value.replace(/<br>/g, '\n');
+        // console.log('Downgrade: ', value)
+        return value;
+    },
+    format: function(value) {
+        // make the value pretty
+        // value = value.replace(/\n/g, '<br>');
+        // console.log('Make pretty: ', v);
+        return value;
+
+    },        
     getValue: function() {         
-        return gui.Field.getValue.call(this) || '';
+        return form.Field.getValue.call(this) || '';
     },
     onKeyDown: function(e) {
         if(e.keyCode == gui.keys.ESC) {
@@ -358,16 +380,16 @@ gui.TextArea = gui.TextField.extend({
 })
 
 
-gui.AmountField = gui.TextField.extend({
+form.AmountField = form.TextField.extend({
     initialize: function(config) {
-        gui.TextField.prototype.initialize.call(config);
+        form.TextField.prototype.initialize.call(config);
     },
     format: function(v) {
         // make value pretty
         return accounting.formatMoney(v);
     },
     interpret: function(v) {
-        // Todo: code dup of gui.TextField.interpret
+        // Todo: code dup of form.TextField.interpret
         var v = value.replace('<br>', ''); // contenteditable
         if(v === '') 
             return undefined;
@@ -379,11 +401,11 @@ gui.AmountField = gui.TextField.extend({
 
 
 
-// gui.DateField = gui.TextField.extend({
-gui.DateField = Backbone.View.extend({
+// form.DateField = form.TextField.extend({
+form.DateField = Backbone.View.extend({
     tagName: 'div',
     className: 'datefield',
-    mixins: [gui.Field],
+    mixins: [form.Field],
     attributes: {
         tabIndex: '-1'
     },
@@ -407,7 +429,7 @@ gui.DateField = Backbone.View.extend({
         this._format = config.format || 'YYYY-MM-DD';
         if(config.value)
             config.value = this.interpret(config.value);
-        gui.Field.initialize.call(this, config);
+        form.Field.initialize.call(this, config);
         
         this.on('change', this.onChange, this);
         this.$el.delegate('button', 'click', $.proxy(this.showDatePicker, this));
@@ -481,7 +503,7 @@ gui.DateField = Backbone.View.extend({
     getDatePicker: function() {
         // Lazy-create a DatePicker 
         if(!this.datepicker) {
-            this.datepicker = new gui.DatePicker({ 
+            this.datepicker = new form.DatePicker({ 
                 value: this.getValue()
             });
             this.datepicker.$el.hide();
@@ -551,7 +573,7 @@ gui.DateField = Backbone.View.extend({
             e.preventDefault();
             e.stopPropagation();
         } else {
-            gui.TextField.prototype.onKeyDown.call(this, e);
+            form.TextField.prototype.onKeyDown.call(this, e);
         }
     },
     onKeyUp: function(e) {
@@ -572,21 +594,23 @@ gui.DateField = Backbone.View.extend({
 
 
 
-gui.DatePicker = gui.MonthCalendar.extend({
+form.DatePicker = calendar.MonthCalendar.extend({
     className: 'calendar datepicker',
-    events: _.extend(_.clone(gui.MonthCalendar.prototype.events), {
+    
+    // TODO: replace this uglyness with the new SubView mixin?
+    events: _.extend(_.clone(calendar.MonthCalendar.prototype.events), {
         'mouseenter tbody td.day': 'onMouseEnterDay',
         'keydown': 'onKeyDown',
         'click .day': 'onClick'
     }),
-    mixins: [gui.Field],
+    mixins: [form.Field],
     
     initialize: function(conf) {
-        gui.Field.initialize.call(this, conf);
-        gui.MonthCalendar.prototype.initialize.call(this, conf);
+        form.Field.initialize.call(this, conf);
+        calendar.MonthCalendar.prototype.initialize.call(this, conf);
     },
     render: function() {
-        gui.MonthCalendar.prototype.render.call(this);
+        calendar.MonthCalendar.prototype.render.call(this);
         if($.browser.ltie9)
             this.$el.iefocus();
         $(this.el).attr('tabIndex', 0);
@@ -658,7 +682,7 @@ gui.DatePicker = gui.MonthCalendar.extend({
 
 
 
-gui.ComboBox = Backbone.View.extend({
+form.ComboBox = Backbone.View.extend({
     tagName: 'div',
     className: 'combobox',
     template: _.template(''+
@@ -670,13 +694,13 @@ gui.ComboBox = Backbone.View.extend({
         'mousedown': 'onMouseDown',
         'keydown': 'onKeyDown'
     },
-    mixins: [gui.Field],
+    mixins: [form.Field],
     overlay: true,
     
     initialize: function(conf) {
         conf = conf || {};
         this.editable = conf.editable;
-        gui.Field.initialize.call(this, conf);
+        form.Field.initialize.call(this, conf);
         this.options = conf.options || [];
         _.bindAll(this, 'onSpanFocus', 'onSpanBlur', 'onBlur');
         this.on('blur', this.onBlur);
@@ -715,7 +739,7 @@ gui.ComboBox = Backbone.View.extend({
     },
     getDropdown: function() {
         if(!this.dropdown) {
-            var dd  = new gui.DropdownList({
+            var dd  = new dropdown.DropdownList({
                 options: this.options,
                 overlay: this.overlay
             });
@@ -806,7 +830,7 @@ gui.ComboBox = Backbone.View.extend({
     
 });
 
-gui.EditableComboBox = gui.ComboBox.extend({
+form.EditableComboBox = form.ComboBox.extend({
     /* A cross between a textfield and combobox. */
     className: 'combobox editable',
     attributes: {
@@ -814,7 +838,7 @@ gui.EditableComboBox = gui.ComboBox.extend({
     },
 
     render: function() {
-        gui.ComboBox.prototype.render.call(this);
+        form.ComboBox.prototype.render.call(this);
         this.$('>span')[0].contentEditable = true;               
         
         if($.browser.ltie9)
@@ -842,22 +866,22 @@ gui.EditableComboBox = gui.ComboBox.extend({
     },
     onMouseDown: function(e) {
         if($(e.target).is('.button'))
-            gui.ComboBox.prototype.onMouseDown.call(this, e);
+            form.ComboBox.prototype.onMouseDown.call(this, e);
     }
 });
 
 
-gui.FilteringComboBox = gui.ComboBox.extend({
+form.FilteringComboBox = form.ComboBox.extend({
     className: 'combobox searchable',
     overlay: false,
 
     initialize: function() {
-        gui.ComboBox.prototype.initialize.apply(this, arguments);
+        form.ComboBox.prototype.initialize.apply(this, arguments);
         _.bindAll(this, 'onSpanKeyUp', 'onSpanKeyDown', 'onSpanKeyPress');
     },
     
     render: function() {
-        gui.EditableComboBox.prototype.render.call(this);
+        form.EditableComboBox.prototype.render.call(this);
         var span = this.$('>span');
         span.on('keyup', this.onSpanKeyUp);
         span.on('keydown', this.onSpanKeyDown);
@@ -909,7 +933,7 @@ gui.FilteringComboBox = gui.ComboBox.extend({
         this.startTyping(String.fromCharCode(e.which));
     },
     onDropdownSelect: function() {
-        gui.ComboBox.prototype.onDropdownSelect.apply(this, arguments);
+        form.ComboBox.prototype.onDropdownSelect.apply(this, arguments);
         this.abort();
         this.focus();
     },    
@@ -958,7 +982,7 @@ gui.FilteringComboBox = gui.ComboBox.extend({
 });
 
 
-gui.Slider = Backbone.View.extend({
+form.Slider = Backbone.View.extend({
     tagName: 'div',
     className: 'slider',
     attributes: {
@@ -976,11 +1000,11 @@ gui.Slider = Backbone.View.extend({
         'keydown': 'onKeyDown',
         'mousedown': 'onMouseDown'
     },
-    mixins: [gui.Field],
+    mixins: [form.Field],
     
     initialize: function(config) {
         config = config || {};
-        gui.Field.initialize.call(this, config);
+        form.Field.initialize.call(this, config);
         this.steps = config.steps;
         this.precision = config.precision;
     },  
@@ -1118,7 +1142,7 @@ gui.Slider = Backbone.View.extend({
 
 
 // Todo: move to separate js file
-gui.Dialog = Backbone.View.extend({
+form.Dialog = Backbone.View.extend({
     className: 'dialog',
     attributes: {tabindex: 0},
     template: _.template(''+
@@ -1237,4 +1261,27 @@ gui.Dialog = Backbone.View.extend({
 
 
 
+form.UploadField = Backbone.View.extend({
+    className: 'upload',
+    tagName: 'div',
+    
+    mixins: [form.Field],
+    
+    initialize: function(config) {
+        
+    },
+    render: function() {
+        this.$el.html('FILEUPLOAD!');
+        return this;
+    }
+});
+
+
+
+
+
+
+return form;
+
+});
 

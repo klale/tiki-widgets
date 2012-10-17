@@ -1,7 +1,13 @@
+define('dropdown', [
+    'jquery',
+    'underscore',
+    'backbone',
+    'gui',
+    'mousewheel'
+], function($, _, Backbone, gui) {
 
 
-
-gui.DropdownList = Backbone.View.extend({
+var DropdownList = Backbone.View.extend({
     tagName: 'div', 
     attributes: {
         'class': 'dropdownlist',
@@ -80,7 +86,7 @@ gui.DropdownList = Backbone.View.extend({
         }
         
         // Hide current dropdown if any
-        var active = gui.DropdownList.activeDropdown;
+        var active = DropdownList.activeDropdown;
         if(active && active !== this)
             // active.$el.fadeOut(200);
             active.hide();
@@ -139,7 +145,7 @@ gui.DropdownList = Backbone.View.extend({
             }
             else
                 this.$el.fadeOut(200);
-            gui.DropdownList.activeDropdown = null;
+            DropdownList.activeDropdown = null;
             this.trigger('hide', this);
         }
     },
@@ -325,21 +331,26 @@ gui.DropdownList = Backbone.View.extend({
 });
 
 
-gui.ContextMenu = gui.DropdownList.extend({
+var ContextMenu = DropdownList.extend({
     initialize: function(config) {
-        gui.DropdownList.prototype.initialize.call(this, config);
+        DropdownList.prototype.initialize.call(this, config);
         this.overlay = true;
     },
     showAt: function(left, top) {
-        gui.DropdownList.prototype.showAt.call(this, left, top);
+        DropdownList.prototype.showAt.call(this, left, top);
         this.focus();
     },
     onBlur: function() {
-        gui.DropdownList.prototype.onBlur.call(this);
+        DropdownList.prototype.onBlur.call(this);
         this.hide();
     } 
-})
+});
 
 
+return {
+    DropdownList: DropdownList,
+    ContextMenu: ContextMenu
+}
 
 
+});

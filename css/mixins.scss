@@ -33,6 +33,13 @@
     -moz-box-shadow: $hepp;
     -webkit-box-shadow: $hepp;
 }
+@mixin small-shadow() {
+    @include box-shadow(0 2px 5px rgba(0,0,0,0.3))
+}
+@mixin large-shadow() {
+    @include box-shadow(0 8px 12px rgba(0,0,0,0.3))
+}
+
 
 @mixin border-radius ($size) {
     -webkit-border-radius: $size;
