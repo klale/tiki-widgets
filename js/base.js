@@ -783,6 +783,18 @@ gui.stylesheet = new function() {
     };    
 };
 
+gui.format = new function() {
+    this.filesize = function(bytes) {
+        var i = -1;
+        var units = [' KB', ' MB', ' GB'];
+        do {
+            bytes = bytes / 1024;
+            i++;
+        } while (bytes > 1024);
+        return Math.max(bytes, 0.1).toFixed(1) + units[i];
+    };  
+};
+
 
 return gui;
 });
