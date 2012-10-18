@@ -292,7 +292,7 @@ variable to the rendering scope, along with the usual 'obj' and '_'.
 (function(_) {
     var noMatch = /.^/;
 
-    var templateSettings = {
+    var settings = {
       evaluate    : /\[\[([\s\S]+?)\]\]/g,
       interpolate : /\$\{([\s\S]+?)\}/g,
       escape      : /\$\{-([\s\S]+?)\}/g      
@@ -323,11 +323,16 @@ variable to the rendering scope, along with the usual 'obj' and '_'.
     };
 
 
-    _.template2 = function(text, settings) {
-      settings = _.defaults(settings || {}, templateSettings);
+    _.template2 = function(text, helpers) {
       // Compile the template source, taking care to escape characters that
       // cannot be included in a string literal and then unescape them in code
       // blocks.
+      
+      // Don't trust ordering of keys in `helpers` object
+      var helpers = _.map(helpers, function(v,k) { return {k:k,v:v}});
+      var keys = _.map(helpers, function(v) { return v.k});
+      var helpersArgs = _.map(helpers, function(v) { return v.v});
+      
       var source = "__p+='" + text
         .replace(escaper, function(match) {
           return '\\' + escapes[match];
@@ -349,9 +354,13 @@ variable to the rendering scope, along with the usual 'obj' and '_'.
         "var print=function(){__p+=Array.prototype.join.call(arguments, '')};\n" +
         source + "return __p;\n";
 
-      var render = new Function(settings.variable || 'obj', '_', 'settings', source);
+      // build argument list
+      var args = [settings.variable || 'obj', '_', 'settings'].concat(keys);
+      var render = new Function(args, source);
+      
       var template = function(data) {
-        return render.call(this, data, _, settings);
+        var args = [data, _, settings].concat(helpersArgs);
+        return render.apply(this, args);
       };
 
       // Provide the compiled function source as a convenience for build time
