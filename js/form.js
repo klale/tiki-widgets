@@ -4,7 +4,8 @@ define('form', [
     'backbone',
     'gui',
     'calendar',
-    'dropdown'
+    'dropdown',
+    'iframetransport'
 ], function($, _, Backbone, gui, calendar, dropdown) {
 
 
@@ -1260,20 +1261,170 @@ form.Dialog = Backbone.View.extend({
 
 
 
-
 form.UploadField = Backbone.View.extend({
     className: 'upload',
     tagName: 'div',
-    
+    template: _.template(''+
+        '<input type="file" multiple="multiple"/>'+
+        '<div class="droparea"></div>'+
+        '<ul class="queue"></ul>'),
+    queueItemTemplate: _.template2(''+
+        '<li>'+
+            '<div class="progressbar"></div>'+
+            '<span class="name">${obj.name}</span> '+
+            '<span class="size">${gui.format.filesize(obj.size)}</span>'+
+            '<button class="remove">Ta bort</button>'+
+        '</li>', {gui: gui}),
+    queueItemTemplateIE: _.template2(''+
+        '<li>'+
+            '<div class="progressbar"></div>'+
+            '<span class="name">${obj.name}</span> '+
+            '<button class="remove">Ta bort</button>'+
+        '</li>', {gui: gui}),
+        
     mixins: [form.Field],
+    events: {
+        'click .queue > li .remove': 'onRemoveClick'
+    },
     
     initialize: function(config) {
+        form.Field.initialize.call(this, config);
+        this.files = [];
+        _.bindAll(this, 'onChange');
+    },
+    getValue: function(formdata) {
+        // instead of returning a value for the application/json
+        // part, add new parts to the multipart request message.
+		// process all File objects
+		var jsonvalue = [];
+		
+        _.each(this.files, function(f) {
+            if(formdata) {
+                formdata.append(f.name, f);
+            }
+            // for the validate-one event
+            if(f.name) {
+                jsonvalue.push({'name': f.name, 'size': f.size, 'type': f.type});
+            } else {
+                // IE<=9
+                var name = f.value.substr(f.value.lastIndexOf('\\')+1)                
+                jsonvalue.push({'name': f.value});
+            }
+        }, this);
+		
+		return jsonvalue;
         
     },
     render: function() {
-        this.$el.html('FILEUPLOAD!');
+        this.$el.html(this.template());
+        this.$('>input').attr('name', this.name);
+        this.$('>input').on("change", this.onChange);
+
+
+		this.$('>ul').empty();
+
+		// process all File objects
+        // var files = [
+        //     {name: 'Adasdasdasd.pdf', type: 'application/pdf', size: 384747},
+        //     {name: 'Lorem ipsum dolor sit amet, consectetur adipisicing elit.pdf', type: 'application/pdf', size: 384747},
+        //     {name: 'test.jpg', type: 'image/jpeg', size: 384747},
+        //     {name: 'Adasdasdasd.pdf', type: 'application/pdf', size: 384747}
+        // ];
+        //         
+        // _.each(files, function(f, i) {
+        //     this.files.push(f);
+        //     this.$('>ul').append(this.queueItemTemplate(f));
+        //     if(i==0)  {
+        //         var li = this.$('> ul > li:nth-child('+(i+1)+')');
+        //         console.log('LI', li[0])
+        //         li.addClass('uploading');
+        //         li.children('.progressbar').width("35%");
+        //     }
+        // }, this);
+        
+        
         return this;
-    }
+    },
+        //     uploadFile: function(file, xhr) {
+        //         /* Invoked by the form */
+        // var xhr = new XMLHttpRequest();
+        //         // if (xhr.upload)  <-- useful test for old ie detection?
+        // 
+        // 
+        // // create progress bar
+        // var index = _.indexOf(this.files, file);
+        // var li = this.$('>ul:nth-child('+index+')');
+        // li.addClass('progress');
+        // 
+        // 
+        // // progress bar
+        // xhr.upload.addEventListener('progress', function(e) {
+        //  var pc = parseInt(100 - (e.loaded / e.total * 100));
+        //  li.css('background-position', pc + "% 0");
+        // }, false);
+        // 
+        // // file received/failed
+        // xhr.onreadystatechange = function(e) {
+        //  if (xhr.readyState == 4) {
+        //      progress.className = (xhr.status == 200 ? "success" : "failure");
+        //  }
+        // };
+        // 
+        // // start upload
+        // xhr.open("POST", action, true);
+        // xhr.setRequestHeader("X_FILENAME", file.name);
+        // xhr.send(file);
+        // 
+        // 
+        //     },
+    addFilesToXHR: function() {
+        
+    },
+    // onChange: function(e) {
+    //     console.log('onchange', e)
+    // },
+    onChange: function(e) {
+		// fetch FileList object
+		if(e.target.files) {
+    		var files = e.target.files || e.dataTransfer.files;
+            // this.$('>ul').empty(); // <-- can I avoid redrawing on each file add?
+            // this.files = [];
+
+    		// process all File objects
+    		_.each(files, function(f) {
+    		    this.$('>ul').append(this.queueItemTemplate(f))
+    		    this.files.push(f);
+    		}, this);
+    	} else {
+            // IE<=9, only one file is added at a time
+            // No file metadata
+            var input = this.$(':file:last')
+            var name = input[0].value;
+            name = name.substr(name.lastIndexOf('\\')+1)
+            var data = {'name': name};
+            this.$('>ul').append(this.queueItemTemplateIE(data));
+            input.hide();
+            this.files.push(input[0]);
+            
+            // add another input
+            var newInput = $('<input type="file" name="'+this.name+'">');
+            newInput.on('change', this.onChange);
+            input.after(newInput);
+    	    
+    	}
+	},
+	onRemoveClick: function(e) {
+	    var li = $(e.target).parents('li:first');
+	    li.fadeOut();
+	    this.files.splice(li.index(), 1);
+
+	    if($.browser.ltie10) {
+	        // remove the corresponding hidden input type="file"
+	        var el = this.$(':file:nth-child('+(li.index()+1)+')');
+    	    el.remove()	        
+	    }
+	}
+	
 });
 
 
