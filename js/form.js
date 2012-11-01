@@ -152,6 +152,10 @@ form.Field = {
         if(config.value !== undefined) {
             this.setValue(config.value);
         }
+        if(config.el) {
+            this.el = config.el;
+            this.$el = $(config.el);
+        }
     },
     interpret: function(value) {
         if(value === '') 
@@ -172,13 +176,14 @@ form.Field = {
             }
         }
     },
-    unsetValue: function() {
-        var old = this.data('value');
+    unsetValue: function(options) {
+        options = options || {};
+        var old = this.$el.data('value');
         if(old !== undefined) {
             $(this.el).removeData('value');
             if(!options.silent) {
-                this.trigger('change', {field: this, value: value});            
-                this.$el.trigger('fieldchange', {field: this, value: value, name: this.name})
+                this.trigger('change', {field: this});            
+                this.$el.trigger('fieldchange', {field: this, name: this.name})
             }
         }
     },
@@ -297,7 +302,8 @@ form.TextField = Backbone.View.extend({
             $(this.el).addClass('empty').html(this.emptytext);
         else
             $(this.el).removeClass('empty').html(this.format(v));
-
+        
+        this.delegateEvents();
         return this;
     },
     abort: function() {
@@ -326,7 +332,7 @@ form.TextField = Backbone.View.extend({
             this.abort();
         }
         gui._keyDownEvent = e;
-        e.stopPropagation();
+        // e.stopPropagation();
     },
     onKeyUp: function(e) {
         if(e.keyCode == gui.keys.ENTER) {
@@ -1300,7 +1306,8 @@ form.UploadField = Backbone.View.extend({
 		
         _.each(this.files, function(f) {
             if(formdata) {
-                formdata.append(f.name, f);
+                // formdata.append(f.name, f);
+                formdata.append(this.name, f);
             }
             // for the validate-one event
             if(f.name) {
@@ -1428,6 +1435,61 @@ form.UploadField = Backbone.View.extend({
 });
 
 
+form.MessageBox = Backbone.View.extend({
+    className: 'messagebox',
+    attributes: {
+        tabindex: '-1'
+    },
+    template: _.template2(
+        '<div class="inner">'+
+            '<div class="title">${title}</div>'+
+            '<div class="message">${message}</div>'+
+            '<div class="buttons">'+
+                '<button class="button ok">OK</button>'+
+            '</div>' +
+        '</div><div class="dropshadow"></div></div>'
+    ),
+    events: {
+        'click .button': 'onCloseClick',
+        'keydown': 'onKeyDown'
+    },
+    
+    initialize: function(config) {
+        this.title = config.title || '';
+        this.message = config.message || '';
+    },
+    render: function() {
+        this.$el.html(this.template({
+            title: this.title,
+            message: this.message
+        }));
+        // Implicitly append message boxes to body
+        if(!this.el.parentNode)
+            $(document.body).append(this.el);
+        
+        if($.browser.ltie9) {
+            this.$el.iefocus().addClass('ltie9');
+        }
+        return this;
+    },
+    show: function() {
+        this.render();
+        this.$el.center();
+        this.$el.fadeIn('fast');
+        this.$el.focus();
+    },
+    close: function() {
+        this.$el.remove();
+    },
+    onKeyDown: function(e) {
+        if(e.which == gui.keys.ESC || e.which == gui.keys.ENTER) {
+            this.close();
+        }
+    },
+    onCloseClick: function() {
+        this.close();
+    }
+});
 
 
 

@@ -4,6 +4,7 @@ define([
     'backbone'
 ], function($, _, Backbone) {
     
+
     
 // =============
 // = Namespace =
@@ -27,7 +28,10 @@ gui.keys = {
 };
 
 
+
+    
 $(function() {
+    
     $(document.body).bind('keydown', function(e) {
         gui._keyDownEvent = e;
     });
@@ -108,12 +112,12 @@ gui.Observable.extend = Backbone.Model.extend;
 // = jQuery extensions =
 // =====================
 // Todo: don't fiddle with the global jquery
-jQuery.fn.jget = function() {
+$.fn.jget = function() {
     if(this.length > 0) {
         return $(this);
     }
 };
-jQuery.fn.contains = function(childEl) {
+$.fn.contains = function(childEl) {
     if(this.length > 0) {
         var parentEl = $(this)[0];
         childEl = $(childEl)[0];
@@ -121,28 +125,28 @@ jQuery.fn.contains = function(childEl) {
     }
     return null;
 };
-jQuery.fn.disableSelection = function() { 
+$.fn.disableSelection = function() { 
     return this.each(function() { 
         // this.onselectstart = function() { return false; }; 
         this.unselectable = "on"; 
         $(this).addClass('disableSelection'); 
     }); 
 };
-jQuery.fn.screen = function() { 
+$.fn.screen = function() { 
     var pos = this.offset(),
         body = this[0].ownerDocument.body,
         top = pos.top - body.scrollTop,
         left = pos.left - body.scrollLeft;
     return {left: left, top: top};
 };
-jQuery.fn.iefocus = function() {
+$.fn.iefocus = function() {
     this.each(function() {
         $(this).bind('focus', function(e) { $(e.target).addClass('focus')});
         $(this).bind('blur', function(e) { $(e.target).removeClass('focus')});
         this.hideFocus = true;
     });
 };
-jQuery.fn.blink = function(callback) {
+$.fn.blink = function(callback) {
     this.each(function() {
         var count = 0,
             el = this;
@@ -157,7 +161,7 @@ jQuery.fn.blink = function(callback) {
         }, 60);        
     });
 };
-jQuery.fn.selectAll = function() {
+$.fn.selectAll = function() {
     this.each(function() {
         var range = document.createRange();
         range.selectNodeContents(this);
@@ -166,7 +170,7 @@ jQuery.fn.selectAll = function() {
         sel.addRange(range);
     });
 };
-jQuery.fn.moveCursorToEnd = function(el) {
+$.fn.moveCursorToEnd = function(el) {
     this.each(function() {
         if(document.selection) { 
             range = document.body.createTextRange();
@@ -185,7 +189,7 @@ jQuery.fn.moveCursorToEnd = function(el) {
     });
     return this;
 };
-jQuery.fn.insertAt = function(i, el) {
+$.fn.insertAt = function(i, el) {
     this.each(function() {
         if(i === 0)
             $(this).prepend(el);
@@ -195,7 +199,7 @@ jQuery.fn.insertAt = function(i, el) {
             $(this).children(':nth-child('+i+')').after(el);
     });
 };
-jQuery.fn.containedBy = function(parent) {
+$.fn.containedBy = function(parent) {
     var isContainedBy = false;
     var parent = $(parent)[0];
     
@@ -208,14 +212,40 @@ jQuery.fn.containedBy = function(parent) {
     return isContainedBy;
 };
 
+$.fn.center = function(args) {
+    var args = $.extend({
+        // defaults
+        top: null  // center horizontally, manually specify top
+    }, args || {})
 
-jQuery.browser.ltie9 = jQuery.browser.msie && parseInt(jQuery.browser.version) < 9;
-jQuery.browser.ltie10 = jQuery.browser.msie && parseInt(jQuery.browser.version) < 10;
+    this.each(function() {
+		var self = $(this);
+        coords = get_center(self.outerWidth(), self.outerHeight())
+        var left = coords[0], top = coords[1]
+		
+		if(args.top !== null) {
+		    top = args.top
+		}
+    	self.css({top: top, left: left});
+   });
+};
+var get_center = function(width, height) {        
+    var winHeight = $(window).height()
+    var winWidth = $(window).width()		
+    var top = ((winHeight - height) / 2) + $(window).scrollTop()
+    var left = ((winWidth - width) / 2) + $(window).scrollLeft()
+    return [left, top]
+};
+
+
+
+$.browser.ltie9 = $.browser.msie && parseInt($.browser.version) < 9;
+$.browser.ltie10 = $.browser.msie && parseInt($.browser.version) < 10;
 
 // ==============================
 // = jQuery selector extensions =
 // ==============================
-jQuery.extend($.expr[':'], {
+$.extend($.expr[':'], {
     selectable: function(el) {
         // visible and not disabled
         return $(el).is(':visible') && !$(el).is('.disabled');
@@ -619,7 +649,7 @@ gui.Scrollable = gui.Observable.extend({
         e.preventDefault();
     }
 });
-jQuery.fn.scrollable = function() {
+$.fn.scrollable = function() {
     $(this).each(function() {
         var a = new gui.Scrollable({
             container: $(this),
@@ -628,7 +658,7 @@ jQuery.fn.scrollable = function() {
     })
 };
 
-jQuery.fn.getPreText = function () {
+$.fn.getPreText = function () {
     var ce = $("<pre />").html(this.html());
     if($.browser.webkit)
         ce.find("div").replaceWith(function() { return "\n" + this.innerHTML; });
@@ -638,7 +668,7 @@ jQuery.fn.getPreText = function () {
         ce.find("br").replaceWith("\n");
     return ce.text();
 };
-jQuery.fn.reverse = [].reverse;
+$.fn.reverse = [].reverse;
 
 
 // ==========
