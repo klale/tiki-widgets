@@ -1,10 +1,10 @@
-define('form', [
+define([
     'jquery', 
     'underscore',
     'backbone',
-    'gui',
-    'calendar',
-    'dropdown',
+    './base',
+    './calendar',
+    './dropdown',
     'iframetransport'
 ], function($, _, Backbone, gui, calendar, dropdown) {
 

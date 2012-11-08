@@ -209,13 +209,13 @@
 .calendar td.over {
     outline: 3px solid #A7BAC6;
 }
-.calendar td.today > div {
+.calendar td.today {
     background-color: #FFEFB9 !important;
 }
-.calendar td.weekend > div {
+.calendar td.weekend {
     background-color: #f8f8f8;
 }
-.calendar td.selected > div {
+.calendar td.selected {
     background-color: #f8f8f8;
 }
 

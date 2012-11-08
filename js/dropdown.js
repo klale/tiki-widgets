@@ -1,8 +1,8 @@
-define('dropdown', [
+define([
     'jquery',
     'underscore',
     'backbone',
-    'gui',
+    './base',
     'mousewheel'
 ], function($, _, Backbone, gui) {
 

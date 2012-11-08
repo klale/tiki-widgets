@@ -49,16 +49,33 @@ $(function() {
         }
       });
     */
-    var prevFocused, 
+    var newFocused,
+        prevFocused, 
         justLostFocus;
     $(document.body).bind('focusout', function(e) {
         // something that had focus, lost it, but we don't now to what yet
-        // console.log('FOCUS lost', e.target)
+
+
         justLostFocus = e.target;
-        // console.log('TARGET (focusout): ', e.target, ', hepp: ', document.activeElement);
+        
+        // andSelf() reverses parents for some reason, restore order 
+        // with another reverse()
+        $(justLostFocus).parents().andSelf().reverse().each(function(i, parent) {
+            if(newFocused && ($(parent).contains(newFocused) || parent === newFocused)) {
+                // we have traversed up to a common ancestor
+                return false; // break
+            }
+            else {
+                // fire a non-bubbling focusleave
+                // $(parent).triggerHandler('focusleave');
+                $(parent).trigger('focusleave');                
+            }
+        });        
+        
     });
     $(document.body).bind('focusin', function(e) {
         newFocused = e.target;
+
         // Now the new thing has received the focus, and we can compare the two
         
         // a focusleave should be triggered starting at justLostFocus, 
@@ -66,6 +83,7 @@ $(function() {
         // (or one level above the common ancestor to be correct)
         // Maybe add: any element with tabindex=0 along the way will have
         // a focusin class toggled accoringly
+
         if(!justLostFocus)
             return // first ever focus, thus no focusleave
 
@@ -82,6 +100,8 @@ $(function() {
                 // we have traversed up to a common ancestor
                 // commonAncestor = parent;
                 // console.log('COMMON ancestor', parent)
+                // justLostFocus = newFocused;
+                // console.log('im here2')                
                 return false; // break
             }
             else {
@@ -91,6 +111,7 @@ $(function() {
                 $(parent).trigger('focusleave');                
             }
         });
+
     });
     $(document.body).attr('tabindex', '-1');
 });
@@ -237,6 +258,26 @@ var get_center = function(width, height) {
     return [left, top]
 };
 
+$.fn.getAllAttributes = function() {
+    var el = this[0];
+    var attributes = {}; 
+    if($.browser.ltie9) {
+        // Todo: Temp, stupid ie
+        var attrs = el.attributes,
+            names = ['name', 'factory', 'class', 'style', 'value'];
+        for(var i=0; i<names.length; i++) {
+            if(attrs[names[i]])
+                attributes[names[i]] = attrs[names[i]].nodeValue;
+        }
+    } else {
+        // w3c NamedNodeMap
+        $.each(el.attributes, function(index, attr) {
+            attributes[attr.name] = attr.value;
+        });
+    }
+    return attributes;
+};
+
 
 
 $.browser.ltie9 = $.browser.msie && parseInt($.browser.version) < 9;
@@ -292,7 +333,7 @@ which is run once when a Function is created */
             if(protoProps.initcls)
                 inits.push(protoProps.initcls)
                         
-            _.each(protoProps.mixins, function(mixin, name) {
+            _.each(mixins, function(mixin, name) {
                 child = extend.call(child, mixin); // ..then create a copy of `child`, extend and return it
                 if(mixin.initcls) // collect initcls functions to run later
                     inits.push(mixin.initcls);
@@ -359,7 +400,7 @@ variable to the rendering scope, along with the usual 'obj' and '_'.
       // blocks.
       
       // Don't trust ordering of keys in `helpers` object
-      var helpers = _.map(helpers, function(v,k) { return {k:k,v:v}});
+      var helpers = _.map(helpers || {}, function(v,k) { return {k:k,v:v}});
       var keys = _.map(helpers, function(v) { return v.k});
       var helpersArgs = _.map(helpers, function(v) { return v.v});
       

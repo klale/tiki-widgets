@@ -2,7 +2,7 @@ define([
     'jquery', 
     'underscore',
     'backbone',
-    'gui',
+    './base',
     'moment'
 ], function($, _, Backbone, gui, moment) {
 
@@ -37,7 +37,6 @@ calendar.MonthCalendar = Backbone.View.extend({
         '<td class="<%= cls %>" data-ymd="<%= ymd %>">'+
             '<div>&nbsp;'+
                 '<div class="date"><%= date %></div>'+
-                '<ul class="tasks"></ul>'+
             '</div>'+
         '</td>'
     ),
@@ -55,10 +54,12 @@ calendar.MonthCalendar = Backbone.View.extend({
     showNextMonth: function() {
         var m = this.date.add({months: 1});
         this.render();
+        this.trigger('monthchange')
     },
     showPrevMonth: function() {
         var m = this.date.subtract({months: 1});
         this.render();
+        this.trigger('monthchange')        
     },
     showMonth: function(date) {
         this.date = moment(date);
