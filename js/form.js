@@ -1468,7 +1468,10 @@ form.MessageBox = Backbone.View.extend({
             $(document.body).append(this.el);
         
         if($.browser.ltie9) {
-            this.$el.iefocus().addClass('ltie9');
+            // Todo: remove this quickfix
+            try {
+                this.$el.iefocus().addClass('ltie9');
+            } catch(e) {}
         }
         return this;
     },
