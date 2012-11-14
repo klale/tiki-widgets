@@ -96,3 +96,8 @@
         @include gradient($end, $start);
     }
 }
+
+
+@mixin selected {
+    @include gradient(#648CF5, #2465F3);
+}

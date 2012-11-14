@@ -1,0 +1,31 @@
+
+
+.gui-tabs {
+    height: 30px;
+    list-style-type: none;
+    padding: 0;
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;    
+    
+    li {
+        display: inline-block;
+        a {
+            display: block;
+            height: 16px;
+            line-height: 16px;
+            padding: 7px 7px;
+            background-color: #A6B2C0;
+            color: #fff;
+            text-decoration: none;
+            &:hover {
+                background-color: #BFCCDD;
+            }
+        }
+        &.selected a {
+            background-color: #fff;
+            color: #555;            
+        }
+    }
+}

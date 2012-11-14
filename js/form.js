@@ -8,7 +8,7 @@ define([
     'iframetransport'
 ], function($, _, Backbone, gui, calendar, dropdown) {
 
-
+console.log('in gui/form.js')
 var form = {};
 
 /**
@@ -46,6 +46,28 @@ _.extend(form.Form.prototype, Backbone.Events, {
     }
 });
 form.Form.extend = Backbone.View.extend;
+
+
+form.TabChain = {
+    render: function() {
+        var focusable = this.$('*:focusable');
+        var first = focusable.first(),
+            last = focusable.last();
+        focusable.first().on('keydown', function(e) {
+            if(e.which == gui.keys.TAB && e.shiftKey) { 
+                last.focus();
+                e.preventDefault();
+            }               
+        });            
+        focusable.last().on('keydown', function(e) {
+            if(e.which == gui.keys.TAB && !e.shiftKey) {
+                first.focus();
+                e.preventDefault();
+            }
+        });            
+    }
+}
+
 
 
 function pasteHtmlAtCaret(html) {
@@ -414,14 +436,14 @@ form.DateField = Backbone.View.extend({
     className: 'datefield',
     mixins: [form.Field],
     attributes: {
-        tabIndex: '-1'
+        tabIndex: '0'
     },
     events: {
         'keydown': 'onKeyDown',
         'keyup': 'onKeyUp'
     },
     template: _.template(''+
-        '<button class="calendar" tabindex="-1"></button>'+
+        '<button class="calendar"></button>'+
         '<div class="textfield" contenteditable="true" tabindex="0"></div>'
     ),
 
@@ -620,7 +642,7 @@ form.DatePicker = calendar.MonthCalendar.extend({
         calendar.MonthCalendar.prototype.render.call(this);
         if($.browser.ltie9)
             this.$el.iefocus();
-        $(this.el).attr('tabIndex', 0);
+        $(this.el).attr('tabIndex', '-1');
         
         if(this.getValue()) {
             var ymd = moment(this.getValue()).format('YYYY-MM-DD');
@@ -841,7 +863,7 @@ form.EditableComboBox = form.ComboBox.extend({
     /* A cross between a textfield and combobox. */
     className: 'combobox editable',
     attributes: {
-        tabIndex: null
+        tabIndex: '0'
     },
 
     render: function() {
@@ -1151,7 +1173,7 @@ form.Slider = Backbone.View.extend({
 // Todo: move to separate js file
 form.Dialog = Backbone.View.extend({
     className: 'dialog',
-    attributes: {tabindex: 0},
+    attributes: {tabindex: '-1'},
     template: _.template(''+
         '<header><h2><%= obj.title %></h2></header>'+
         '<div class="content"></div>'+

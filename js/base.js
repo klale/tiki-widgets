@@ -58,22 +58,23 @@ $(function() {
 
         justLostFocus = e.target;
         
-        // andSelf() reverses parents for some reason, restore order 
-        // with another reverse()
-        $(justLostFocus).parents().andSelf().reverse().each(function(i, parent) {
-            if(newFocused && ($(parent).contains(newFocused) || parent === newFocused)) {
-                // we have traversed up to a common ancestor
-                return false; // break
-            }
-            else {
-                // fire a non-bubbling focusleave
-                // $(parent).triggerHandler('focusleave');
-                $(parent).trigger('focusleave');                
-            }
-        });        
+        // // andSelf() reverses parents for some reason, restore order 
+        // // with another reverse()
+        // $(justLostFocus).parents().andSelf().reverse().each(function(i, parent) {
+        //     if(newFocused && ($(parent).contains(newFocused) || parent === newFocused)) {
+        //         // we have traversed up to a common ancestor
+        //         return false; // break
+        //     }
+        //     else {
+        //         // fire a non-bubbling focusleave
+        //         // $(parent).triggerHandler('focusleave');
+        //         $(parent).trigger('focusleave', {newFocused: newFocused});                
+        //     }
+        // });        
         
     });
     $(document.body).bind('focusin', function(e) {
+        // console.log('FOCUS IN: ', e.target)
         newFocused = e.target;
 
         // Now the new thing has received the focus, and we can compare the two
@@ -108,7 +109,7 @@ $(function() {
                 // fire a non-bubbling focusleave
                 // console.log('focusleave: ', parent, 'newFocused: ', newFocused)
                 // $(parent).triggerHandler('focusleave');
-                $(parent).trigger('focusleave');                
+                $(parent).trigger('focusleave', {newFocused: newFocused, justLostFocus: justLostFocus});                
             }
         });
 
@@ -139,12 +140,7 @@ $.fn.jget = function() {
     }
 };
 $.fn.contains = function(childEl) {
-    if(this.length > 0) {
-        var parentEl = $(this)[0];
-        childEl = $(childEl)[0];
-        return $.contains(parentEl, childEl);
-    }
-    return null;
+    return $(childEl).containedBy(this);
 };
 $.fn.disableSelection = function() { 
     return this.each(function() { 
@@ -864,6 +860,23 @@ gui.format = new function() {
         } while (bytes > 1024);
         return Math.max(bytes, 0.1).toFixed(1) + units[i];
     };  
+};
+
+gui.isArrowKey = function(e) {
+    if(e.shiftKey || e.altKey || e.metaKey)
+        return false;
+    var keys = gui.keys,
+        key = e.which,
+        arrows = [keys.LEFT, keys.RIGHT, keys.UP, keys.DOWN]    
+    return _.indexOf(arrows, e.which) !== -1;
+};
+
+gui.parseQueryString = function(url) {
+    var vars = {};
+    url.replace(
+        new RegExp("([^?=&]+)(=([^&]*))?", "g"),
+        function($0, $1, $2, $3) { vars[$1] = $3; });
+    return vars;
 };
 
 

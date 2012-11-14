@@ -1,3 +1,5 @@
+@import "mixins.scss";
+
 
 /* ================= */
 /* = Miniscrollbar = */
@@ -624,7 +626,7 @@ button:focus,button.focus,
 /* ========== */
 /* = Dialog = */
 /* ========== */
-.dialog {
+.gui-win {
     box-shadow: 0 10px 20px rgba(0,0,0,0.3);
     -moz-box-shadow: 0 10px 20px rgba(0,0,0,0.3);
     position: absolute;
@@ -633,12 +635,137 @@ button:focus,button.focus,
     display: block;
     background-color: #fff;
     z-index: 100;       
-    width: 550px;
-    height: 470px;
+    width: 300px;
+    height: 300px;
     left: 0px;
     top: 0px;
     font-size: 1px;
     background-color: #fff;
+
+    >.content {
+        font-size: 11px;
+        position: absolute;
+        top: 50px;
+        bottom: 50px;
+        left: 15px;
+        right: 15px;
+
+        overflow: hidden;
+    }
+    >footer {
+        border-top: 1px dashed #ddd;    
+        position: absolute;
+        left: 0px;
+        right: 0px;
+        bottom: 0px;
+        height: 40px;
+        text-align: right;
+        .buttons {
+            padding: 5px 5px;
+        }
+    }
+    >.resize {
+        position: absolute;
+        bottom: 0px;
+        right: 0px;
+        width: 16px;
+        height: 16px;
+        cursor: se-resize;
+        z-index: 1;
+    }
+    header {
+        font-size: 12px;        
+        background-color: #999;
+        padding: 7px 10px;
+        cursor: default;
+        @include noselect();
+    }
+    header .title {
+        min-height: 15px;
+        line-height: 15px;
+        color: #fff;
+    }
+    .dialog header span {
+        font: 13px "Trebuchet MS";
+        font-weight: normal;
+        line-height: 17px;
+        color: #fff;
+        font-weight: normal;
+        margin: 0;
+        height: 17px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+
+
+    .ds {
+        position: absolute;
+        overflow: hidden;        
+    }
+    /* Left, right */
+    .ds_l,
+    .ds_r {   
+        top: 20px;    
+        bottom: 20px;    
+        width: 20px;     
+        overflow: hidden;
+    }    
+
+    .ds_l {
+        left: -20px;
+        background: url(../img/ds_vert.png) repeat-y;
+    }
+    .ds_r {
+        right: -20px;
+        background: url(../img/ds_vert.png) repeat-y top right;    
+    }
+    /* Bottom */
+    .ds_bl,
+    .ds_br {
+        width: 40px;
+        height: 50px;
+        bottom: -30px;    
+    }
+    .ds_bl {
+        left: -20px;
+        background: url(../img/ds_corners.png) no-repeat bottom left;    
+    }
+    .ds_br {
+        right: -20px;
+        background: url(../img/ds_corners.png) no-repeat bottom right;    
+    }
+    .ds_b {
+        bottom: -30px;
+        left: 20px;
+        right: 20px;
+        height: 30px;
+        background: url(../img/ds_hor.png) repeat-x left bottom;
+    }
+    /* Top */
+    .ds_tl,
+    .ds_tr {
+        height: 25px;
+        top: -5px;
+        width: 40px;
+    }
+    .ds_tl {
+        left: -20px;
+        background: url(../img/ds_corners.png) no-repeat top left;    
+    }
+    .ds_tr {
+        right: -20px;
+        background: url(../img/ds_corners.png) no-repeat top right;    
+    }
+    .ds_t {
+        left: 20px;
+        right: 20px;
+        top: -5px;
+        height: 5px;
+        background: url(../img/ds_hor.png) repeat-x;
+    }
+    
 }
 
 /*
@@ -652,134 +779,8 @@ button:focus,button.focus,
     background-color: #000;
 }
 */
-.dialog .ds {
-    position: absolute;
-    overflow: hidden;
-}
-/* Left, right */
-.dialog .ds_l,
-.dialog .ds_r {   
-    top: 20px;    
-    bottom: 20px;    
-    width: 20px;     
-    overflow: hidden;
-}
-.dialog .ds_l {
-    left: -20px;
-    background: url(../img/ds_vert.png) repeat-y;
-}
-.dialog .ds_r {
-    right: -20px;
-    background: url(../img/ds_vert.png) repeat-y top right;    
-}
-/* Bottom */
-.dialog .ds_bl,
-.dialog .ds_br {
-    width: 40px;
-    height: 50px;
-    bottom: -30px;    
-}
-.dialog .ds_bl {
-    left: -20px;
-    background: url(../img/ds_corners.png) no-repeat bottom left;    
-}
-.dialog .ds_br {
-    right: -20px;
-    background: url(../img/ds_corners.png) no-repeat bottom right;    
-}
-.dialog .ds_b {
-    bottom: -30px;
-    left: 20px;
-    right: 20px;
-    height: 30px;
-    background: url(../img/ds_hor.png) repeat-x left bottom;
-}
-/* Top */
-.dialog .ds_tl,
-.dialog .ds_tr {
-    height: 25px;
-    top: -5px;
-    width: 40px;
-}
-.dialog .ds_tl {
-    left: -20px;
-    background: url(../img/ds_corners.png) no-repeat top left;    
-}
-.dialog .ds_tr {
-    right: -20px;
-    background: url(../img/ds_corners.png) no-repeat top right;    
-}
-.dialog .ds_t {
-    left: 20px;
-    right: 20px;
-    top: -5px;
-    height: 5px;
-    background: url(../img/ds_hor.png) repeat-x;
-}
-
-/* Content */
-.dialog .content {
-    font-size: 11px;
-    position: absolute;
-    top: 50px;
-    bottom: 40px;
-    left: 15px;
-    right: 15px;
-    border-bottom: 1px dashed #ddd;    
-    overflow: hidden;
-}
-
-/* Buttons */
-.dialog .buttons {
-    position: absolute;
-    left: 15px;
-    right: 15px;
-    bottom: 10px;
-    height: 22px;
-    text-align: right;
-}
-.dialog .buttons .ok > span {
-    width: 70px;
-}
-.dialog  .resize {
-    position: absolute;
-    bottom: 0px;
-    right: 0px;
-    width: 16px;
-    height: 16px;
-    cursor: se-resize;
-    z-index: 1;
-}
 
 
-/* Header */
-.dialog header {
-    background-color: #999;
-    padding: 7px 10px;
-    margin: 10px;
-    -webkit-border-radius: 3px;
-    -moz-border-radius: 3px;
-    cursor: default;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    -o-user-select: none;
-    user-select: none;
-}
-.dialog header h2 {
-    font: 13px "Trebuchet MS";
-    font-weight: normal;
-    line-height: 17px;
-    color: #fff;
-    font-weight: normal;
-    margin: 0;
-    height: 17px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 
 
 
@@ -862,3 +863,43 @@ button:focus,button.focus,
     filter: progid:DXImageTransform.Microsoft.Blur(pixelradius=3, MakeShadow='true', ShadowOpacity='0.30');
     background-color: #000;
 }
+
+
+/* =============== */
+/* = tools.Table = */
+/* =============== */
+.gui-table {
+    outline: none;
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        table-layout: fixed;
+    
+        td, th {
+            color: #777;
+        }
+        tr > * {
+            padding: 3px 20px 3px 0;
+            vertical-align: top;        
+        }
+        thead th {
+            text-align: left;
+            border-bottom: 1px solid #eee;        
+        }
+
+        tbody {
+            tr:nth-child(2n) > * {
+                background-color: #f6f6f6;
+            }
+            tr.selected td {
+                @include selected();
+                color: #fff;
+            }
+        }
+    }
+
+}
+
+
+
+
