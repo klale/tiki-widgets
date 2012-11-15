@@ -8,7 +8,6 @@ define([
     'iframetransport'
 ], function($, _, Backbone, gui, calendar, dropdown) {
 
-console.log('in gui/form.js')
 var form = {};
 
 /**
