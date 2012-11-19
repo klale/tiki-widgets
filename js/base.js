@@ -273,6 +273,15 @@ $.fn.getAllAttributes = function() {
     }
     return attributes;
 };
+$.fn.attrs = function(attrs) {
+    if(arguments.length == 0) {
+        return $(this).getAllAttributes();
+    }
+    _.each(attrs || {}, function(val, key) {
+        $(this).attr(key, val);
+    }, this);
+    return this;
+};
 
 
 
@@ -299,7 +308,14 @@ $.extend($.expr[':'], {
     },
     focusable: function(el) {
         return el.tabIndex !== -1;
-    }
+    },
+    inviewport: function(el) {
+        var scrollTop = $(window).scrollTop(),
+            elTop = $(el).offset().top,
+            height = $(window).height();
+        
+        return (elTop > scrollTop) && (elTop < scrollTop+height);
+    }    
 });
 
 

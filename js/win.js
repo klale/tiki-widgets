@@ -3,6 +3,8 @@ define([
     'underscore',
     'backbone',
     './base',
+    
+    'ui',
 ], function($, _, Backbone, gui) {
 
     var win = {};
@@ -85,7 +87,22 @@ define([
             this.$('>.content').html(this.template());            
         },
         alignTo: function(el, align) {
-            
+            // if(align=='right') {
+            // 
+            //     elLeft = el.offset().left,
+            //     rightSpace = $(document).width() - (elLeft + el.width()),
+            //     winWidth = this.$el.outerWidth();
+            // 
+            // if(winWidth < rightSpace) {
+            //     // right
+            //     win.$el.css({left: tdLeft + td.width()});
+            // }
+            // else {
+            //     // left
+            //     win.$el.css({left: tdLeft - winWidth});                    
+            // }
+            // win.$el.css({top: td.offset().top});
+            // 
         },
 
 

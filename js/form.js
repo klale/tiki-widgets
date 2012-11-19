@@ -320,10 +320,10 @@ form.TextField = Backbone.View.extend({
     render: function() {
         var v = this.getValue();
         if(this.emptytext && v === undefined)
-            $(this.el).addClass('empty').html(this.emptytext);
+            this.$el.addClass('empty').html(this.emptytext);
         else
-            $(this.el).removeClass('empty').html(this.format(v));
-        
+            this.$el.removeClass('empty').html(this.format(v));
+        this.$el.attr('name', this.name);
         this.delegateEvents();
         return this;
     },
@@ -1291,8 +1291,9 @@ form.Dialog = Backbone.View.extend({
 form.UploadField = Backbone.View.extend({
     className: 'upload',
     tagName: 'div',
-    template: _.template(''+
-        '<input type="file" multiple="multiple"/>'+
+    template: _.template2(''+
+        '<input type="file" multiple="multiple" style="visibility: hidden; width:0; height:0"/>'+
+        '<button class="button browse">${obj.browseButtonText}</button>'+
         '<div class="droparea"></div>'+
         '<ul class="queue"></ul>'),
     queueItemTemplate: _.template2(''+
@@ -1300,7 +1301,7 @@ form.UploadField = Backbone.View.extend({
             '<div class="progressbar"></div>'+
             '<span class="name">${obj.name}</span> '+
             '<span class="size">${gui.format.filesize(obj.size)}</span>'+
-            '<button class="remove">Ta bort</button>'+
+            '<button class="remove">${obj.removeButtonText}</button>'+
         '</li>', {gui: gui}),
     queueItemTemplateIE: _.template2(''+
         '<li>'+
@@ -1311,25 +1312,33 @@ form.UploadField = Backbone.View.extend({
         
     mixins: [form.Field],
     events: {
-        'click .queue > li .remove': 'onRemoveClick'
+        'click .queue > li .remove': 'onRemoveClick',
+        'click .browse': 'onBrowseClick'
     },
     
     initialize: function(config) {
         form.Field.initialize.call(this, config);
         this.files = [];
+        this.browseButtonText = config.browseButtonText || 'Browse..';
+        this.removeButtonText = config.removeButtonText || 'Remove';
+        
         _.bindAll(this, 'onChange');
     },
     getValue: function(formdata) {
-        // instead of returning a value for the application/json
-        // part, add new parts to the multipart request message.
-		// process all File objects
+		// When the form is collecting all values before a submit,
+		// a FormData is passed in modern browsers. Add all files 
+		// to the FormData.
+		if(formdata) {
+            _.each(this.files, function(f) {
+                formdata.append(this.name, f);
+            }, this);
+        }
+        return form.Field.getValue.call(this)
+    },
+    _updateValue: function() {
 		var jsonvalue = [];
 		
         _.each(this.files, function(f) {
-            if(formdata) {
-                // formdata.append(f.name, f);
-                formdata.append(this.name, f);
-            }
             // for the validate-one event
             if(f.name) {
                 jsonvalue.push({'name': f.name, 'size': f.size, 'type': f.type});
@@ -1339,12 +1348,10 @@ form.UploadField = Backbone.View.extend({
                 jsonvalue.push({'name': f.value});
             }
         }, this);
-		
-		return jsonvalue;
-        
+        this.setValue(jsonvalue);
     },
     render: function() {
-        this.$el.html(this.template());
+        this.$el.html(this.template(this));
         this.$('>input').attr('name', this.name);
         this.$('>input').on("change", this.onChange);
 
@@ -1420,7 +1427,8 @@ form.UploadField = Backbone.View.extend({
 
     		// process all File objects
     		_.each(files, function(f) {
-    		    this.$('>ul').append(this.queueItemTemplate(f))
+    		    var vars = _.extend({'removeButtonText': this.removeButtonText}, f);
+    		    this.$('>ul').append(this.queueItemTemplate(vars))
     		    this.files.push(f);
     		}, this);
     	} else {
@@ -1429,7 +1437,10 @@ form.UploadField = Backbone.View.extend({
             var input = this.$(':file:last')
             var name = input[0].value;
             name = name.substr(name.lastIndexOf('\\')+1)
-            var data = {'name': name};
+            var data = {
+                'name': name,
+                'removeButtonText': this.removeButtonText
+            };
             this.$('>ul').append(this.queueItemTemplateIE(data));
             input.hide();
             this.files.push(input[0]);
@@ -1440,6 +1451,7 @@ form.UploadField = Backbone.View.extend({
             input.after(newInput);
     	    
     	}
+    	this._updateValue();
 	},
 	onRemoveClick: function(e) {
 	    var li = $(e.target).parents('li:first');
@@ -1451,6 +1463,10 @@ form.UploadField = Backbone.View.extend({
 	        var el = this.$(':file:nth-child('+(li.index()+1)+')');
     	    el.remove()	        
 	    }
+	    this._updateValue();
+	},
+	onBrowseClick: function(e) {
+	    this.$('input[type="file"]').click();
 	}
 	
 });
