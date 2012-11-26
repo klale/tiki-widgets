@@ -315,7 +315,6 @@ form.TextField = Backbone.View.extend({
         'blur': 'onBlur'
     },
     mixins: [form.Field],
-    sune: 123,
     
     initialize: function(config) {
         config = config || {};
@@ -1494,7 +1493,6 @@ form.UploadField = Backbone.View.extend({
 	        // by the user, opposed to eg reading the value from database)
 	        for(var i=0,f; f = this.files[i]; i++) {
 	            if(f['name'] == remove['name'] && f['size'] == remove['size']) {
-	                console.log('REMIVE', f['name'])
             	    this.files.splice(index, 1);
             	    break;
             	}
