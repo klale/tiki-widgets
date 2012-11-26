@@ -129,13 +129,13 @@ define([
     
     
         initialize: function(config) {
-            tools.ItemTable.__super__.prototype.initialize.call(this, config)
+            tools.ItemTable.__super__.initialize.call(this, config)
             this.rows.url = config.url;
             this.rows.on('add', this.onRowAdd, this);
             this.rows.on('destroy', this.onRowDestroy, this);            
         },
         render: function() {
-            return tools.ItemTable.__super__.prototype.render.call(this)
+            return tools.ItemTable.__super__.render.call(this)
         },
         comparator: function(row) {
             return row.get('period');
@@ -152,7 +152,7 @@ define([
             $(e.target).parents('tr:first').addClass('selected')
         },
         onKeyDown: function(e) {
-            tools.ItemTable.__super__.prototype.onKeyDown.call(this, e);
+            tools.ItemTable.__super__.onKeyDown.call(this, e);
             if(e.which == gui.keys.BACKSPACE && confirm('Delete this row?')) {
                 var id = this.$('tr.selected').attr('id'),
                     row = this.rows.get(id);

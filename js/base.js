@@ -344,17 +344,17 @@ which is run once when a Function is created */
                 mixins = protoProps.mixins || [];
             if(protoProps.initcls)
                 inits.push(protoProps.initcls)
-                        
-            _.each(mixins, function(mixin, name) {
-                child = extend.call(child, mixin); // ..then create a copy of `child`, extend and return it
+
+            // add all keys from all mixins if not already declared
+            // in protoProps. 
+            _.each(mixins, function(mixin) {
+                _.defaults(protoProps, mixin);
                 if(mixin.initcls) // collect initcls functions to run later
                     inits.push(mixin.initcls);
             });
-            child = extend.call(child, protoProps, classProps);
-            
-            // Restore Backbone's __super__, which currently equals the last applied mixin
-            // from the iteration above
-            child.__super__ = this;
+
+            // Then exend as usual
+            child = extend.call(child, protoProps, classProps);                    
             
             // Call initcls
             for(var i=0, l=inits.length; i<l; i++)
@@ -465,7 +465,7 @@ variable to the rendering scope, along with the usual 'obj' and '_'.
 /* A mixin for inheriting events declared on parent view classes. */
 gui.ChildView = {
     initcls: function() {
-        var parentEvents = this.__super__.prototype.events;        
+        var parentEvents = this.__super__.events;        
         this.prototype.events = _.extend({}, parentEvents, this.prototype.events);
     }
 };

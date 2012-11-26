@@ -4,7 +4,7 @@ define([
     'backbone',
     './base',
     
-    'ui',
+    'jquery-ui',
 ], function($, _, Backbone, gui) {
 
     var win = {};

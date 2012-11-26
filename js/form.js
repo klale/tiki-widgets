@@ -5,7 +5,8 @@ define([
     './base',
     './calendar',
     './dropdown',
-    'iframetransport'
+    'iframetransport',
+    'jquery-ui'
 ], function($, _, Backbone, gui, calendar, dropdown) {
 
 var form = {};
@@ -167,16 +168,28 @@ form.Field = {
     dateField.getValue()
     >>> '2012-06-05'
     */    
+    // initialize: function(config) {
+    //     config = config || {};
+    //     this.name = config.name || '';
+    //     if(config.value !== undefined) {
+    //         this.setValue(config.value);
+    //     }
+    //     if(config.el) {
+    //         this.el = config.el;
+    //         this.$el = $(config.el);
+    //     }
+    // },
     initialize: function(config) {
-        config = config || {};
-        this.name = config.name || '';
-        if(config.value !== undefined) {
+        this.name = config.name;
+        this.required = config.required;        
+        this.label = config.label;
+        this.config = config;
+
+        // Set config.value or config.default
+        if(config.value !== undefined)
             this.setValue(config.value);
-        }
-        if(config.el) {
-            this.el = config.el;
-            this.$el = $(config.el);
-        }
+        else if(config['default'] !== undefined)  // cannot use foo.default in IE
+            this.setValue(config['default']);
     },
     interpret: function(value) {
         if(value === '') 
@@ -185,12 +198,16 @@ form.Field = {
     },    
     setValue: function(value, options) {
         options = options || {};
-        var old = $(this.el).data('value');
-        if(old !== value) {
-            if(value === undefined)
-                $(this.el).removeData('value', value);
-            else 
-                $(this.el).data('value', value);
+        // var old = $(this.el).data('value');
+        var old = this.value;
+        if(old !== value) {                
+            // if(value === undefined) {
+            //     $(this.el).removeData('value', value);
+            // }                
+            // else {
+            //     $(this.el).data('value', value);
+            // }
+            this.value = value;
             if(!options.silent) {
                 this.trigger('change', {field: this, value: value});
                 this.$el.trigger('fieldchange', {field: this, value: value, name: this.name})
@@ -199,9 +216,11 @@ form.Field = {
     },
     unsetValue: function(options) {
         options = options || {};
-        var old = this.$el.data('value');
+        // var old = this.$el.data('value');
+        var old = this.value;
         if(old !== undefined) {
-            $(this.el).removeData('value');
+            // $(this.el).removeData('value');
+            this.value = value;
             if(!options.silent) {
                 this.trigger('change', {field: this});            
                 this.$el.trigger('fieldchange', {field: this, name: this.name})
@@ -209,7 +228,8 @@ form.Field = {
         }
     },
     getValue: function() {      
-        return $(this.el).data('value');
+        // return $(this.el).data('value');
+        return this.value;
     }
 };
 
@@ -295,6 +315,7 @@ form.TextField = Backbone.View.extend({
         'blur': 'onBlur'
     },
     mixins: [form.Field],
+    sune: 123,
     
     initialize: function(config) {
         config = config || {};
@@ -439,7 +460,8 @@ form.DateField = Backbone.View.extend({
     },
     events: {
         'keydown': 'onKeyDown',
-        'keyup': 'onKeyUp'
+        'keyup': 'onKeyUp',
+        'click button.calendar': 'showDatePicker'
     },
     template: _.template(''+
         '<button class="calendar"></button>'+
@@ -460,7 +482,6 @@ form.DateField = Backbone.View.extend({
         form.Field.initialize.call(this, config);
         
         this.on('change', this.onChange, this);
-        this.$el.delegate('button', 'click', $.proxy(this.showDatePicker, this));
     },
     render: function() {
         var val = this.getValue();
@@ -470,7 +491,10 @@ form.DateField = Backbone.View.extend({
         this.$('.textfield').bind('blur', $.proxy(this.onBlur, this));
         this.$('.textfield').bind('focus', $.proxy(this.onFocus, this));
         if($.browser.ltie9)
-            this.$('.textfield').iefocus();        
+            this.$('.textfield').iefocus();    
+
+
+        this.delegateEvents();                
         return this;
     },
     interpret: function(s) {
@@ -550,7 +574,7 @@ form.DateField = Backbone.View.extend({
         datepicker.date = moment(this.getValue() || new Date());
         datepicker.render();
         datepicker.$el.show();
-        datepicker.alignTo(this.el);
+        datepicker.alignTo(this.$('button.calendar'));
         datepicker.el.focus();
     },
     focus: function(e) {
@@ -655,10 +679,17 @@ form.DatePicker = calendar.MonthCalendar.extend({
         return this;
     },
     alignTo: function(el) {
-        var offset = $(el).screen();
-        this.$el.css({
-            left: offset.left,
-            top: offset.top + $(el).outerHeight()
+        // var offset = $(el).screen();
+        // this.$el.css({
+        //     left: offset.left,
+        //     top: offset.top + $(el).outerHeight()
+        // });
+        this.$el.position({
+            my: 'left top',
+            at: 'right top',
+            of: el,
+            collision: 'flip fit',
+            within: window
         });
     },
     onMouseEnterDay: function(e) {
@@ -1327,7 +1358,7 @@ form.UploadField = Backbone.View.extend({
     getValue: function(formdata) {
 		// When the form is collecting all values before a submit,
 		// a FormData is passed in modern browsers. Add all files 
-		// to the FormData.
+		// to the FormData.		
 		if(formdata) {
             _.each(this.files, function(f) {
                 formdata.append(this.name, f);
@@ -1335,28 +1366,13 @@ form.UploadField = Backbone.View.extend({
         }
         return form.Field.getValue.call(this)
     },
-    _updateValue: function() {
-		var jsonvalue = [];
-		
-        _.each(this.files, function(f) {
-            // for the validate-one event
-            if(f.name) {
-                jsonvalue.push({'name': f.name, 'size': f.size, 'type': f.type});
-            } else {
-                // IE<=9
-                var name = f.value.substr(f.value.lastIndexOf('\\')+1)                
-                jsonvalue.push({'name': f.value});
-            }
-        }, this);
-        this.setValue(jsonvalue);
-    },
     render: function() {
         this.$el.html(this.template(this));
         this.$('>input').attr('name', this.name);
         this.$('>input').on("change", this.onChange);
 
 
-		this.$('>ul').empty();
+        // this.$('>ul').empty();
 
 
 
@@ -1377,6 +1393,7 @@ form.UploadField = Backbone.View.extend({
             }, this);
         }
         
+        this.delegateEvents();
         return this;
     },
         //     uploadFile: function(file, xhr) {
@@ -1419,6 +1436,7 @@ form.UploadField = Backbone.View.extend({
     // },
     onChange: function(e) {
 		// fetch FileList object
+		var val = this.getValue() || [];
 		if(e.target.files) {
     		var files = e.target.files || e.dataTransfer.files;
             // this.$('>ul').empty(); // <-- can I avoid redrawing on each file add?
@@ -1430,6 +1448,7 @@ form.UploadField = Backbone.View.extend({
     		    vars.field = this;
     		    this.$('>ul').append(this.queueItemTemplate(vars))
     		    this.files.push(f);
+    		    val.push({'name': f.name, 'size': f.size, 'type': f.type});
     		}, this);
     	} else {
             // IE<=9, only one file is added at a time
@@ -1444,6 +1463,7 @@ form.UploadField = Backbone.View.extend({
             this.$('>ul').append(this.queueItemTemplateIE(data));
             input.hide();
             this.files.push(input[0]);
+            val.push({'name': name});            
             
             // add another input
             var newInput = $('<input type="file" name="'+this.name+'">');
@@ -1451,19 +1471,36 @@ form.UploadField = Backbone.View.extend({
             input.after(newInput);
     	    
     	}
-    	this._updateValue();
+    	this.setValue(val);
 	},
 	onRemoveClick: function(e) {
-	    var li = $(e.target).parents('li:first');
-	    li.fadeOut();
-	    this.files.splice(li.index(), 1);
+	    var li = $(e.target).parents('li:first'),
+	        val = this.getValue(),
+	        index = li.index(),
+	        remove = val[index];
+
+        
+        li.remove();
+	    val.splice(index, 1);
+        this.setValue(val.length ? val : null);
 
 	    if($.browser.ltie10) {
 	        // remove the corresponding hidden input type="file"
 	        var el = this.$(':file:nth-child('+(li.index()+1)+')');
     	    el.remove()	        
 	    }
-	    this._updateValue();
+	    else {
+	        // the file removed might be in this.files (it will if it was just added
+	        // by the user, opposed to eg reading the value from database)
+	        for(var i=0,f; f = this.files[i]; i++) {
+	            if(f['name'] == remove['name'] && f['size'] == remove['size']) {
+	                console.log('REMIVE', f['name'])
+            	    this.files.splice(index, 1);
+            	    break;
+            	}
+	        }
+	    }
+
 	},
 	onBrowseClick: function(e) {
 	    this.$('input[type="file"]').click();
