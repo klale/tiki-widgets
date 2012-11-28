@@ -1322,8 +1322,10 @@ form.UploadField = Backbone.View.extend({
     className: 'upload',
     tagName: 'div',
     template: _.template2(''+
-        '<input type="file" multiple="multiple" style="visibility: hidden; width:0; height:0"/>'+
-        '<button class="button browse">${obj.browseButtonText}</button>'+
+        '<div class="browse-container">'+
+            '<button class="button browse">${obj.browseButtonText}</button>'+
+            '<input type="file" multiple="multiple"/>'+
+        '</div>'+
         '<div class="droparea"></div>'+
         '<ul class="queue"></ul>'),
     queueItemTemplate: _.template2(''+
@@ -1367,8 +1369,9 @@ form.UploadField = Backbone.View.extend({
     },
     render: function() {
         this.$el.html(this.template(this));
-        this.$('>input').attr('name', this.name);
-        this.$('>input').on("change", this.onChange);
+        this.$('input[type="file"]').attr('name', this.name);
+        this.$('input[type="file"]').on("change", this.onChange);
+        
 
 
         // this.$('>ul').empty();
@@ -1391,6 +1394,11 @@ form.UploadField = Backbone.View.extend({
         	    this.$('>ul').append(this.queueItemTemplate(json))
             }, this);
         }
+
+        if(!$.browser.ltie10) {
+            // Hide the transparent <input type="file">
+            this.$('input[type="file"]').hide();
+        }        
         
         this.delegateEvents();
         return this;
@@ -1452,15 +1460,16 @@ form.UploadField = Backbone.View.extend({
     	} else {
             // IE<=9, only one file is added at a time
             // No file metadata
-            var input = this.$(':file:last')
+            var input = this.$(':file:last');
             var name = input[0].value;
-            name = name.substr(name.lastIndexOf('\\')+1)
+            name = name.substr(name.lastIndexOf('\\')+1);
             var data = {
                 'name': name,
                 'field': this
             };
             this.$('>ul').append(this.queueItemTemplateIE(data));
             input.hide();
+            
             this.files.push(input[0]);
             val.push({'name': name});            
             
@@ -1468,7 +1477,7 @@ form.UploadField = Backbone.View.extend({
             var newInput = $('<input type="file" name="'+this.name+'">');
             newInput.on('change', this.onChange);
             input.after(newInput);
-    	    
+            e.preventDefault();
     	}
     	this.setValue(val);
 	},
@@ -1501,7 +1510,14 @@ form.UploadField = Backbone.View.extend({
 
 	},
 	onBrowseClick: function(e) {
-	    this.$('input[type="file"]').click();
+        // opening the Browse.. dialog by triggering a click does
+        // indeed open it and allows you to choose a file. But later
+        // when trying to submit, it just says "Access is denied."
+        // without giving any clue to why. Clicking directy on a transparent
+        // <input type="file"> is the only way to style a file field.
+	    if(!$.browser.ltie10) {
+    	    this.$('input[type="file"]').click();
+	    }
 	}
 	
 });
