@@ -534,7 +534,8 @@ form.DateField = Backbone.View.extend({
     },
     interpret: function(s) {
         // make a pretty value real, (was "unformat")
-        s = String(s || '').replace('<br>', '');
+        // s = String(s || '').replace('<br>', '');
+        var s = $('<div>'+s+'</div>').getPreText();
         var d;
         if(s == 'now') {
             var now = new Date();
@@ -766,8 +767,8 @@ form.DatePicker = calendar.MonthCalendar.extend({
         }
     },
     onClick: function(e) {
-        var el = $(e.target).parents('.day');
-        if(el) {
+        var el = $(e.currentTarget);
+        if(el[0]) {
             var m = moment(el.attr('data-ymd'), 'YYYY-MM-DD');
             this.setValue(m.toDate().getTime());
         }
