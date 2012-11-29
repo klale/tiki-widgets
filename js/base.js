@@ -178,13 +178,20 @@ $.fn.blink = function(callback) {
         }, 60);        
     });
 };
-$.fn.selectAll = function() {
+jQuery.fn.selectAll = function() {
     this.each(function() {
-        var range = document.createRange();
-        range.selectNodeContents(this);
-        var sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
+        var sel, range;
+        if (window.getSelection && document.createRange) {
+            sel = window.getSelection();
+            range = document.createRange();
+            range.selectNodeContents(this);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        } else if (document.body.createTextRange) {
+            range = document.body.createTextRange();
+            range.moveToElementText(this);
+            range.select();
+        }
     });
 };
 $.fn.moveCursorToEnd = function(el) {
