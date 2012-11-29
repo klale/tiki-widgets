@@ -178,7 +178,7 @@ $.fn.blink = function(callback) {
         }, 60);        
     });
 };
-jQuery.fn.selectAll = function() {
+$.fn.selectAll = function() {
     this.each(function() {
         var sel, range;
         if (window.getSelection && document.createRange) {
