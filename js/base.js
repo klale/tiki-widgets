@@ -283,7 +283,12 @@ $.fn.attrs = function(attrs) {
     return this;
 };
 
-
+$.fn.focusWithoutScrolling = function(){
+    var x = window.scrollX, 
+        y = window.scrollY;
+    this.focus();
+    window.scrollTo(x, y);
+};
 
 $.browser.ltie9 = $.browser.msie && parseInt($.browser.version) < 9;
 $.browser.ltie10 = $.browser.msie && parseInt($.browser.version) < 10;
@@ -711,16 +716,25 @@ $.fn.scrollable = function() {
     })
 };
 
+
 $.fn.getPreText = function () {
-    var ce = $("<pre />").html(this.html());
-    if($.browser.webkit)
+    var ce = this.clone();
+    if($.browser.webkit || $.browser.chrome)
         ce.find("div").replaceWith(function() { return "\n" + this.innerHTML; });
-    if($.browser.msie)
-        ce.find("p").replaceWith(function() { return this.innerHTML + "<br>"; });
-    if($.browser.mozilla || $.browser.opera || $.browser.msie)
+    else if($.browser.msie)
+        ce.find("p").replaceWith(function() { return "\n" + this.innerHTML; });        
+    else {
         ce.find("br").replaceWith("\n");
-    return ce.text();
+    }
+
+    var lines = ce.text().split('\n');
+    var lines = _.compact(_.map(lines, function(line) {
+        return $.trim(line);
+    }));
+    return lines.join('\n');
 };
+
+
 $.fn.reverse = [].reverse;
 
 

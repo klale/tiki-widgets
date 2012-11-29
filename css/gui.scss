@@ -354,23 +354,31 @@
     padding: 2px 5px;   
     outline: none;
     background-color: #fff;
+    min-height: 20px;
+    line-height: 20px;
 }
+
 .textarea {
-    min-height: 34px;
-    white-space: pre-wrap;          
+    min-height: 40px;
+    line-height: 16px;
 }
+.textarea div,
+.textarea p {
+    margin: 0 !important; /* ie required important, todo: who's overriding? */
+}
+
 
 .upload {
 
     input[type="file"] {
         position: absolute;
         left: 0px;
-        top: 3px;
+        top: 0px;
         height: 20px;
-        opacity: 0;
-        -moz-opacity: 0;
+        opacity: 0;  
         filter:progid:DXImageTransform.Microsoft.Alpha(opacity=0);
         width: 1px;
+        min-width: 80px;
         height: 20px;
     }
     

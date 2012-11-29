@@ -390,25 +390,63 @@ form.TextArea = form.TextField.extend({
     initialize: function(config) {
         form.TextField.prototype.initialize.call(this, config);
     },
-    interpret: function(value) {
-        // make a pretty value real
-        if(value === '') 
-            return undefined;
+    onBlur: function(e) {        
+        var value = this.interpret(this.$el.html());
+
+        if(value !== this.getValue()) {
+            this.setValue(value);          
+        }
+    },
+    render: function() {
+        var v = this.getValue();
+        if(this.emptytext && v === undefined)
+            this.$el.addClass('empty').html(this.emptytext);
+        else
+            this.$el.removeClass('empty').html(this.format(v));
+        this.$el.attr('name', this.name);
+        this.delegateEvents();
+        return this;
+    },        
+    interpret: function(htmlvalue) {
+        // Downgrade. Convert the html to plain text with newlines        
+        var el = $('<div></div>').append(htmlvalue);
         
-        // value = value.replace(/<br>/g, '\n');
-        // console.log('Downgrade: ', value)
-        return value;
+        // Webkit produces:
+        //     foo
+        //     <div>bar</div>
+        //     <div>fep</div>
+        // Wrap the first textnode in a div as well.
+        if($.browser.chrome || $.browser.webkit) {
+            var contents = el.contents();
+            if(contents.length && contents[0].nodeType == 3) {
+                $(contents[0]).replaceWith('<div>'+contents[0].nodeValue+'</div>');
+            }
+        }
+        var text = el.getPreText(); 
+        return text;
     },
     format: function(value) {
-        // make the value pretty
-        // value = value.replace(/\n/g, '<br>');
-        // console.log('Make pretty: ', v);
-        return value;
-
+        // Upgrade.
+        // The raw form.TextArea value is stored as plain text with \n
+        // as exepected. Convert this proper html. 
+        // Moz uses <br>, webkit uses <div>, and IE uses <p>.
+        if($.browser.mozilla) {
+            return value.trim().replace('\n', '<br>');
+        }
+        
+        var out = $('<div></div>');
+        _.each(_.compact(value.split('\n')), function(line) {
+            if($.browser.msie) {
+                out.append('<p>'+line+'</p>');
+            }
+            else if($.browser.webkit || $.browser.chrome) {
+                out.append('<div>'+line+'</div>');
+            }
+        });
+        
+        return out.html();
+    
     },        
-    getValue: function() {         
-        return form.Field.getValue.call(this) || '';
-    },
     onKeyDown: function(e) {
         if(e.keyCode == gui.keys.ESC) {
             this.abort();
@@ -422,8 +460,6 @@ form.TextArea = form.TextField.extend({
         if(this.$el.is('.empty')) {
             this.$el.removeClass('empty').html('');
         }
-        else
-            this.$el.html(this.format(this.getValue()));
     }
 })
 
