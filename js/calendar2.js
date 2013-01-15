@@ -105,7 +105,7 @@ calendar.EditableMonthCalendar = Backbone.View.extend({
         // }));
 
         // Add the weekday names
-        var tr = table.find('thead').append('<tr class="weekdays"></tr>');                
+        var tr = $('<tr class="weekdays"></tr>').appendTo(table.find('thead'));                
         for(var i=0,days=[1,2,3,4,5,6,0]; i<days.length; i++) {
             tr.append($('<th>'+moment.weekdaysShort[days[i]]+'</th>'));
         }

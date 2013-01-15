@@ -1,4 +1,55 @@
+// ==========
+// = Colors =
+// ==========
+$selected: #3B77D5;
 
+
+@mixin selected2 {
+    background-color: #3B77D5;
+    color: #fff;
+    a {
+        color: #fff;
+    }
+}
+
+
+// ==========
+// = Mixins =
+// ==========
+@mixin focusstyle {
+    border-color: rgb(14, 158, 211) !important; 
+    @include box-shadow(0 0 5px rgba(14, 158, 211, 0.4));
+    outline: none;
+}
+
+@mixin verticalcenter {
+    display: -webkit-box;
+    -webkit-box-orient: horizontal;
+    -webkit-box-pack: center;
+    -webkit-box-align: center;
+
+    display: -moz-box;
+    -moz-box-orient: horizontal;
+    -moz-box-pack: center;
+    -moz-box-align: center;
+
+    display: box;
+    box-orient: horizontal;
+    box-pack: center;
+    box-align: center;
+}
+
+@mixin clearfloat {
+    &:before,
+    &:after {
+        content:"";
+        display:table;
+    }
+    &:after {
+        clear:both;
+    }
+    zoom: 1; /* For IE 6/7 (trigger hasLayout) */
+}
 
 @mixin gradient($start: #EEE, $stop: #FFF) {
     background: -webkit-gradient(
@@ -45,6 +96,29 @@
     -webkit-border-radius: $size;
     -moz-border-radius: $size;
     border-radius: $size;    
+}
+
+@mixin border-radius2($topleft: 0, $topright: 0, $bottomleft: 0, $bottomright: 0) {
+    @if $topleft {
+        -webkit-border-top-left-radius: $topleft;
+        -moz-border-top-left-radius: $topleft;
+        border-top-left-radius: $topleft;
+    }
+    @if $topright {
+        -webkit-border-top-right-radius: $topright;
+        -moz-border-top-right-radius: $topright;
+        border-top-right-radius: $topright;
+    }
+    @if $bottomleft {
+        -webkit-border-bottom-left-radius: $bottomleft;
+        -moz-border-bottom-left-radius: $bottomleft;
+        border-bottom-left-radius: $bottomleft;
+    }
+    @if $bottomright {
+        -webkit-border-bottom-right-radius: $bottomright;
+        -moz-border-bottom-right-radius: $bottomright;
+        border-bottom-right-radius: $bottomright;
+    }            
 }
 
 

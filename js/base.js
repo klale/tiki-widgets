@@ -1,7 +1,8 @@
 define([
     'jquery',
     'underscore',
-    'backbone'
+    'backbone',
+    'jquery-hotkeys'
 ], function($, _, Backbone) {
     
 
@@ -28,6 +29,11 @@ gui.keys = {
 };
 
 
+// ==================
+// = IE "polyfills" =
+// ==================
+String.trim = String.trim || _.trim;
+    
 
     
 $(function() {
@@ -157,11 +163,37 @@ $.fn.screen = function() {
     return {left: left, top: top};
 };
 $.fn.iefocus = function() {
-    this.each(function() {
-        $(this).bind('focus', function(e) { $(e.target).addClass('focus')});
-        $(this).bind('blur', function(e) { $(e.target).removeClass('focus')});
-        this.hideFocus = true;
+    if($.browser.ltie10) {
+        this.each(function() {
+            $(this).on('mousedown', function(e) { 
+                window.setTimeout(_.bind(function() {
+                    this.focus(); 
+                }, this), 1);
+                this.focus();
+                e.stopPropagation();
+            });
+            if($.browser.ltie8) {
+                this.hideFocus = true;                                    
+                $(this).bind('focus', function(e) { $(e.target).addClass('focus'); });
+                $(this).bind('blur', function(e) { $(e.target).removeClass('focus'); });
+            }
+        });
+    }
+};
+$.fn.ieunselectable = function() { 
+    this.each(function() { 
+        if($.browser.ltie10)
+            $(this).find('*').each(function() { this.unselectable = "on"; });
     });
+    return this;
+};
+gui.iepreventTextSelection = function(e) {
+    // IE7-IE8 cannot abort text selection buy calling 
+    // e.preventDefault() on the mousedown event.    
+    if($.browser.ltie9) {
+        e.srcElement.onselectstart = function () { return false; };
+        window.setTimeout(function () { e.srcElement.onselectstart = null; }, 0);
+    }
 };
 $.fn.blink = function(callback) {
     this.each(function() {
@@ -223,6 +255,14 @@ $.fn.insertAt = function(i, el) {
             $(this).children(':nth-child('+i+')').after(el);
     });
 };
+$.fn.make = function(className) {
+    this.each(function() {
+        $(this).parent().children('.'+className).removeClass(className);
+        $(this).addClass(className);
+    });
+    return this;
+}
+
 $.fn.containedBy = function(parent) {
     var isContainedBy = false;
     var parent = $(parent)[0];
@@ -297,6 +337,9 @@ $.fn.focusWithoutScrolling = function(){
     window.scrollTo(x, y);
 };
 
+$.fn.reverse = [].reverse;
+
+$.browser.ltie8 = $.browser.msie && parseInt($.browser.version) < 8;
 $.browser.ltie9 = $.browser.msie && parseInt($.browser.version) < 9;
 $.browser.ltie10 = $.browser.msie && parseInt($.browser.version) < 10;
 
@@ -331,6 +374,60 @@ $.extend($.expr[':'], {
 });
 
 
+// ==========================
+// = jQuery Ajax transports =
+// ==========================
+$.ajaxTransport("multipart", function( options, originalOptions, jqXHR ) {
+    /* Will only be called for "multipart" requests */
+    return {
+        send: function(headers, completeCallback) {
+            
+            // Build a completely new body to post
+            var jsonstr = originalOptions.data; // its already a json string
+            var formdata = new FormData();            
+            
+            // Add _json
+            try {
+                var blob = new Blob(jsonstr, {type: "application/json"});
+                formdata.append('_json', blob);
+            } catch (e) {
+                formdata.append('_json', jsonstr);
+            }
+            
+            // Add files
+            _.each(originalOptions.files || [], function(f) {
+                var name = f.name,
+                    file = f.file;
+                formdata.append(f.name, f.file)
+            });
+
+            // Add some ajax settings
+            _.extend(options, {
+                cache: false,                
+                dataType: 'json',
+                data: formdata,
+                contentType: false,
+                processData: false,
+                done: function() {
+                    console.log('IT IS DONE!')
+                },
+                fail: function() {
+                    console.log('FAIL')
+                }
+            });
+            
+            // Send request
+            $.ajax(options);            
+        },
+        abort: function() {
+            
+        }
+    }
+    
+});
+
+
+
 
 // =====================================
 // = Backbone and Underscore extension =
@@ -354,6 +451,14 @@ which is run once when a Function is created */
             var child = this, // were starting of alike..
                 inits = [],
                 mixins = protoProps.mixins || [];
+
+            _.each(mixins.slice(), function(mixin) {
+                if(mixin.beforeinitcls) // collect initcls functions to run later
+                    mixin.beforeinitcls.call(child);
+            });
+            if(protoProps.beforeinitcls) 
+                protoProps.beforeinitcls.call(child);
+                
             if(protoProps.initcls)
                 inits.push(protoProps.initcls)
 
@@ -377,6 +482,33 @@ which is run once when a Function is created */
 })(Backbone);
 
 
+
+
+// https://github.com/amccloud/backbone-safesync
+(function(_, Backbone) {
+    var sync = Backbone.sync;
+
+    Backbone.sync = function(method, model, options) {
+        var lastXHR = model._lastXHR && model._lastXHR[method];
+
+        if ((lastXHR && lastXHR.readyState != 4) && (options && options.safe !== false))
+            lastXHR.abort('stale');
+
+        if (!model._lastXHR)
+            model._lastXHR = {};
+
+        return model._lastXHR[method] = sync.apply(this, arguments);
+    };
+})(_, Backbone);
+
+
+_.instanceof = function(obj, klass) {
+    try {
+        return _.indexOf(obj.mixins || [], klass) !== -1 || obj instanceof klass;
+    } catch(e) {
+        return false;
+    }
+};
 
 /* 
 _.template2()
@@ -476,6 +608,10 @@ variable to the rendering scope, along with the usual 'obj' and '_'.
 // ==========
 /* A mixin for inheriting events declared on parent view classes. */
 gui.ChildView = {
+    beforeinitcls: function() {
+        var parentMixins = this.__super__.mixins;        
+        this.prototype.mixins = _.extend([], parentMixins, this.prototype.mixins);        
+    },
     initcls: function() {
         var parentEvents = this.__super__.events;        
         this.prototype.events = _.extend({}, parentEvents, this.prototype.events);
@@ -724,7 +860,7 @@ $.fn.scrollable = function() {
 };
 
 
-$.fn.getPreText = function () {
+$.fn.getPreText = function (trim) {
     var ce = this.clone();
     if($.browser.webkit || $.browser.chrome)
         ce.find("div").replaceWith(function() { return "\n" + this.innerHTML; });
@@ -734,11 +870,16 @@ $.fn.getPreText = function () {
         ce.find("br").replaceWith("\n");
     }
 
-    var lines = ce.text().split('\n');
-    var lines = _.compact(_.map(lines, function(line) {
-        return $.trim(line);
-    }));
-    return lines.join('\n');
+    if(trim) {
+        var lines = ce.text().split('\n');
+        var lines = _.compact(_.map(lines, function(line) {
+            return $.trim(line);
+        }));
+        return lines.join('\n');
+    }
+    else
+        return ce.text();
+    
 };
 
 
@@ -915,6 +1056,15 @@ gui.parseQueryString = function(url) {
         function($0, $1, $2, $3) { vars[$1] = $3; });
     return vars;
 };
+
+gui.randhex = function(len) {
+    var out = [],
+        chars = "abcdef0123456789";
+    for(var i=0; i<len; i++)
+        out.push(chars.charAt(Math.floor(Math.random() * chars.length)));
+    return out.join('');
+}
+
 
 
 return gui;

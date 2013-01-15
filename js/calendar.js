@@ -3,7 +3,8 @@ define([
     'underscore',
     'backbone',
     './base',
-    'moment'
+    'moment',
+    'jquerypp'
 ], function($, _, Backbone, gui, moment) {
 
 var calendar = {};    
@@ -77,6 +78,7 @@ calendar.MonthCalendar = Backbone.View.extend({
         
         // Start at first day of month
         m.date(1);
+        console.log('RENDER MONTH', m.month())
         var firstWeekdayOfMonth = m.day() - 1;
         if(firstWeekdayOfMonth == -1)
             firstWeekdayOfMonth = 6        
@@ -123,10 +125,14 @@ calendar.MonthCalendar = Backbone.View.extend({
                 tr.append('<td class="empty"><div>&nbsp;</div></td>');
             } else {
                 // tr.append('<td class="'+cls.join(' ')+'"><div>'+(m.date())+'</div></td>');                        
-                var html = this.templateDay({
+                var html = $(this.templateDay({
                     cls: cls.join(' '),
                     date: m.date(),
                     ymd: m.format('YYYY-MM-DD')
+                }));
+                html.on('draginit', function(event, drag) {
+                    console.log('foo')
+                    drag.vertical();
                 });
                 tr.append(html);
             }
@@ -134,6 +140,17 @@ calendar.MonthCalendar = Backbone.View.extend({
         }
         
         $(this.el).empty().append(table);    
+        
+        
+        var el = $('<div style="width: 100px; height: 100px; border: 1px solid red;">goo</div>');
+        $(document.body).append(el);
+
+
+        el.on('draginit', function(event, drag) {
+            console.log('foo');
+            drag.ghost();
+        });        
+        // el.draginit();        
         return this;    
     }
 

@@ -55,18 +55,14 @@ define([
             gui.ChildView
         ],
         events: {
-            'mousedown header': '_onHeaderMouseDown',
             'mousedown': 'bringToTop',
             'click .buttons .close': 'close',
-            'mousedown .resize': '_onResizeMouseDown',
             'focusin': '_onFocusIn',            
         },
                 
         initialize: function(config) {
             this.title = config.title || this.title || 'asdee';
             this.template = config.template || this.template;
-            
-            _.bindAll(this, '_onResizeDrag', '_onResizeDragEnd', '_onFocusIn');            
         },    
         render: function() {
             this.$el.html(this._template({title: this.title}));
@@ -81,6 +77,9 @@ define([
                 this.$('> header h2, > header, > .resize').attr('unselectable', 'on');
             }
             this.renderContent();
+            
+            this.$el.draggable({handle: this.$('>header')});
+            this.$el.resizable();            
             return this;
         },
         renderContent: function() {
@@ -105,37 +104,6 @@ define([
             // 
         },
 
-
-        _ieRepaintScrollbars: function() {
-            this.$('.tabs > div').css('overflow', 'hidden').css('overflow', 'auto');
-        },
-        _onHeaderMouseDown: function(e) {
-            gui.drag.start({
-                ev: e,
-                el: this.el
-            });
-            e.preventDefault();                
-        },
-        _onResizeMouseDown: function(e) {
-            var curr = this.$el.position();
-            gui.drag.start({
-                ev: e,
-                ondrag: this.onResizeDrag,
-                onend: this.onResizeDragEnd,
-                startX: curr.left,
-                startY: curr.top
-            });
-            e.preventDefault();                        
-        },
-        _onResizeDrag: function(e, conf) {
-            var w = e.pageX - conf.startX,
-                h = e.pageY - conf.startY;
-            this.$el.css({'width': w, 'height': h});
-        },
-        _onResizeDragEnd: function(e) {
-            if($.browser.ltie9)
-                this._ieRepaintScrollbars();
-        },
         _onFocusIn: function(e) {
             this.bringToTop();
         },
@@ -172,10 +140,10 @@ define([
                 winWidth = $(window).width(),
                 winHeight = $(window).height();
 
-            var top = ((winHeight - height) / 2) + $(window).scrollTop(),
-                left = ((winWidth - width) / 2) + $(window).scrollLeft();
+            var top = ((winHeight - height) / 2) + $(window.document).scrollTop(),
+                left = ((winWidth - width) / 2) + $(window.document).scrollLeft();
 
-            var top = 10;
+            // var top = 10;
 
             el.css({left: left, top: top});
         }

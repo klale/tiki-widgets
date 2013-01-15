@@ -11,6 +11,8 @@ define([
 
 var form = {};
 
+window.form = form;
+
 /**
     A collection of gui.Field objects
 */
@@ -185,15 +187,22 @@ form.Field = {
         this.label = config.label;
         this.config = config;
 
-        // Set config.value or config.default
-        if(config.value !== undefined)
-            this.setValue(config.value);
-        else if(config['default'] !== undefined)  // cannot use foo.default in IE
-            this.setValue(config['default']);
+
+        // Set value
+        if(config.value !== undefined) {
+            // Use given config.value
+            this.value = config.value;
+        }
+        else if(config['default'] !== undefined) { // config.default = error in IE (reserved word)
+            // Use configured default value
+            this.value = config['default'];                
+        }
+        else {
+            // Use the Field's default value, or null
+            this.value = this.constructor.defaultValue || null;
+        }
     },
     interpret: function(value) {
-        if(value === '') 
-            return undefined;
         return value;
     },    
     setValue: function(value, options) {
@@ -218,7 +227,7 @@ form.Field = {
         options = options || {};
         // var old = this.$el.data('value');
         var old = this.value;
-        if(old !== undefined) {
+        if(old !== null) {
             // $(this.el).removeData('value');
             this.value = value;
             if(!options.silent) {
@@ -292,6 +301,16 @@ form.InterceptPaste = {
 };
 
 
+form.createFromElement = function(klass, el) {
+    var attr = $(el).getAllAttributes();
+    return new klass({
+        el: el,
+        name: attr.name,
+        value: attr.value,
+        required: attr.required
+    });
+}
+
 /** 
 A TextField
  
@@ -311,6 +330,7 @@ form.TextField = Backbone.View.extend({
     events: {
         'keydown': 'onKeyDown',
         'keyup': 'onKeyUp',
+        'keypress': 'onKeyPress',
         'focus': 'onFocus',
         'blur': 'onBlur'
     },
@@ -323,7 +343,7 @@ form.TextField = Backbone.View.extend({
 
         if($.browser.ltie9) 
             this.$el.iefocus();        
-    },  
+    },      
     getValue: function() {         
         return form.Field.getValue.call(this) || '';
     },
@@ -345,6 +365,7 @@ form.TextField = Backbone.View.extend({
             this.$el.removeClass('empty').html(this.format(v));
         this.$el.attr('name', this.name);
         this.delegateEvents();
+        
         return this;
     },
     abort: function() {
@@ -373,7 +394,6 @@ form.TextField = Backbone.View.extend({
             this.abort();
         }
         gui._keyDownEvent = e;
-        // e.stopPropagation();
     },
     onKeyUp: function(e) {
         if(e.keyCode == gui.keys.ENTER) {
@@ -381,8 +401,22 @@ form.TextField = Backbone.View.extend({
             e.stopPropagation();
         }
         gui._keyDownEvent = null;        
+    },
+    onKeyPress: function(e) {
+        // On eg fututre numeric textfield, type is supposed to only 
+        // trigger when hitting an allowed key.
+        this.trigger('type', {e: e, character: String.fromCharCode(e.which)});
     }
+},{
+    createFromElement: function(el) {
+        $(el).attr('foo', 'bar')
+        var field = form.createFromElement(this, el);
+        return field
+    },
+    defaultValue: ''
 });
+
+
 
 form.TextArea = form.TextField.extend({
     className: 'textarea',
@@ -430,6 +464,7 @@ form.TextArea = form.TextField.extend({
         // The raw form.TextArea value is stored as plain text with \n
         // as exepected. Convert this proper html. 
         // Moz uses <br>, webkit uses <div>, and IE uses <p>.
+        value = value || '';
         if($.browser.mozilla) {
             return value.trim().replace('\n', '<br>');
         }
@@ -461,7 +496,11 @@ form.TextArea = form.TextField.extend({
             this.$el.removeClass('empty').html('');
         }
     }
-})
+},{
+    createFromElement: function(el) {
+        return form.createFromElement(this, el);
+    }
+});
 
 
 form.AmountField = form.TextField.extend({
@@ -675,6 +714,10 @@ form.DateField = Backbone.View.extend({
             this.hideDatePicker();
         }
     }
+},{
+    createFromElement: function(el) {
+        return form.createFromElement(this, el);
+    }
 });
 
 
@@ -704,7 +747,8 @@ form.DatePicker = calendar.MonthCalendar.extend({
         $(this.el).attr('tabIndex', '-1');
         
         if(this.getValue()) {
-            var ymd = moment(this.getValue()).format('YYYY-MM-DD');
+            // I WAS HERE (.local()....)
+            var ymd = moment(this.getValue()).local().format('YYYY-MM-DD');
             this.$('.day[data-ymd="'+ymd+'"]').addClass('selected');
         }
     
@@ -782,7 +826,7 @@ form.ComboBox = Backbone.View.extend({
     className: 'combobox',
     template: _.template(''+
         '<i></i>'+
-        '<span tabindex="0"><%= text %></span>'+
+        '<span tabindex="0"><%= text || "&nbsp;" %></span>'+
         '<div class="button"></div>'
     ),
     events: {
@@ -901,6 +945,7 @@ form.ComboBox = Backbone.View.extend({
         else if(dropdown.$el.is(':visible')) {
             if(e.keyCode == gui.keys.ESC) {
                 this.abort();
+                e.stopPropagation();
             } else if(e.keyCode == gui.keys.TAB) {
                 dropdown.el.focus();
                 e.preventDefault();
@@ -923,6 +968,10 @@ form.ComboBox = Backbone.View.extend({
         this.$el.removeClass('focus');
     }
     
+},{
+    createFromElement: function(el) {
+        return form.createFromElement(this, el);
+    }
 });
 
 form.EditableComboBox = form.ComboBox.extend({
@@ -1229,6 +1278,10 @@ form.Slider = Backbone.View.extend({
             this.render();
         }
         e.stopPropagation();
+    }
+},{
+    createFromElement: function(el) {
+        return form.createFromElement(this, el);
     }
 });
 
@@ -1557,6 +1610,10 @@ form.UploadField = Backbone.View.extend({
 	    }
 	}
 	
+},{
+    createFromElement: function(el) {
+        return form.createFromElement(this, el);
+    }
 });
 
 
