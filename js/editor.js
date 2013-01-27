@@ -510,6 +510,7 @@ api.CodeView = Backbone.View.extend({
 
 api.Editor = Backbone.View.extend({
     className: 'gui-editor',
+    typeName: 'editor',
     template: _.template(''+
         '<div class="toolbar">'+
             '<ul>'+
@@ -836,7 +837,10 @@ api.Editor = Backbone.View.extend({
             this.insertHTML('<br/>');
             e.preventDefault();            
         }
-       
+        
+        if(e.which == gui.keys.ENTER) {
+            e.stopPropagation();
+        }
     },
     
     saveRange: function() {
@@ -945,6 +949,10 @@ api.Editor = Backbone.View.extend({
 
     }
     
+}, {
+    createFromElement: function(el) {
+        return form.createFromElement(this, el);        
+    }
 });
 
 

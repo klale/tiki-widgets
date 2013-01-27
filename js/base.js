@@ -29,6 +29,9 @@ gui.keys = {
 };
 
 
+
+
+
 // ==================
 // = IE "polyfills" =
 // ==================
@@ -1094,6 +1097,7 @@ gui.isArrowKey = function(e) {
 
 gui.parseQueryString = function(url) {
     var vars = {};
+    url = url || document.location.href;
     url.replace(
         new RegExp("([^?=&]+)(=([^&]*))?", "g"),
         function($0, $1, $2, $3) { vars[$1] = $3; });
@@ -1102,10 +1106,45 @@ gui.parseQueryString = function(url) {
 
 gui.randhex = function(len) {
     var out = [],
-        chars = "abcdef0123456789";
+        chars = "abcdef0123456789"
+        len = len || 32;
     for(var i=0; i<len; i++)
         out.push(chars.charAt(Math.floor(Math.random() * chars.length)));
     return out.join('');
+}
+
+gui.pasteHtmlAtCaret = function(html) {
+    var sel, range;
+    if (window.getSelection) {
+        // IE9 and non-IE
+        sel = window.getSelection();
+        if (sel.getRangeAt && sel.rangeCount) {
+            range = sel.getRangeAt(0);
+            range.deleteContents();
+
+            // Range.createContextualFragment() would be useful here but is
+            // non-standard and not supported in all browsers (IE9, for one)
+            var el = document.createElement("div");
+            el.innerHTML = html;
+            var frag = document.createDocumentFragment(), node, lastNode;
+            while ( (node = el.firstChild) ) {
+                lastNode = frag.appendChild(node);
+            }
+            range.insertNode(frag);
+
+            // Preserve the selection
+            if (lastNode) {
+                range = range.cloneRange();
+                range.setStartAfter(lastNode);
+                range.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+    } else if (document.selection && document.selection.type != "Control") {
+        // IE < 9
+        document.selection.createRange().pasteHTML(html);
+    }
 }
 
 

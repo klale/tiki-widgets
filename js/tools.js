@@ -100,9 +100,10 @@ define([
         s.render();
         */
         initialize: function(config) {
-            _.bindAll(this, 'onSelectableMouseDown', 'onSelectableKeyDown')
+            _.bindAll(this, 'onSelectableMouseDown', 'onSelectableKeyDown', 'onSelectableDblClick')
             this.selectables = config.selectables;
-            this.$el.delegate(config.selectables, 'mousedown', this.onSelectableMouseDown);
+            this.$el.on('mousedown', config.selectables, this.onSelectableMouseDown);
+            this.$el.on('dblclick', config.selectables, this.onSelectableDblClick);            
         },
         onSelectableMouseDown: function(e) {
             var el = $(e.currentTarget);
@@ -126,8 +127,13 @@ define([
             }
             else {
                 this.selectOne(el);
-                this.trigger('choose', {selected: el});
+                // this.trigger('choose', {selected: el});
             }
+        },
+        onSelectableDblClick: function(e) {
+            var el = $(e.currentTarget);
+            this.selectOne(el);
+            this.trigger('choose', {selected: el});
         },
         getSelected: function() {
             return this.$(this.selectables).filter('.selected');
@@ -148,7 +154,6 @@ define([
         },
         select: function(el) {
             if(_.isNumber(el)) {
-                console.log('OO', this.selectables+':nth-child('+el+')')
                 el = this.$(this.selectables+':nth-child('+el+')')
             }
             $(el).addClass('selected');
@@ -274,7 +279,15 @@ define([
                 this.$el.attr(this.attributes);
             }
             // _.bindAll(this, 'onResizeDrag', 'onResizeDragEnd');
-            this.rows = new (Backbone.Collection.extend({url: config.url}))(config.rows);
+            if(config.rows instanceof Backbone.Collection) {
+                this.rows = config.rows;
+            } else {
+                this.rows = new (Backbone.Collection.extend({url: config.url}))(config.rows);
+            }
+            this.rows.on('add', this.onRowAdd, this);
+            this.rows.on('destroy remove', this.onRowRemove, this);
+            
+            
             // this.rows.url = config.url;
 
             this.columns = config.columns;
@@ -315,7 +328,6 @@ define([
         render: function() {
             var alreadyHasLotOfHtml = false;
             
-            console.log('render table')
             if(alreadyHasLotOfHtml) {
                 // Populating from innerHTML, just apply the behavior.
                 // What about the this.rows collection?
@@ -346,9 +358,8 @@ define([
                 // ..and finally some rows, from this.rows, if any.
                 var tbody = this.$('table.body tbody');
                 
-                console.log('FOOBAR', this.rows.length)
                 this.rows.each(function(row) {
-                    tbody.append(this.rowTemplate(row.toJSON()));
+                    tbody.append(this.renderOne(row));
                 }, this);
             }
 
@@ -381,16 +392,35 @@ define([
             this.$('table.body').iefocus();
             this.$('>.head').ieunselectable();        
             return this;
-        }
+        },
+        renderOne: function(model) {
+            return this.rowTemplate(model.toJSON());
+        },
+        onRowAdd: function(model, collection, options) {
+            options = options || {};
+            var tr = this.renderOne(model);
+            this.$('table.body tbody').insertAt(options.index || -1, tr);
+        },
+        onRowRemove: function(model, collection) {
+            var el = this.$el.find('#'+model.id);
+            el.remove();
+        },
+
 
     });
     
     // Some common table column renderers
     tools.renderers = {
         'timeago': function(row, col) {
+            var val = row[col.name];
+            if(!val)
+                return '<td><div></div></td>';
             return '<td><div>'+moment.utc(row[col.name]).local().fromNow()+'</div></td>';
         },
         'ymd': function(row, col) {
+            var val = row[col.name];
+            if(!val)
+                return '<td><div></div></td>';
             return '<td><div>'+moment.utc(row[col.name]).local().format('YYYY-MM-DD')+'</div></td>';            
         }
     }

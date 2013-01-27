@@ -245,7 +245,6 @@
 .calendar td.day > div {
     padding: 1px;
     overflow: hidden;
-    position: relative;
 }
 .calendar td > div .date {
     position: absolute;
@@ -1141,7 +1140,7 @@ pre .xml .cdata {
 
 .gui-editor {
 //    width: 700px;
-    min-height: 300px;
+//    min-height: 300px;
     position: relative;
     outline: none;
     
@@ -1174,6 +1173,7 @@ pre .xml .cdata {
         font: 12px 'Trebuchet MS';
         outline: none;
         color: #555;
+        min-height: 40px;
 
         section {
             margin-bottom: 20px;
