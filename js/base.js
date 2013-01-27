@@ -470,15 +470,58 @@ which is run once when a Function is created */
                     inits.push(mixin.initcls);
             });
 
+
+            if(klass == 'View') {
+                // protoProps.constructor = function(options) {
+                //     Backbone.View.call(this, options);
+                //     console.log('Fooooo!')
+                // 
+                // }
+                protoProps.delegateEvents = function(events) {
+                    Backbone.View.prototype.delegateEvents.call(this, events);
+                    this._delegateHotkeys(this.hotkeys);
+                }                
+            }
+
             // Then exend as usual
             child = extend.call(child, protoProps, classProps);                    
             
             // Call initcls
             for(var i=0, l=inits.length; i<l; i++)
                 inits[i].call(child);
-            return child;
+            
+            return child;            
         }
     });
+    
+    /*
+    hotkeys: {
+        "keydown shift+a .sune": "myHandler"
+    }
+    */
+    var delegateHotkeySplitter = /^(\S+)\s+(\S+)\s*(.*)$/;    
+    Backbone.View.prototype._delegateHotkeys = function(events) {    
+        if(!this.hotkeys) return;
+        
+        var events = this.hotkeys;
+        for (var key in events) {
+            var method = events[key];
+            if (!_.isFunction(method)) method = this[events[key]];
+            if (!method) throw new Error('Method "' + events[key] + '" does not exist');
+            var match = key.match(delegateHotkeySplitter);
+            var eventName = match[1], 
+                hotkey = match[2],
+                selector = match[3];
+                
+            method = _.bind(method, this);
+            eventName += '.delegateEvents' + this.cid;
+    
+            this.$el.on(eventName, selector || null, hotkey, method);
+        }      
+    }
+
+    
+
 })(Backbone);
 
 
