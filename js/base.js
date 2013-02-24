@@ -410,13 +410,7 @@ $.ajaxTransport("multipart", function( options, originalOptions, jqXHR ) {
                 dataType: 'json',
                 data: formdata,
                 contentType: false,
-                processData: false,
-                done: function() {
-                    console.log('IT IS DONE!')
-                },
-                fail: function() {
-                    console.log('FAIL')
-                }
+                processData: false
             });
             
             // Send request
@@ -643,6 +637,59 @@ variable to the rendering scope, along with the usual 'obj' and '_'.
 
       return template;
     };
+
+
+
+
+
+
+
+
+    _.template3 = function(text, helpers) {      
+      // Don't trust ordering of keys in `helpers` object
+      var helpers = _.map(helpers || {}, function(v,k) { return {k:k,v:v}});
+      var keys = _.map(helpers, function(v) { return v.k});
+      var helpersArgs = _.map(helpers, function(v) { return v.v});
+      
+      var source = "__p+='" + text
+        .replace(escaper, function(match) {
+          return '\\' + escapes[match];
+        })
+        .replace(settings.escape || noMatch, function(match, code) {
+          return "'+\n_.escape(" + unescape(code) + ")+\n'";
+        })
+        .replace(settings.interpolate || noMatch, function(match, code) {
+          return "'+\n(" + unescape(code) + ")+\n'";
+        })
+        .replace(settings.evaluate || noMatch, function(match, code) {
+          return "';\n" + unescape(code) + "\n;__p+='";
+        }) + "';\n";
+
+      // If a variable is not specified, place data values in local scope.
+      if (!settings.variable) source = 'with(obj||{}){\n' + source + '}\n';
+
+      source = "var __p='',cache={},i=0;" +
+        "var print=function(){__p+=Array.prototype.join.call(arguments, '')};\n" +
+        source + "return __p;\n";
+
+      // build argument list
+      var args = [settings.variable || 'obj', '_', 'settings'].concat(keys);
+      var render = new Function(args, source);
+      
+      var template = function(data) {
+        var args = [data, _, settings].concat(helpersArgs);
+        return render.apply(this, args);
+      };
+
+      // Provide the compiled function source as a convenience for build time
+      // precompilation.
+      template.source = 'function(' + (settings.variable || 'obj') + '){\n' +
+        source + '}';
+
+      return template;
+    };
+
+
 
 })(_);
 
@@ -928,6 +975,37 @@ $.fn.getPreText = function (trim) {
     
 };
 
+(function($) {
+    function getNumericStyleProperty(style, prop){
+        return parseInt(style.getPropertyValue(prop),10) ;
+    }
+
+    $.fn.getOffsetPadding = function() {
+        var el = this[0]
+
+        var x = 0, y = 0;
+        var inner = true ;
+        do {
+            var style = getComputedStyle(el, null);
+            var borderTop = getNumericStyleProperty(style,"border-top-width");
+            var borderLeft = getNumericStyleProperty(style,"border-left-width");
+            y += borderTop;
+            x += borderLeft;
+            if (inner) {
+                var paddingTop = getNumericStyleProperty(style,"padding-top");
+                var paddingLeft = getNumericStyleProperty(style,"padding-left");
+                y += paddingTop;
+                x += paddingLeft;
+            }
+            inner = false;
+        } while (el = el.offsetParent);
+        return {x: x, y: y};
+
+    }
+
+
+})($);
+
 
 $.fn.reverse = [].reverse;
 
@@ -1147,6 +1225,19 @@ gui.pasteHtmlAtCaret = function(html) {
     }
 }
 
+
+gui.addcss = function(stylesheets) {
+    if(!_.isArray(stylesheets)) stylesheets = [stylesheets];
+    var head = $(window.document).find('head');
+    
+    _.each(stylesheets, function(url) {
+        if(!head.find('link[href="'+url+'"]').length) {
+            console.log('Add css: ', url);
+            var link = $('<link rel="stylesheet"></link>').attr('href', url);
+            $(window.document).find('head').append(link);
+        }
+    });
+}
 
 
 return gui;

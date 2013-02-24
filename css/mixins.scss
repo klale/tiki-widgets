@@ -16,6 +16,13 @@ $selected: #3B77D5;
 // ==========
 // = Mixins =
 // ==========
+@mixin transform($arg) {
+    -webkit-transform: $arg;
+    -moz-transform: $arg;
+    -ms-transform: $arg;
+    transform: $arg;
+}
+
 @mixin focusstyle {
     border-color: rgb(14, 158, 211) !important; 
     @include box-shadow(0 0 5px rgba(14, 158, 211, 0.4));
@@ -120,6 +127,72 @@ $selected: #3B77D5;
         border-bottom-right-radius: $bottomright;
     }            
 }
+
+
+@mixin button($radius: 3px, $padding: 4px 8px, $start: #fff, $end: #e1e1e1, $border: 1px solid #919191, $neg: false) {
+    display: inline-block;
+    cursor: default;
+    padding: $padding;
+    overflow: visible; /* Removes crazy padding in IE7 */
+    border: $border;
+    @include border-radius($radius);
+    @include gradient($start, $end);
+    @include box-shadow(0 1px 1px #fff);
+    font-weight: bold;
+    @include noselect();
+    
+    @if $neg {
+        color: #fff;
+        text-shadow: darken($end, 70%) 0px -1px;        
+    }
+    @else {
+        color: #555;
+        text-shadow: lighten($end, 70%) 0px 1px;        
+    }
+    
+    &:not(.disabled):active {
+        @include gradient(darken($end, 10%), darken($start, 10%));
+        @include box-shadow(inset 0px 2px 8px rgba(0, 0, 0, 0.3));
+    }
+    
+    &.disabled {
+        color: #aaa !important;
+    }
+}
+
+@mixin button2($radius: 3px, $padding: 6px 12px, $start: #fff, $end: #e1e1e1, $neg: false) {
+    display: inline-block;
+    cursor: default;
+    padding: $padding;
+    overflow: visible; /* Removes crazy padding in IE7 */
+    border: 1px solid darken($end, 20%);
+    @include border-radius($radius);
+    @include gradient($start, $end);
+//    @include box-shadow(0 1px 1px #fff);
+//    font-weight: bold;
+    font-size: 13px;
+    @include noselect();
+    
+    @if $neg {
+        color: #fff;
+        text-shadow: darken($end, 70%) 0px -1px;        
+    }
+    @else {
+        color: #555;
+        text-shadow: lighten($end, 70%) 0px 1px;        
+    }
+    
+    &:not(.disabled):active {
+        @include gradient(darken($end, 10%), darken($start, 10%));
+//        @include box-shadow(inset 0px 2px 8px rgba(0, 0, 0, 0.3));
+    }
+    
+    &.disabled {
+        color: #aaa !important;
+    }
+}
+
+
 
 
 @mixin buttonstyle($padvert: 3px, $padhor: 8px, $color: #ececec, $textcolor: #333) {

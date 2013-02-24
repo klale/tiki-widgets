@@ -987,49 +987,120 @@ button:focus,button.focus,
 /* ============= */
 /* = gui-table = */
 /* ============= */
+//.gui-table {
+//    outline: none;
+//    cursor: default;
+//    position: relative;
+//}
+//.gui-table table {
+//    table-layout: fixed;
+//    width: 100%;
+//    border-collapse: collapse;
+//}
+//.gui-table table tbody tr.odd td { 
+//    background-color: #f4f4f4;
+//}
+//.gui-table td,
+//.gui-table th {
+//    padding: 4px 2px;
+//    
+//}
+//.gui-table .scroll {
+//    position: absolute;
+//    left: 0px;
+//    right: 0px;
+//    top: 22px;
+//    bottom: 0px;
+//    overflow: scroll;
+//    overflow-x: hidden;
+//}
+//.gui-table .body {
+//    outline: none;
+//}
+//.gui-table .body td {
+//    border-top: 1px solid #fff;
+//}
+///* head */
+//.gui-table .head th {
+//    color: #777;
+//    position: relative;
+//    text-align: left;
+//}
+//.gui-table .head {
+//    padding-right: 15px; /* compensate for scrollbar */
+//}
+//.gui-table .head th .resize {
+//    float: right;
+//    cursor: col-resize;
+//    width: 10px;
+//    height: 100%;
+//    height: 14px;
+//}
+//
+///* body */
+//.gui-table .scroll {
+//    border-top: 1px solid #ccc;
+//}
+//.gui-table .body td div {
+//    overflow: hidden;
+//    text-overflow: ellipsis;
+//    white-space: nowrap;
+//}
+//.gui-table .body tr.selected td {
+//    background: #A6A6A6;
+//    color: #fff;
+//}
+//.gui-table:focus .body tr.selected td,
+//.gui-table.focus .body tr.selected td {    
+//    background-color: #3B77D5;
+//    color: #fff;
+//}
+//.gui-table.focus .body tr.selected td a,
+//.gui-table:focus .body tr.selected td a {
+//    color: #fff;
+//}
+//
+//.gui-table .body tr:nth-child(2n) td {
+//    background-color: #f5f5f5;
+//}
+
+
+
 .gui-table {
     outline: none;
     cursor: default;
     position: relative;
 }
 .gui-table table {
-    table-layout: fixed;
+//    table-layout: fixed;
     width: 100%;
     border-collapse: collapse;
 }
 .gui-table table tbody tr.odd td { 
     background-color: #f4f4f4;
 }
-.gui-table td,
-.gui-table th {
-    padding: 4px 2px;
-    
+.gui-table table tbody td > div {
+    padding: 2px 20px 2px 0;
+//    padding-right: 20px !important;    
 }
-.gui-table .scroll {
-    position: absolute;
-    left: 0px;
-    right: 0px;
-    top: 22px;
-    bottom: 0px;
-    overflow: scroll;
-    overflow-x: hidden;
+.gui-table table thead th {
+    padding-right: 8px;
+    padding-bottom: 5px;
 }
-.gui-table .body {
+
+.gui-table table {
     outline: none;
 }
-.gui-table .body td {
+.gui-table table td {
     border-top: 1px solid #fff;
 }
 /* head */
-.gui-table .head th {
+.gui-table table thead th {
     color: #777;
     position: relative;
     text-align: left;
 }
-.gui-table .head {
-    padding-right: 15px; /* compensate for scrollbar */
-}
-.gui-table .head th .resize {
+.gui-table thead th .resize {
     float: right;
     cursor: col-resize;
     width: 10px;
@@ -1038,27 +1109,31 @@ button:focus,button.focus,
 }
 
 /* body */
-.gui-table .scroll {
+.gui-table tbody tr:first-child td {
     border-top: 1px solid #ccc;
 }
-.gui-table .body td div {
+.gui-table tbody td div {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.gui-table .body tr.selected td {
+.gui-table tbody tr.selected td {
     background: #A6A6A6;
     color: #fff;
 }
-.gui-table:focus .body tr.selected td,
-.gui-table.focus .body tr.selected td {    
+.gui-table:focus tbody tr.selected td,
+.gui-table.focus tbody tr.selected td {    
     background-color: #3B77D5;
     color: #fff;
 }
-.gui-table .body tr:nth-child(2n) td {
-    background-color: #f0f0f0;
+.gui-table.focus tbody tr.selected td a,
+.gui-table:focus tbody tr.selected td a {
+    color: #fff;
 }
 
+.gui-table tbody tr:nth-child(2n) td {
+    background-color: #f5f5f5;
+}
 
 
 

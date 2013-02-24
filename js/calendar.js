@@ -142,15 +142,6 @@ calendar.MonthCalendar = Backbone.View.extend({
         $(this.el).empty().append(table);    
         
         
-        var el = $('<div style="width: 100px; height: 100px; border: 1px solid red;">goo</div>');
-        $(document.body).append(el);
-
-
-        el.on('draginit', function(event, drag) {
-            console.log('foo');
-            drag.ghost();
-        });        
-        // el.draginit();        
         return this;    
     }
 

@@ -76,15 +76,37 @@ define([
                 this.$el.iefocus();
                 this.$('> header h2, > header, > .resize').attr('unselectable', 'on');
             }
-            this.renderContent();
+            // this.renderContent();
             
-            this.$el.draggable({handle: this.$('>header')});
-            this.$el.resizable();            
+            // Draggable
+            var foo = this.el,
+                header = this.$('>header'),
+                xtra = {x:0, y:0};
+            header.on('draginit', function(e, drag) {
+                var xtra = header.getOffsetPadding();
+                drag.only();
+                drag.representative(foo, e.offsetX+xtra.x, e.offsetY+xtra.y);
+                return drag
+            })
+            
+            // Resizable
+            this.$('>.resize').on('draginit', function(e, drag) {
+                // snapshot the window's x and y
+                drag.winpos = $(foo).offset();
+                drag.only();
+            }).on('dragmove', function(e, drag) {
+                var w = e.pageX - drag.winpos.left,
+                    h = e.pageY - drag.winpos.top;
+                $(foo).css({'width': w, 'height': h});
+            }).on('dragend', function(e, drag) {
+                drag.element.attr('style', '');
+            });
+            
             return this;
         },
-        renderContent: function() {
-            this.$('>.content').html(this.template());            
-        },
+        // renderContent: function() {
+        //     this.$('>.content').html(this.template());            
+        // },
         alignTo: function(el, align) {
             // if(align=='right') {
             // 
@@ -114,6 +136,7 @@ define([
             if(!this.el.parentNode)
                 $(document.body).append(this.render().el);
             this.bringToTop();
+            // this.el.focus();
         },
         bringToTop: function() {
             var currz = parseInt(this.$el.css('z-index') || 0),

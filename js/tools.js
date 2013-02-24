@@ -10,6 +10,43 @@ define([
     var tools = {};
 
 
+    tools.FileDropper = Backbone.View.extend({
+        tagName: 'div',
+        className: 'dropupload',
+        attributes: {
+            'ondragover': "return false"
+        },
+        events: {
+            // 'dragover': 'onDragOver',
+            'drop': 'onDrop',
+        },    
+        initialize: function(config) {
+            if(config.el) {
+                $(config.el).attr(this.attributes).addClass(this.className);
+            }
+        },
+        render: function() {
+            return this;
+        },
+    
+        onDragOver: function(e) {
+            e.preventDefault(); 
+            return false;
+        },
+        onDrop: function(e) {
+            // Prevent the default behavior of opening a dropped file
+            e.preventDefault();
+        
+            // Get all dropped files
+            var files = e.originalEvent.dataTransfer.files;
+    
+            // Re-trigger the origial "drop" event, with the spaceholders added.
+            var ev = _.extend({}, e, {files: files});
+            this.trigger('drop', ev);
+        }    
+    });
+
+
     tools.Float = Backbone.View.extend({
         
         initialize: function(config) {
@@ -240,7 +277,6 @@ define([
 
 
     /*
-
     Example:
     -----------------
     this.table = new gui.Table({
@@ -254,8 +290,31 @@ define([
             {title: 'Lorem', col2: 'Ipsum'},
         ]
     });
-
+    
     */
+    
+    tools.TableColumn = Backbone.View.extend({
+        tagName: 'th',
+        template: _.template2(''+
+            '<div>'+
+                '<i></i>' + 
+                '${obj.title}'+
+                '<span class="resize ui-draggable"></span>' +
+            '</div>'), 
+            
+        initialize: function(config) {
+            this.config = config;
+            this.model = config.model;
+            if(!this.model)
+                this.model = new Backbone.Model();
+            
+        },
+        render: function() {
+            this.$el.html(this.template(this.model.toJSON()));
+            return this;
+        }
+    });
+    
     tools.Table = Backbone.View.extend({
         tagName: 'div',
         className: 'gui-table',
@@ -263,14 +322,11 @@ define([
             tabindex: 0
         },
         template: _.template('' + 
-            '<div class="head"><table><colgroup></colgroup><thead><tr></tr></thead></table></div>'+
-            '<div class="scroll">'+
-                '<table class="body">'+ //  tabindex="0"
-                    '<colgroup></colgroup>' +
-                    '<tbody></tbody>' +
-                '</table>'+
-            '</div>'),
-        colTemplate: _.template('<th><i></i><%= obj.title || "" %><span class="resize"></span></th>'),
+            '<table>'+
+                '<colgroup></colgroup>'+
+                '<thead><tr></tr></thead>' + 
+                '<tbody></tbody>' + 
+            '</table>'),
 
 
         initialize: function(config) {
@@ -278,91 +334,76 @@ define([
             if(config.el) {
                 this.$el.attr(this.attributes);
             }
-            // _.bindAll(this, 'onResizeDrag', 'onResizeDragEnd');
-            if(config.rows instanceof Backbone.Collection) {
+
+            // Add a columns collection
+            if(config.columns instanceof Backbone.Collection)
+                this.columns = config.columns;
+            else
+                this.columns = new Backbone.Collection(config.columns);
+
+            // Add a rows collection
+            if(config.rows instanceof Backbone.Collection)
                 this.rows = config.rows;
-            } else {
+            else
                 this.rows = new (Backbone.Collection.extend({url: config.url}))(config.rows);
-            }
             this.rows.on('add', this.onRowAdd, this);
             this.rows.on('destroy remove', this.onRowRemove, this);
             
-            
-            // this.rows.url = config.url;
-
-            this.columns = config.columns;
-            this.sortBy = config.sortBy;
-
             var tr = this.$('thead > tr');
             var rowTpl = [];
             var renderers = {};
-            _.each(this.columns || [], function(col) {                
+            this.columns.each(function(col) {                
                 // Append another <td> to the row template
-                var renderer = col.renderer;
+                var renderer = col.get('renderer');
                 if(renderer) {
                     // Call a given renderer function 
-                    
                     if(_.isString(renderer))
-                        // use built-in common renderer
+                        // use a named built-in renderer, see `tools.renderers`
                         renderer = tools.renderers[renderer]
 
-                    
-                    renderers[col.name] = function(row) { return renderer(row, col); };
-                    // console.log('REN: ', renderer, renderers)
-                    rowTpl.push('${ renderers["'+col.name+'"](obj) }');
-                    // rowTpl.push('<td>AAAA</td>');
+                    renderers[col.get('name')] = function(row) { return renderer(row, col.toJSON()); };
+                    rowTpl.push('${ renderers["'+col.get('name')+'"](obj) }');
                 }
                 else
                     // or just use the default cell markup
-                    rowTpl.push('<td><div>${ obj.'+col.name+' || "" }</div></td>');
+                    rowTpl.push('<td><div>${ obj.'+col.get('name')+' || "" }</div></td>');
             }, this);
             this.rowTemplate = _.template2('<tr id="${obj.id}">'+rowTpl.join('')+'</tr>', {renderers: renderers});            
 
             // Make the rows selectable
             this.selectable = new tools.Selectable({
-                // el: this.$('table'),
                 el: this.el,
                 selectables: 'tbody tr'
             });            
         },
         render: function() {
-            var alreadyHasLotOfHtml = false;
+
+            // Start by generate a skeleton
+            this.$el.html(this.template());
+
+            // ..add some column headers
+            var tr = this.$('thead > tr'),
+                colgroup = this.$('table > colgroup');
+
+            this.columns.each(function(model) {
+                // Create a <col> to the main table 
+                var c = $('<col/>').css('width', model.get('width')).addClass(model.get('className'));
+                colgroup.append(c);
+
+                // Append a th to the header table                
+                var th = new tools.TableColumn({model: model})
+                tr.append(th.render().el);                    
+            }, this);
+
+            // ..and finally some rows, from this.rows, if any.
+            var tbody = this.$('table > tbody');
             
-            if(alreadyHasLotOfHtml) {
-                // Populating from innerHTML, just apply the behavior.
-                // What about the this.rows collection?
-                // We still configure the columns, hence don't add <col> tags
-                // or <thead>, just a raw table with all the rows.
-                // Add support for specifying these in markup as well later.
-            }
-            else {
-                // Start by generate a skeleton
-                this.$el.html(this.template());
+            
+            this.rows.each(function(row) {
+                tbody.append(this.renderOne(row));
+            }, this);
 
-                // ..add some column headers
-                var tr = this.$('thead > tr'),
-                    colgroup = this.$('table.body > colgroup'),
-                    colgroupheader = this.$('.head colgroup');
-
-                _.each(this.columns || [], function(col) {
-                    // Create a <col> to the main table 
-                    var c = $('<col/>').css('width', col.width);
-                    colgroup.append(c);
-
-                    // Append a th to the header table
-                    var th = $(this.colTemplate(col)).css('width', col.width);
-                    tr.append(th);
-                    colgroupheader.append(c.clone());
-                }, this);
-
-                // ..and finally some rows, from this.rows, if any.
-                var tbody = this.$('table.body tbody');
-                
-                this.rows.each(function(row) {
-                    tbody.append(this.renderOne(row));
-                }, this);
-            }
-
+            
             // Make the columns resizable
             var o = {table: this};
             this.$('.resize').draggable({
@@ -387,8 +428,6 @@ define([
                 }
             });
 
-
-
             this.$('table.body').iefocus();
             this.$('>.head').ieunselectable();        
             return this;
@@ -404,10 +443,11 @@ define([
         onRowRemove: function(model, collection) {
             var el = this.$el.find('#'+model.id);
             el.remove();
-        },
-
-
+        }
     });
+
+
+
     
     // Some common table column renderers
     tools.renderers = {
@@ -486,7 +526,6 @@ define([
             
         },
         onFilterViewChange: function() {
-            console.log('YEAYEA')
             var url = this.url + '?' + this.filterView.getQueryString();
             this.rows.url = url;
         },
@@ -828,7 +867,38 @@ define([
     });    
         
 
-        
+    /*
+    A small single-line editor
+    */
+    tools.Edit = Backbone.View.extend({
+        events: {
+            'blur': 'finish'
+        },
+        hotkeys: {
+            'keydown return': 'finish',
+            'keydown left': 'foo',
+            'keydown right': 'foo',
+            'keydown up': 'foo',
+            'keydown down': 'foo',
+        },
+        foo: function(e) {
+            e.stopPropagation();
+        },
+        initialize: function(config) {
+            this.config = config;
+            this.$el.attr('contenteditable', 'true');
+            this.$el.focus();
+            this.$el.selectAll();
+        },
+        finish: function(e) {
+            this.$el.attr('contenteditable', 'false');
+            this.trigger('edit', {el: this.el, '$el': this.$el})
+            if(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }            
+        }
+    });
 
 
 

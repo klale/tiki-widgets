@@ -111,7 +111,6 @@ form.Field = {
     initialize: function(config) {
         this.name = config.name;
         this.required = config.required;        
-        this.label = config.label;
         this.config = config;
 
 
@@ -133,7 +132,6 @@ form.Field = {
         var typeName = this.prototype.typeName;
         if(typeName) {
             if(!form.types[typeName]) {
-                console.log('ADDING: ', typeName, 'className: ', this.prototype.className)
                 form.types[typeName] = this;
             }
         }
@@ -250,12 +248,37 @@ form.createFromElement = function(klass, el) {
     });
 }
 
+/*
+Create a form from an existing <form>..</form>.
+
+Example
+-------
+<form class="foo" action="/foo" method="post">
+    Name: <div type="text" name="name"></div>
+    Date: <div type="date" name="date"></div>
+</form>
+
+var myform = form.createFromForm({
+    el: $('form.foo')
+});
+myform.render();
+
+Details
+-------
+The config dict is expected to contain config.el being the 
+exsting form to wrap. The config dict is passed to the form's
+initialize. 
+
+Optionally specify config.factory. Defauls to form.FormView.
+*/
 form.createFromForm = function(config) {
+    
     if(config.jquery || config.tagName)
         config = {el: $(config)}
     
     var formEl = $(config.el);
     var fields = [];
+    var formFactory = config.factory || form.FormView;
     
     formEl.find('*[type]').each(function() {
         var type = $(this).attr('type');
@@ -263,8 +286,8 @@ form.createFromForm = function(config) {
         if(!Type) 
             throw new Error('Quickform: Unknown field type: ' + $(this).attr('type'));
         var field = Type.createFromElement(this);
-        fields.push(field);        
-    });  
+        fields.push(field);
+    });
     formEl.attr('class', 'quickform');
     
     // Create a Form instance
@@ -273,22 +296,55 @@ form.createFromForm = function(config) {
     c.method = c.method || formEl.attr('method');    
     c.fields = fields;
     c.el = formEl;
-    console.log('Config', c)
-    var formview = new form.FormView(c);    
+    var formobj = new formFactory(c);    
     
     // Initialize fields. ..can this be removed somehow?
-    _.each(formview.form.fields, function(field) {
+    _.each(formobj.form.fields, function(field) {
         var attrs = field.attributes || {};
         if(field.id) attrs.id = field.id;                
         if(field.className) attrs['class'] = field.className;
         field.$el.attr(attrs)
         field.render();
     }, this);
-    formview.render();
+    formobj.render();
     
-    formview.delegateEvents();
-    return formview;    
+    formobj.delegateEvents();
+    return formobj;    
 }
+
+
+form.createFromEl = function(config) {    
+    var el = $(config.el);
+    var fields = {};
+    var formFactory = config.factory || form.Form;
+    
+    
+    formEl.find('*[type]').each(function() {
+        var type = $(this).attr('type');
+        var Type = form.types[$(this).attr('type')];
+        if(!Type) 
+            throw new Error('Quickform: Unknown field type: ' + $(this).attr('type'));
+        var field = Type.createFromElement(this);
+        fields[field.name] = field;
+    });
+
+    // Create a Form instance
+    var form = new formFactory(c);
+    
+    // Initialize fields. ..can this be removed somehow?
+    _.each(formobj.form.fields, function(field) {
+        var attrs = field.attributes || {};
+        if(field.id) attrs.id = field.id;                
+        if(field.className) attrs['class'] = field.className;
+        field.$el.attr(attrs)
+        field.render();
+    }, this);
+    formobj.render();
+    
+    formobj.delegateEvents();
+    return formobj;    
+}
+
 
 
 function isfield(field) {
@@ -296,155 +352,128 @@ function isfield(field) {
 }
 
 
-// ========
-// = Form =
-// ========
-/*
-
-Overview
---------
-A Form is a collection of Fields.
-
-- All values of a form are sent as single big json http body
-- Supports uploading files as well by creating a multipart message,
-  moving the json body to its own part named "_json"
-
-It does not have a view. Use form.Quickform for a form View, rendering
-a table-based layout of all fields.
 
 
-Example: Manually set method and action
----------------------------------------
-var form = new Form({
-    method: 'POST',
-    action: '/foo/bar'
-    fields: [{
-            type: 'text',
-            name: 'title'
-        },{
-            type: 'date',
-            name: 'start_at'
-        }, 
-        new TextField({name: 'bar'}),
-        new TextArea({name: 'content'}),        
-    ]
-});
 
 
-Example: Create a form, using a Backbone model
-----------------------------------------------
-var form = new Form({
-    model: myBackboneModel,
-    fields: [...]
-});
-form.setValues({title: 'Foo', start_at: '2013-01-01'});
-form.validateAll();
-form.submit();
-
-
-Example: Create a Form subclass
--------------------------------
-var MyForm = Form.extend({
-    events: {
-    
-    },
+// =============
+// = FormModel =
+// =============
+form.Model = Backbone.Model.extend({        
     initialize: function(config) {
-        // My custom initialization goes here
-    }
-});
-*/
-form.Form = function(config) {
-    this.config = config;
-    
-    // Set action and method
-    if(config.model) {
-        this.action = config.model.url();
-        this.method = config.model.isNew() ? 'POST' : 'PUT';            
-        this.model = config.model;
-    }
-    else {
-        this.action = config.action || '';
-        this.method = config.method;
-    }
-    
-    // Set this.fields
-    this.fields = [];
-    _.each(config.fields, function(json) {
-        // UPDATE: duck-type, form.Fiels is an Object (mixin), 
-        // hence cannot use instanceof operator
-        // if(json instanceof form.Field) {
-        if(isfield(json)) { 
-            var field = json;
-        }
-        else {
-            var klass = form.types[json.type];
-            if(!klass)
-                throw new Error('Field factory form.types['+json.type+'] does not exist');
-            var field = new klass(json);
-        }
-        this.fields.push(field);
-    }, this);    
-
-    // Bind functions
-    _.bindAll(this, 'createMultipartXHR', '_onSubmitDone', 
-              '_onSubmitFail', '_onSubmitAlways', '_onBeforeSend', '_onProgress',
-              '_onLoadStart', '_onLoad');
-    
-    // Run any custom initializtion
-    this.initialize.apply(this, config);    
-}
-_.extend(form.Form.prototype, Backbone.Events, {
-    
-    initialize: function(config) {
+        _.bindAll(this, '_createMultipartXHR', '_onSubmitDone', 
+                  '_onSubmitFail', '_onSubmitAlways', '_onBeforeSend', '_onProgress',
+                  '_onLoadStart', '_onLoad');
     },
-    
-    getValues: function(formdata) {
-        var values = {};
-        _.each(this.fields, function(field) {
-            values[field.name] = field.getValue(formdata);
-        });
-        return values;
+    url: function() {
+        if(this.ajax && this.ajax.url)
+            return this.ajax.url;
+        return form.Model.__super__.url.call(this)
     },
-    setValues: function(values, options) {
-        _.each(this.fields, function(field) {
-            var val = values[field.name]
-            if(val !== undefined) {
-                console.log('SETVAL: ', field, val)
-                field.setValue(val, options);
-                field.render()
-            }
-        });
+    // save: function() {
+    //     // Like a normal model save, but look for attribute values that
+    //     // are file objects. If found, do a multipart save. By changing
+    //     // this.sync to a custom multipartSync?
+    //     // Hmm. FormModel should always use this syncer.        
+    //     // TODO: replace _saveMultipart with a custom Backbone.sync implementaion
+    //     // to make the following logic more accessible.
+    // 
+    //     if(this.isSaving)
+    //         return;  // easy on the trigger
+    //     this.isSaving = true;
+    // 
+    //     var sendxhr = _.bind(function(conf) {
+    //         var jqxhr = $.ajax(conf);
+    //         jqxhr.done(this._onSubmitDone);
+    //         jqxhr.fail(this._onSubmitFail);
+    //         jqxhr.always(this._onSubmitAlways);            
+    //     }, this);
+    //     
+    //     if(!this.isMultipart()) {            
+    //         // Do a classic json-for-the-whole-body
+    //         // Same in ie and modern browsers
+    //         this.trigger('onbeforesubmit');
+    //         var conf = {
+    //             url: this.url(),
+    //             type: this.isNew() ? 'POST' : 'PUT',
+    //             dataType: 'json',
+    //             contentType: 'application/json; charset=UTF-8',
+    //             data: JSON.stringify(this.attributes),
+    //             cache: false,
+    //             beforeSend: this._onBeforeSend
+    //         }
+    //     }
+    //     else {
+    //         // Submit with files as a multipart body, instead of an all-json body.
+    //         // The json data is moved into "_json".
+    //         var formdata;
+    //         if(window.FormData) {
+    //             formdata = new FormData();
+    //             var json = this.getValues(formdata);
+    //                             
+    //             // Add the json body
+    //             try {
+    //                 var blob = new Blob([JSON.stringify(json)], {type: "application/json"});
+    //                 formdata.append('_json', blob);
+    //             } catch (e) {
+    //                 formdata.append('_json', JSON.stringify(json));
+    //             }
+    //         }
+    //         else {
+    //             // IE<=9. Add the json body, will deal with the files
+    //             var formdata = {'_json': JSON.stringify(this.getValues())};
+    //         }
+    // 
+    //         // Add any files and to the formdata object
+    //         var files = []
+    //         _.each(this.fields, function(field) {
+    //             _.each(field.files || [], function(file) {
+    //                 if(formdata) // modern browser
+    //                     formdata.append(field.name, file)
+    //                 else // IE<10
+    //                     files.push(file);
+    //             });
+    //         });
+    // 
+    //         this.trigger('onbeforesubmit');                
+    //         var conf = {
+    //             url: this.action,
+    //             type: this.method,
+    //             dataType: 'json',
+    //             data: formdata,
+    //             accepts: 'application/json', // <-- why is this not working? Don't remove, used by iframe-transport.
+    //             headers: {'Accept': 'application/json'},
+    //             iframe: $.browser.ltie10 && files.length,
+    //             files: files,
+    //             cache: false,
+    //             contentType: false,   // <---------------- important!
+    //             processData: false,   // <---------------- important!
+    //             xhr: this._createMultipartXHR,
+    //             beforeSend: this._onBeforeSend
+    //         };
+    //     }
+    //     sendxhr(conf);
+    // },    
+    save: function(key, value, options) {
+        // if (_.isObject(key) || key == null) {
+        //     attrs = key;
+        //     options = value;
+        // } else {
+        //     attrs = {};
+        //     attrs[key] = value;
+        // }  
+        var onvalid = _.bind(function() {
+            Backbone.Model.prototype.save.call(this, key, value, options);
+        }, this);
+        this.validateAll(onvalid);
+        // this.validateAll();        
     },
-    clear: function() {
-        _.each(this.fields, function(field) {
-            field.unsetValue({silent: true});
-        });
-    },    
-    getFieldByName: function(name) {
-        return _.find(this.fields, function(f) { return f.name == name; });
-    },
-    getFieldsByName: function(name) {
-        var o = {};
-        _.each(this.fields, function(f, key) { o[f.name] = f; })
-        return o;
-    },
-    isMultipart: function() {
-        for(k in this.fields) {
-            if(this.fields[k] instanceof form.UploadField)
-                return true;
-        }
-        return false;
-    },    
-    validateOne: function(field) {
-        if(!isfield(field)) 
-            field = this.getFieldByName(field)
-        
+    validateOne: function(attr) {
         var data = {};
-        data[name || field.name] = field.getValue();
-        
-        $.ajax({
-            url: this.action,
-            type: this.method,
+        data[attr] = this.get(attr);        
+        var xhr = $.ajax({
+            url: this.url(),
+            type: 'post',
             dataType: 'json',
             data: JSON.stringify(data),
             contentType: 'application/json',            
@@ -452,151 +481,56 @@ _.extend(form.Form.prototype, Backbone.Events, {
                 xmlhttp.setRequestHeader('X-Validate', 'single');
             },            
             success: _.bind(function(data, textStatus, response) {
-
-                this.trigger('valid', {form: this, field: field});
+                this.trigger('valid', {model: this, fieldName: attr});
             }, this),
             error: _.bind(function(xmlhttp, textStatus, errorThrown) {
                 var json = JSON.parse(xmlhttp.responseText);
-                this.trigger('invalid', {form: this, field: field, error: json});
+                this.trigger('invalid', {model: this, fieldName: attr, error: json});
             }, this)
         });
     },
-
     validateAll: function(onsuccess) {
-        var fields = this.getFieldsByName();
-        var data = this.getValues();
+        var attributes = this.attributes;
         this.trigger('beforevalidateall');
-        
         $.ajax({
-            url: this.action,
-            type: this.method,
+            url: this.url(),
+            // type: this.method,
+            type: 'post',
             dataType: 'json',
-            data: JSON.stringify(data),
+            data: JSON.stringify(attributes),
             contentType: 'application/json',            
             beforeSend: function(xmlhttp) {
                 xmlhttp.setRequestHeader('X-Validate', 'all');
             },            
             success: _.bind(function(data, textStatus, response) {
-                _.each(fields, function(f) { 
-                    this.trigger('valid', {form: this, field: f}); }, 
+                _.each(attributes, function(val, key) { 
+                    this.trigger('valid', {model: this, fieldName: key}); }, 
                 this);
                 this.trigger('validateallsuccess', {form: this})
-                
-                if(onsuccess) {
+                if(onsuccess)
                     onsuccess()
-                }
             }, this),
             error: _.bind(function(xmlhttp, textStatus, errorThrown) {
                 var resp = JSON.parse(xmlhttp.responseText);
-                _.each(fields, function(v, k) {
-                    if(resp[k] && fields[k])
-                        this.trigger('invalid', {form: this, field: fields[k], error: resp[k]})
+                _.each(attributes, function(val, key) {
+                    if(resp[key])
+                        this.trigger('invalid', {model: this, fieldName: key, error: resp[key]});
                     else
-                        this.trigger('valid', {form: this, field: fields[k]})
+                        this.trigger('valid', {model: this, fieldName: key});
                 }, this);
-                this.trigger('validateallfail')                
+                this.trigger('validateallfail')
             }, this),
             complete: _.bind(function() {
                 this.trigger('aftervalidateall')
             }, this)
         });
     },
-    
-    submit: function() {
-        if(this.isSubmitting)
-            return;  // easy on the trigger
-        this.isSubmitting = true;
-
-        // Make sure the last field is saved as well (eg pressing
-        // Enter in a text that hasn't blurred yet)            
-        var ae = $(document.activeElement);
-        if(ae.attr('contenteditable')) {
-            ae.trigger('blur').focus();
-        }
-        
-        
-        var sendxhr = _.bind(function(conf) {
-            var jqxhr = $.ajax(conf);
-            jqxhr.done(this._onSubmitDone);
-            jqxhr.fail(this._onSubmitFail);
-            jqxhr.always(this._onSubmitAlways);            
-        }, this);
-        
-        if(!this.isMultipart()) {            
-            // Do a classic json-for-the-whole-body
-            // Same in ie and modern browsers
-            var json = this.getValues();
-            var doSubmit = _.bind(function() {
-                this.trigger('onbeforesubmit');
-                var conf = {
-                    url: this.action,
-                    type: this.method,
-                    dataType: 'json',
-                    contentType: 'application/json; charset=UTF-8',
-                    data: JSON.stringify(json),
-                    cache: false,
-                    beforeSend: this._onBeforeSend
-                }
-                sendxhr(conf);
-            }, this);
-        }
-        else {
-            // Submit with files as a multipart body, instead of an all-json body.
-            // The json data is moved into "_json".
-            var formdata;
-            if(window.FormData) {
-                formdata = new FormData();
-                var json = this.getValues(formdata);
-                                
-                // Add the json body
-                try {
-                    var blob = new Blob([JSON.stringify(json)], {type: "application/json"});
-                    formdata.append('_json', blob);
-                } catch (e) {
-                    formdata.append('_json', JSON.stringify(json));
-                }
-            }
-            else {
-                // IE<=9. Add the json body, will deal with the files
-                var formdata = {'_json': JSON.stringify(this.getValues())};
-            }
-
-            // Add any files and to the formdata object
-            var files = []
-            _.each(this.fields, function(field) {
-                _.each(field.files || [], function(file) {
-                    if(formdata) // modern browser
-                        formdata.append(field.name, file)
-                    else // IE<10
-                        files.push(file);
-                });
-            });
-
-            var doSubmit = _.bind(function() {
-                this.trigger('onbeforesubmit');                
-                var conf = {
-                    url: this.action,
-                    type: this.method,
-                    dataType: 'json',
-                    data: formdata,
-                    accepts: 'application/json', // <-- why is this not working? Don't remove, used by iframe-transport.
-                    headers: {'Accept': 'application/json'},
-                    iframe: $.browser.ltie10 && files.length,
-                    files: files,
-                    cache: false,
-                    contentType: false,   // <---------------- important!
-                    processData: false,   // <---------------- important!
-                    xhr: this.createMultipartXHR,
-                    beforeSend: this._onBeforeSend
-                };
-                sendxhr(conf)
-            }, this);
-            
-        }
-        this.validateAll(doSubmit);
+    isMultipart: function() {
+        return false;
     },
     
-    createMultipartXHR: function() {
+    
+    _createMultipartXHR: function() {
         var xhr = $.ajaxSettings.xhr();
         if(xhr.upload) {
             xhr.upload.addEventListener('progress', this._onProgress, false);
@@ -611,16 +545,15 @@ _.extend(form.Form.prototype, Backbone.Events, {
         this.trigger('beforesend', {jqxhr: jqxhr, form: this, settings: settings});
     },
     _onSubmitDone: function(json, statusText, jqxhr) {
-        this.trigger('submitdone', {jqxhr: jqxhr, form: this, json: json});
+        this.trigger('submitdone', {jqxhr: jqxhr, form: this});
     },
     _onSubmitFail: function(jqxhr, errorStr, exception) {
-        this.trigger('submitfail', {jqxhr: jqxhr, form: this, json: json});
+        this.trigger('submitfail', {jqxhr: jqxhr, form: this});
     },
     _onSubmitAlways: function() {    
         this.trigger('submitalways', {form: this});
-        this.isSubmitting = false;
+        this.isSaving = false;
     },
-
     _onProgress: function(e) {
         var progress = Math.round((e.loaded / e.total) * 100);
         this.trigger('progress', {form: this, progress: progress, e: e, loaded: e.loaded, total: e.total})
@@ -630,58 +563,117 @@ _.extend(form.Form.prototype, Backbone.Events, {
     },
     _onLoad: function(e) {
         this.trigger('load', {form: this, e: e});
-    },       
-
-    
+    }    
 });
 
 
 
-form.FormView = Backbone.View.extend({
-    // className: '',
-    events: {
-        'fieldchange': 'onFieldChange',
-        'keydown': 'onFormKeyDown',
-        'click button.submit': 'onSubmitButtonClick',
-    },
-    initialize: function(config) {
-        var frm = new form.Form(config);
-        this.form = frm;
-        this.config = config;
-        
-        if(this.el.tagName == 'FORM') {
-            this.$el.on('submit', function(e) { e.preventDefault(); });
-        }
-        
-        frm.on('invalid', this.onInvalid, this);
-        frm.on('valid', this.onValid, this);
-        frm.on('beforevalidateall', this.onBeforeValidateAll, this);
-        frm.on('validateallfail', this.onValidateAllFail, this);        
-        frm.on('beforesubmit', this.onBeforeSubmit, this);        
-        frm.on('submitdone', this.onSubmitDone, this);
-        frm.on('submitalways', this.onSubmitAlways, this);
-        
-        if(frm.isMultipart()) {
-            frm.on('progress', this.onProgress, this);            
-        }
-    },
-    
-    render: function() {
-        // 
-        // // Progress bar
-        // if(this.form.isMultipart()) {
-        //     var progressbar = $('<div class="progressbar"><div><div class="progress"></div></div></div>');
-        //     this.$el.append(progressbar);
-        // }
+// ========
+// = Form =
+// ========
 
-        if(this.config.className)
-            this.$el.attr('class', this.config.className)
+/*
+form.FormModel
+  - describe here
 
-        // Keep a reference to the submit button
-        this.submitButton = this.$('button.submit');
-        this.submitButton.data('origText', this.submitButton.text());
-        // return this;        
-        return this;
+form.Form
+  - Abstract. 
+  - has dict this.fields
+  - has .model
+  - No layout. Implement render() yourself.
+  - Listens to 'change' of all its fields, propagate field changes to the model
+  - Does not fire change events. Use this.model as the observable.
+
+form.SimpleForm
+  - Has a UL based layout
+  - Requires config.fields to be a list since order is relevant.
+  - Uses field.label and field.required
+
+form.CustomForm
+  - Uses an arbitrary template.
+  - Ignores config.fields.
+  - Renders the tempalte, sniffs type="*" and replaces those elemens with 
+    <Field>.render().el, as it popuplates the this.fields dict.
+
+
+
+
+Examples
+=================================================
+
+Example 1: Create a form with no layout
+----------------------------------------
+var myform = new form.Form({
+    model: new form.Model({title: 'Foo', description: 'Foo foo bar'});,
+    fields: {
+        'title': new form.TextField(),
+        'description': new form.TextArea(),
+    }
+});
+console.log(myform.model.attributes)
+myform.model.set({title: 'Hello', description: 'World!'});      
+
+
+
+Example 2: Create a form with layout (SimpleForm), without passing a model
+--------------------------------------------------------------------------
+// An empty this.model is implicity created
+var myform = new form.SimpleForm({
+    ajax: {
+        type: 'PUT',
+        url: '/foo/bar'
+    },
+    fields: [
+        new form.TextField({name: 'title', label: 'Title'}),
+        new form.TextArea({name: 'description', label: 'Description'})
+    ]
+});
+body.append(myform.render().el);
+myform.model.save()
+
+
+Example 3: Create a form with layout (SimpleForm), passing a model
+------------------------------------------------------------------
+var model = new form.Model({description: 'Foo foo bar'});
+var myform = new form.SimpleForm({
+    model: model,
+    urlRoot: '/foo/bar',
+    fields: [
+        new form.TextField({name: 'title', label: 'Title', value: 'Initial title value'}),
+        new form.TextArea({name: 'description', label: 'Description'}),
+    ]
+});
+body.append(myform.render().el);
+
+console.log('Values: ', myform.model.attributes)    
+console.log('Values: ', myform.fields['title'].getValue(), myform.fields['description'].getValue());
+
+myform.model.set({title: 'Adam', description: ''});
+myform.model.set('title', 'Adam Bertil');
+myform.fields['title'].setValue('Adam Bertil Ceasar');
+
+myform.model.save();
+
+
+Example 4
+--------------------------------
+this.form = new form.SimpleForm({
+    fields: [
+        {type: 'text', name: 'aggregate_functions', label: 'Aggregate'},
+        {type: 'text', name: 'bar', label: 'Bar'},
+        {type: 'checkbox', name: 'visible', label: 'Visible', checked: true},
+        {type: 'checkbox', name: 'group', label: 'Group', checked: false}
+    ]
+});
+
+*/
+
+form.ErrorMessages = {
+    initialize: function(config) {                
+        this.model.on('invalid', this.onInvalid, this);
+        this.model.on('valid', this.onValid, this);
+        this.model.on('change', this.onModelChange2, this);
+        console.log('Hayuken')
     },
     showError: function(field, message) {
         var el = field.$el.parent().find('.error');
@@ -696,79 +688,331 @@ form.FormView = Backbone.View.extend({
         field.$el.parent().find('.error').fadeOut(function() {$(this).remove()});
         field.$el.parent().removeClass('invalid');        
     },
-
-    onFieldChange: function(e, evt) {
-        this.form.validateOne(evt.name, evt.field)
+    onInvalid: function(e) {
+        this.showError(this.fields[e.fieldName], e.error.message);
     },
-    onFormKeyDown: function(e) {
-        if(e.which == gui.keys.ENTER) {
-            this.form.submit();
-        }
+    onValid: function(e) {
+        console.log('onValid (single field)', this.fields[e.fieldName], this.fields, e.fieldName)
+        this.hideError(this.fields[e.fieldName]);
     },
-    onBeforeValidateAll: function() {
-        this.submitButton.text('Validating..');
-        this.submitButton[0].disabled = true;
-        this.isSubmitting = true;
-    },
-    onValidateAllFail: function() {
-        this.submitButton.text(this.submitButton.data('origText'));
-        this.submitButton[0].disabled = false;
-        this.isSubmitting = false;
-    },
-    onBeforeSubmit: function() {
-        this.submitButton.text('Sending..');        
-    },
-    onSubmitAlways: function() {
-        this.submitButton.text(this.submitButton.data('origText'));    
-        this.submitButton[0].disabled = false;
-        this.$el.removeClass('sending').removeClass('infinite');
+    onModelChange2: function(e) {
+        if(!this.model.validateOne)
+            return;
         
-        if(this.form.isMultipart()) {
-            this.$('.progressbar .progress').width(0);
+        _.each(e.changedAttributes(), function(v, k) {
+            this.model.validateOne(k);
+        }, this)
+    }
+};
+    
+
+
+form.Form = Backbone.View.extend({
+    
+    mixins: [form.ErrorMessages],
+    
+    initialize: function(config) {
+        this.config = config;
+        this.ajax = config.ajax || {};
+        this.model = config.model;
+        if(!this.model)
+            this.model = new form.Model();
+        if(config.urlRoot)
+            this.model.urlRoot = config.urlRoot;
+        if(config.ajax)
+            this.model.ajax = config.ajax;
+
+        form.ErrorMessages.initialize.call(this, config); 
+        this.model.on('change', this.onModelChange, this);
+        
+        // Set this.fields
+        this.fields = {};
+        _.each(config.fields, function(json, key) {
+            // UPDATE: duck-type, form.Fiels is an Object (mixin), 
+            // hence cannot use instanceof operator
+            // if(json instanceof form.Field) {
+            if(isfield(json)) { 
+                var field = json;
+            }
+            else {
+                var klass = form.types[json.type];
+                if(!klass)
+                    throw new Error('Field factory form.types['+json.type+'] does not exist');
+                var field = new klass(json);
+                
+                // Todo: don't instrument Field
+                field.label = json.label || '';
+            }
+            field.name = key;
+            var value = this.model.get(key);
+            if(value !== undefined)
+                field.value = value;
+            field.on('change', this.onFormFieldChange, this)
+            this.fields[key] = field;
+        }, this);    
+        
+    },
+    submit: function(options) {
+        options = options || {};
+        // we must intercept the save() response and remove the
+        // "_redirect", "_messagebox" etc keys, before model.set(model.parse(..resp..))
+        // A quick solution now is to temporarily overwrite model.parse during the request
+        // then put back the origal again when done
+        var orig_parse = this.model.parse;
+        var model = this.model,
+            org_parse = model.parse,
+            respData;
+        var parse = function(resp, xhr) {
+            // filter out "_redirect"
+            console.log('Filter out stuff:', resp)
+            respData = _.clone(resp)
+            delete resp['redirect']
+            return resp;
         }
-        this.isSubmitting = false;
-    },   
+        var complete = function() {
+            // Restoring model.parse
+            model.parse = org_parse;
+        }
+        var success = function() {
+            console.log('we made it!')
+            console.log('data: ', respData)
+            
+            // Remove this line when upgrading from Backbone 0.9.2
+            model.trigger('sync');
+            
+            if(respData.forward) {
+                var form = $('<form><input type="hidden" name="_json" value=""/></form>').attr({
+                    action: respData.forward, 
+                    method: 'post'
+                });
+                form.appendTo(document.body)
+                form[0]._json.value = JSON.stringify(this.form.getValues());
+                form.submit();
+            }
+            // else if(status == 301 || status == 302 || status == 303 || respData.redirect) {
+            else if(respData.redirect) {
+                var sep = respData.redirect.indexOf('?') === -1 ? '?' : '&'
+                // window.location.href = respData.redirect + sep + '_rnd=' + parseInt(Math.random()*10000000);
+                window.location.href = respData.redirect;
+            }
+            else if(json.messagebox) {
+                var config = json.messagebox;
+                var msgbox = new form.MessageBox(config);
+                msgbox.show();
+            }  
+        }
+        // Hi-jacking model.parse
+        model.parse = parse;
+        options.complete = complete;
+        options.success = success;
+        model.save(null, options);
+    },
+    onFormFieldChange: function(e) {
+        this.model.set(e.field.name, e.value);
+    },
+    onModelChange: function() {
+        _.each(this.model.changedAttributes(), function(v,k) {
+            if(this.fields[k]) {
+                this.fields[k].setValue(v);
+                this.fields[k].render();
+            }
+        }, this);
+    },
+});
+
+
+
+
+form.SimpleForm = form.Form.extend({
+    className: 'gui-simpleform',
+    
+    template: _.template('<ul class="form"></ul>'),
+    rowTemplate: _.template2(''+
+        '<li>'+
+            '<div class="label">${obj.label}[[ if(obj.required) print("*") ]]</div>'+
+            '<div class="field"></div>'+
+        '</li>'),    
+    
+    initialize: function(config) {
+        // Change the list to a dict
+        this.fieldList = config.fields;
+        fields = {};
+        _.each(config.fields, function(field) {
+            fields[field.name] = field;
+        })
+        config.fields = fields;
+        
+        form.SimpleForm.__super__.initialize.call(this, config);
+        _.each(this.fieldList.slice(), function(field, i) {
+            this.fieldList[i] = this.fields[field.name];
+        }, this);
+    },
+
+    render: function() {
+        this.$el.empty().html(this.template());
+        var ul = this.$('>ul');
+
+        _.each(this.fieldList, function(field) {
+            var li = $(this.rowTemplate({label: field.label, required: field.required}));
+            li.children('.field').append(field.render().el);
+            ul.append(li);
+        }, this);
+        return this;        
+    }
+});
+
+
+
+form.CustomForm = form.Form.extend({
+    
+    initialize: function(config) {
+        this.domTemplate = $(config.domTemplate).clone();
+        
+        // el will be our dom template.
+        // Iterate all *[type] divs, and create one Field for each found.
+        // Render will clone `el` and substitute all matching space-holder divs,
+        // ..do this for each render().
+        var fields = {};
+        this.domTemplate.find('*[type]').each(function() {
+            var div = $(this)
+            var type = div.attr('type');
+            var Type = form.types[div.attr('type')];
+            if(!Type) 
+                throw new Error('Quickform: Unknown field type: ' + div.attr('type'));
+            var field = Type.createFromElement(this);
+            fields[field.name] = field;
+        });
+        config.fields = fields;
+        form.CustomForm.__super__.initialize.call(this, config);
+    },
+    
+    render: function() {
+        this.$el.empty();
+        var fields = this.fields;
+        var clone = $(this.domTemplate).clone();
+        clone.find('*[type]').each(function() {
+            var el = $(this);
+            var field = fields[el.attr('name')];
+            if(field.attributes)
+                field.$el.attr(field.attributes);
+            field.$el.attr('class', field.className);
+            el.replaceWith(field.render().el);
+        });
+        this.$el.append(clone);
+        return this;
+    },
+});
+
+
+
+
+/**
+Semi-silly convenience class assuming things.
+
+- Reacts to 'valid' and 'invalid' events of this.form, showing/hiding error messages.
+- Pressing Return or clicking config.submitButton, invokes this.form.submit().
+- While sending:
+  - If a config.submitbutton is given, toggle its text to "Sending.." during the ajax request.
+  - Adds class "sending" to this.el
+  - Disables the submitbutton to avoid accidental double clicking
+
+
+var myformlayout = form.NiceFormLayout({
+    form: myform,
+    rows: [
+        {label: 'Foo', name: 'foo'},    <-- shorthand for {el: myform.fields['foo'].el}
+        {label: 'Bar', el: someEl},     <-- ..or pass any arbitrary element
+    ]
+})
+*/
+form.NiceFormLayout = form.SimpleForm.extend({
+    hotkeys: {
+        'keydown return': 'onReturnKeyDown',
+    },
+    initialize: function(config) {
+        form.NiceFormLayout.__super__.initialize.call(this, config);
+        _.bindAll(this, 'onSubmitButtonClick')
+                
+        if(config.submitButton) {
+            this.submitButton = $(config.submitButton);
+            this.submitButton.on('click', this.onSubmitButtonClick);
+        }
+                
+        this.form.on('invalid', this.onInvalid, this);
+        this.form.on('valid', this.onValid, this);
+        this.form.on('beforevalidateall', this.onBeforeValidateAll, this);
+        this.form.on('validateallfail', this.onValidateAllFail, this);        
+        this.form.on('beforesubmit', this.onBeforeSubmit, this);        
+        this.form.on('submitalways', this.onSubmitAlways, this);
+    },
+    
+    render: function() {
+        // Keep a reference to the submit button
+        this.submitButton = this.$('button.submit');
+        this.submitButton.data('origText', this.submitButton.text());    
+        return this;
+    },
+
+    showError: function(field, message) {
+        var el = field.$el.parent().find('.error');
+        if(el.length) 
+            el.show().text(message);
+        else {
+            $('<div class="error"></div>').text(message).insertAfter(field.el);
+            field.$el.parent().addClass('invalid');
+        }
+    },
+    hideError: function(field) {
+        field.$el.parent().find('.error').fadeOut(function() {$(this).remove()});
+        field.$el.parent().removeClass('invalid');        
+    },
+
     onInvalid: function(e) {
         this.showError(e.field, e.error.message);
     },
     onValid: function(e) {
         this.hideError(e.field);
+    },    
+    onReturnKeyDown: function(e) {
+        if(e.which == gui.keys.ENTER) {
+            this.form.submit();
+        }
     },
+    onBeforeValidateAll: function() {
+        if(this.submitButton) {
+            this.submitButton.text('Validating..');
+            this.submitButton[0].disabled = true;
+        }
+        this.isSubmitting = true;
+    },
+    onValidateAllFail: function() {
+        if(this.submitButton) {
+            this.submitButton.text(this.submitButton.data('origText'));
+            this.submitButton[0].disabled = false;
+            this.isSubmitting = false;
+        }
+    },
+    onBeforeSubmit: function() {
+        if(this.submitButton)
+            this.submitButton.text('Sending..');        
+    },
+    onSubmitAlways: function() {
+        if(this.submitButton) {
+            this.submitButton.text(this.submitButton.data('origText'));    
+            this.submitButton[0].disabled = false;
+        }
+        this.$el.removeClass('sending');
+        this.isSubmitting = false;
+    },   
     onSubmitButtonClick: function() {
         this.form.submit();
     },
-
-    onSubmitDone: function(e) {
-        json = e.json || {}
-        // status = e.jqxhr.status;
-        
-        if(json.forward) {
-            var form = $('<form><input type="hidden" name="_json" value=""/></form>').attr({
-                action: json.forward, 
-                method: 'post'
-            });
-            form.appendTo(document.body)
-            form[0]._json.value = JSON.stringify(this.form.getValues());
-            form.submit();
-        }
-        // else if(status == 301 || status == 302 || status == 303 || json.redirect) {
-        else if(json.redirect) {
-            var sep = json.redirect.indexOf('?') === -1 ? '?' : '&'
-            window.location.href = json.redirect + sep + '_rnd=' + parseInt(Math.random()*10000000);
-        }
-        else if(json.messagebox) {
-            var config = json.messagebox;
-            var msgbox = new form.MessageBox(config);
-            msgbox.show();
-        }        
-    },
     onFail: function(e) {
         try { 
-            // responseText may be garbage (non-json)
-            // "always" is not triggered if there is a js error,
-            // hence the exception catching.
+            // responseText may be garbage (non-json) "always" is not triggered 
+            // if there is a js error, hence the catching.
             var resp = JSON.parse(e.jqxhr.responseText || '{}');            
-            var fields = this.form.getFieldsByName();
+            var fields = this.form.fields;
             _.each(fields, function(v, k) {
                 if(resp[k] && fields[k])
                     this.showError(fields[k], resp[k])
@@ -776,63 +1020,51 @@ form.FormView = Backbone.View.extend({
                     this.hideError(fields[k])
             });        
         } catch(e) {
-            alert('Invalid json response? Todo: Add popup here for X-Debug-URL if set');
-            console.log(e.jqxhr.responseText);
-            console.log(exception);
-            console.log(errorStr);
+            // json response was not json
         }
-    },
-    onProgress: function(e) {
-        this.$('.progressbar .progress').width(e.progress+'%');
-        if(e.progress == 100) {
-            this.$el.addClass('infinite');
-        }
-    },    
-    
+    }
 });
 
 
 
-form.Quickform = form.FormView.extend({
+
+/**
+Convenience class owning both a Form and a FormView.
+
+
+var myform = form.Quickform({
+    action: '/foo/bar',
+    method: 'PUT',
+    fields: [
+        {'name': 'foo', label: 'Foo', type='text},
+        {'name': 'foo', label: 'Foo', type='text}        
+    ]
+});
+
+*/
+form.Quickform = Backbone.View.extend({
     className: 'quickform',
-    rowTemplate: _.template2(''+
-        '<tr>'+
-            '<th><div>${obj.label}[[ if(obj.required) print("*") ]]</div></th>'+
-            '<td></td>'+
-        '</tr>'),
+
+    initialize: function(config) {
+        console.log('Holy schmoly!')
+        var fieldsMap = {};
+        _.each(config.fields, function(field) {
+            fieldsMap[field.name] = field;
+        })
+        
+        this.form = new form.RemoteValidationAjaxForm({
+            action: config.action,
+            method: config.method,
+            fields: fieldsMap
+        });
+        this.formLayout = new form.NiceFormLayout({
+            rows: config.fields
+        });
+    },
     
     render: function() {
-        // 1. Create a <table> of all section-less fields
         this.$el.empty();
-        var table = $('<table class="form"><tbody></tbody></table>');
-        this.$el.append(table);
-
-        _.each(this.config.fields, function(fieldjson) {
-            var field = this.form.getFieldByName(fieldjson.name)
-            // Create table row
-            var tr = $(this.rowTemplate({label: field.label, required: field.required}));
-            
-            // Append and continue
-            $('td', tr).append(field.render().el);
-            table.append(tr);
-        }, this);
-        
-        // Progress bar
-        if(this.form.isMultipart()) {
-            var progressbar = $('<div class="progressbar"><div><div class="progress"></div></div></div>');
-            this.$el.append(progressbar);
-        }
-                
-        // Submit button
-        if(this.config.submitButtonText) {
-            var submit = $('<div class="submitrow"><button class="submit">'+(this.config.submitButtonText || 'Submit form')+'</button></div>');
-            this.$el.append(submit);
-        }
-        
-        // Keep a reference to the submit button
-        this.submitButton = this.$('button.submit');
-        this.submitButton.data('origText', this.submitButton.text());
-
+        this.$el.append(this.formLayout.render().el);
         return this;        
     },
     
@@ -888,8 +1120,10 @@ form.TextField = Backbone.View.extend({
     },
     interpret: function(value) {
         // make a pretty value real
-        if(value === '') 
-            return undefined;
+        // if(value === '') 
+        //     return undefined;
+        if(value === undefined)
+            return '';
         return value.replace(/\n/g, '');
     },
     render: function() {
@@ -1175,7 +1409,7 @@ form.DateField = Backbone.View.extend({
             this.datepicker.$el.hide();
             this.datepicker.render();
             this.datepicker.on('change', this.onDatePickerChange, this);
-            this.datepicker.$el.bind('blur', $.proxy(this.onDatePickerBlur, this));
+            // this.datepicker.$el.bind('blur', $.proxy(this.onDatePickerBlur, this));
             this.datepicker.$el.bind('keydown', $.proxy(this.onDatePickerKeyDown, this));
             $(document.body).append(this.datepicker.el);
         }
@@ -1692,14 +1926,14 @@ form.CheckboxField = Backbone.View.extend({
         var checkbox = $('<input type="checkbox"/>').attr({
             name: this.name
         });
-        if(this.config.checked) {
+        if(this.getValue()) {
             checkbox.attr('checked', 'checked');
         }
 
-        if(this.config.label) {
+        if(this.config.text) {
             var rnd = parseInt(Math.random() * 100000),
                 id = this.name + '_' + rnd,
-                label = $('<label for="'+id+'"> '+this.config.label+'</label>');
+                label = $('<label for="'+id+'"> '+this.config.text+'</label>');
 
             checkbox.attr('id', id);
             this.$el.append(checkbox).append(label);
@@ -1709,10 +1943,13 @@ form.CheckboxField = Backbone.View.extend({
         
         return this;
     },
+    // onCheckboxChange: function() {
+    //     var cb = $('input[type="checkbox"]');
+    //     var v = cb.is(':checked') ? cb[0].value : null;
+    //     this.setValue(v);
+    // },
     onCheckboxChange: function() {
-        var cb = $('input[type="checkbox"]');
-        var v = cb.is(':checked') ? cb[0].value : null;
-        this.setValue(v);
+        this.setValue(this.$('input').is(':checked'));
     }
     
 },{
@@ -1751,10 +1988,13 @@ form.CheckboxesField = Backbone.View.extend({
         var rnd = parseInt(Math.random() * 100000);
         _.each(config.options || [], function(conf, i) {
             var div = $('<div></div>');
-            var checked = conf.checked ? ' checked="checked"' : '';
+            
+            // var checked = conf.checked ? ' checked="checked"' : '';
+            var checked = _.indexOf(this.getValue() || [], conf.value) !== -1;
+            
             var id = this.name + '_' + rnd +'_'+i;
             var checkbox = $('<input id="'+id+'" type="checkbox" name="'+this.name+'" value="'+conf.value+'"'+checked+'>');
-            var label = $('<label for="'+id+'"> '+conf.label+'</label>');
+            var label = $('<label for="'+id+'"> '+conf.text+'</label>');
             div.append(checkbox).append(label);
             this.$el.append(div);
         }, this);
@@ -1813,11 +2053,13 @@ form.RadiosField = Backbone.View.extend({
             if(value) {
                 if(value == conf.value)
                     checked = ' checked="checked"';
-            } else if(conf.checked) {
-                checked = ' checked="checked"';
-            }
-            var checkbox = $('<input type="radio" name="'+this.name+'_'+this._rnd+'" value="'+conf.value+'"'+checked+'>');
-            var label = $('<label> '+conf.label+'</label>');
+            } 
+            // else if(conf.checked) {
+            //     checked = ' checked="checked"';
+            // }
+            var id = this.name+'_'+this._rnd;
+            var checkbox = $('<input type="radio" id="'+id+'" value="'+conf.value+'"'+checked+'>');
+            var label = $('<label for="'+id+'"> '+conf.text+'</label>');
             div.append(checkbox).append(label);
             this.$el.append(div);
         }, this);

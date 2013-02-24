@@ -86,91 +86,91 @@ function pasteHtmlAtCaret(html) {
 *
 * Adding a dropupload 
 */
-api.FileDropper = Backbone.View.extend({
-    tagName: 'div',
-    className: 'dropupload',
-    attributes: {
-        'ondragover': "return false"
-    },
-    events: {
-        // 'dragover': 'onDragOver',
-        'drop': 'onDrop',
-    },
-    
-    initialize: function(config) {
-        if(config.el) {
-            $(config.el).attr(this.attributes).addClass(this.className);
-        }
-    },
-    render: function() {
-        return this;
-    },
-    
-    onDragOver: function(e) {
-        e.preventDefault(); 
-        return false;
-    },
-    // createSpaceholder: function(file) {
-    //     var id = gui.randhex(32),
-    //         name = file.name,
-    //         extension = name.substr(name.lastIndexOf('.')+1),
-    //         isImage = file.type.substr(0,6) == 'image/';
-    //     
-    //     // Create a space-holder element
-    //     var el = $(''+
-    //         '<div id="'+id+'" class="file new '+extension+'" contenteditable="false" draggable="true">'+
-    //             '<div class="icon">&nbsp;</div>'+
-    //             '<div class="name">'+name+'</div>'+
-    //         '</div>');
-    //     
-    //     // The space-holder el has a reference to its file object
-    //     el.data('file', file);
-    //     
-    //     // If it's an image, load it client-side
-    //     if(isImage) {
-    //         // var fileReader = new FileReader();
-    //         // $(fileReader).on('load', function() {
-    //         //     el.attr('src', fileReader.result)
-    //         // });
-    //         // fileReader.readAsDataURL(file);
-    //         el.addClass('image');
-    //         el.find('.icon').append('<img draggable="false"/>');
-    //         if(window.webkitURL)
-    //             var url = window.webkitURL.createObjectURL(file)
-    //         else
-    //             var url = window.createObjectURL(file)
-    //         el.find('img').attr('src', url)
-    //     }
-    //     return el;
-    // },
-    // onDrop: function(e) {
-    //     // Prevent the default behavior of opening a dropped file
-    //     e.preventDefault();
-    //     
-    //     // Get all dropped files
-    //     var files = e.originalEvent.dataTransfer.files;
-    //     
-    //     // Create an space-holder+file object for each file
-    //     var elements = _.map(files, function(file) {
-    //         return this.createSpaceholder(file);
-    //     }, this);
-    // 
-    //     // Re-trigger the origial "drop" event, with the spaceholders added.
-    //     var ev = _.extend({}, e, {elements: elements});
-    //     this.trigger('drop', ev);
-    // }
-    onDrop: function(e) {
-        // Prevent the default behavior of opening a dropped file
-        e.preventDefault();
-        
-        // Get all dropped files
-        var files = e.originalEvent.dataTransfer.files;
-    
-        // Re-trigger the origial "drop" event, with the spaceholders added.
-        var ev = _.extend({}, e, {files: files});
-        this.trigger('drop', ev);
-    }    
-});
+// api.FileDropper = Backbone.View.extend({
+//     tagName: 'div',
+//     className: 'dropupload',
+//     attributes: {
+//         'ondragover': "return false"
+//     },
+//     events: {
+//         // 'dragover': 'onDragOver',
+//         'drop': 'onDrop',
+//     },
+//     
+//     initialize: function(config) {
+//         if(config.el) {
+//             $(config.el).attr(this.attributes).addClass(this.className);
+//         }
+//     },
+//     render: function() {
+//         return this;
+//     },
+//     
+//     onDragOver: function(e) {
+//         e.preventDefault(); 
+//         return false;
+//     },
+//     // createSpaceholder: function(file) {
+//     //     var id = gui.randhex(32),
+//     //         name = file.name,
+//     //         extension = name.substr(name.lastIndexOf('.')+1),
+//     //         isImage = file.type.substr(0,6) == 'image/';
+//     //     
+//     //     // Create a space-holder element
+//     //     var el = $(''+
+//     //         '<div id="'+id+'" class="file new '+extension+'" contenteditable="false" draggable="true">'+
+//     //             '<div class="icon">&nbsp;</div>'+
+//     //             '<div class="name">'+name+'</div>'+
+//     //         '</div>');
+//     //     
+//     //     // The space-holder el has a reference to its file object
+//     //     el.data('file', file);
+//     //     
+//     //     // If it's an image, load it client-side
+//     //     if(isImage) {
+//     //         // var fileReader = new FileReader();
+//     //         // $(fileReader).on('load', function() {
+//     //         //     el.attr('src', fileReader.result)
+//     //         // });
+//     //         // fileReader.readAsDataURL(file);
+//     //         el.addClass('image');
+//     //         el.find('.icon').append('<img draggable="false"/>');
+//     //         if(window.webkitURL)
+//     //             var url = window.webkitURL.createObjectURL(file)
+//     //         else
+//     //             var url = window.createObjectURL(file)
+//     //         el.find('img').attr('src', url)
+//     //     }
+//     //     return el;
+//     // },
+//     // onDrop: function(e) {
+//     //     // Prevent the default behavior of opening a dropped file
+//     //     e.preventDefault();
+//     //     
+//     //     // Get all dropped files
+//     //     var files = e.originalEvent.dataTransfer.files;
+//     //     
+//     //     // Create an space-holder+file object for each file
+//     //     var elements = _.map(files, function(file) {
+//     //         return this.createSpaceholder(file);
+//     //     }, this);
+//     // 
+//     //     // Re-trigger the origial "drop" event, with the spaceholders added.
+//     //     var ev = _.extend({}, e, {elements: elements});
+//     //     this.trigger('drop', ev);
+//     // }
+//     onDrop: function(e) {
+//         // Prevent the default behavior of opening a dropped file
+//         e.preventDefault();
+//         
+//         // Get all dropped files
+//         var files = e.originalEvent.dataTransfer.files;
+//     
+//         // Re-trigger the origial "drop" event, with the spaceholders added.
+//         var ev = _.extend({}, e, {files: files});
+//         this.trigger('drop', ev);
+//     }    
+// });
 
 
 api.Quicklook = win.Window.extend({
@@ -270,7 +270,8 @@ api.FileView = Backbone.View.extend({
     },
     initialize: function(config) {
         config = config || {}
-        // this.files = new (Backbone.Collection.extend({url: config.url}))(config.models);
+        console.log('Createing a new FileView with: ', config.models)
+        // this.files = new (Backbone.Collection.extend({}))(config.models);
         this.files = new Backbone.Collection(config.models);        
         this.files.on('add', this.onFileAdd, this);
         if(config.el) 
@@ -323,6 +324,7 @@ api.FileView = Backbone.View.extend({
     },
     render: function() {
         this.$el.empty();
+        console.log('RENDER FILEVIEW', this.files.length)
         this.files.each(function(file) {
             this.$el.append(this.renderOne(file));
         }, this);
@@ -645,14 +647,17 @@ api.Editor = Backbone.View.extend({
         });
         
         // Create a FileDropper
-        this.fileDropper = new api.FileDropper({el: this.$('.pane')})
+        this.fileDropper = new tools.FileDropper({el: this.$('.pane')})
         this.fileDropper.on('drop', this.onFileDropperDrop, this)
         
         // find and render all .fileview elements
+        var editor = this;
+        console.log('EDITOR .files', editor.files)
         this.$('.fileview').each(function() {
             var ids = JSON.parse(this.innerHTML);
-            var models = _.compact(_.map(ids, function(id) { return this.files[id]; }));
-            console.log('MODELS: ', models, ids)
+            var models = _.compact(_.map(ids, function(id) { 
+                return editor.files[id]; 
+            }));
             var fileview = new api.FileView({
                 el: this, 
                 models: models});
