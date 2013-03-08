@@ -78,7 +78,6 @@ calendar.MonthCalendar = Backbone.View.extend({
         
         // Start at first day of month
         m.date(1);
-        console.log('RENDER MONTH', m.month())
         var firstWeekdayOfMonth = m.day() - 1;
         if(firstWeekdayOfMonth == -1)
             firstWeekdayOfMonth = 6        

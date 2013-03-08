@@ -46,7 +46,7 @@ form.Field = {
         render: function() {
             // Create a form
             this.form = new gui.Form({fields:
-                new gui.TextField({name: 'title', value: 'I am a value'}),
+                new gui.Text({name: 'title', value: 'I am a value'}),
                 new gui.TextArea({name: 'description'})
             });
             
@@ -186,11 +186,11 @@ event and the pasted text.
 
 Example
 --------------------
-var MyTextField = gui.TextField.extend({
+var MyTextField = gui.Text.extend({
     mixins: [gui.Field, gui.InterceptPaste],
     
     initialize: function(config) {
-        gui.TextField.prototype.initialize.call(this, config);
+        gui.Text.prototype.initialize.call(this, config);
         gui.InterceptPaste.initialize.call(this);
         this.on('paste', this.onPaste, this);
     },
@@ -572,6 +572,45 @@ form.Model = Backbone.Model.extend({
 // = Form =
 // ========
 
+form.ErrorMessages = {
+    initialize: function(config) {                
+        this.model.on('invalid', this.onInvalid, this);
+        this.model.on('valid', this.onValid, this);
+        this.model.on('change', this.onModelChange2, this);
+    },
+    showError: function(field, message) {
+        var el = field.$el.parent().find('.error');
+        if(el.length) 
+            el.show().text(message);
+        else {
+            $('<div class="error"></div>').text(message).insertAfter(field.el);
+            field.$el.parent().addClass('invalid');
+        }
+    },
+    hideError: function(field) {
+        field.$el.parent().find('.error').fadeOut(function() {$(this).remove()});
+        field.$el.parent().removeClass('invalid');        
+    },
+    onInvalid: function(e) {
+        this.showError(this.fieldsmap[e.fieldName], e.error.message);
+    },
+    onValid: function(e) {
+        // console.log('onValid (single field)', this.fieldsmap[e.fieldName], this.fields, e.fieldName)
+        this.hideError(this.fieldsmap[e.fieldName]);
+    },
+    onModelChange2: function(e) {
+        if(!this.model.validateOne)
+            return;
+        
+        _.each(e.changedAttributes(), function(v, k) {
+            this.model.validateOne(k);
+        }, this)
+    }
+};
+    
+
+
+
 /*
 form.FormModel
   - describe here
@@ -597,160 +636,72 @@ form.CustomForm
 
 
 
-
-Examples
-=================================================
-
-Example 1: Create a form with no layout
-----------------------------------------
+Example: Create a form with no layout
+-------------------------------------
 var myform = new form.Form({
     model: new form.Model({title: 'Foo', description: 'Foo foo bar'});,
-    fields: {
-        'title': new form.TextField(),
-        'description': new form.TextArea(),
-    }
+    fields: [
+        new form.Text({name: 'title'}),
+        new form.TextArea({name: 'description'}),
+        {type: 'text', name: 'foo'}               // <-- shorthand syntax
+    ]
 });
 console.log(myform.model.attributes)
 myform.model.set({title: 'Hello', description: 'World!'});      
-
-
-
-Example 2: Create a form with layout (SimpleForm), without passing a model
---------------------------------------------------------------------------
-// An empty this.model is implicity created
-var myform = new form.SimpleForm({
-    ajax: {
-        type: 'PUT',
-        url: '/foo/bar'
-    },
-    fields: [
-        new form.TextField({name: 'title', label: 'Title'}),
-        new form.TextArea({name: 'description', label: 'Description'})
-    ]
-});
-body.append(myform.render().el);
-myform.model.save()
-
-
-Example 3: Create a form with layout (SimpleForm), passing a model
-------------------------------------------------------------------
-var model = new form.Model({description: 'Foo foo bar'});
-var myform = new form.SimpleForm({
-    model: model,
-    urlRoot: '/foo/bar',
-    fields: [
-        new form.TextField({name: 'title', label: 'Title', value: 'Initial title value'}),
-        new form.TextArea({name: 'description', label: 'Description'}),
-    ]
-});
-body.append(myform.render().el);
-
-console.log('Values: ', myform.model.attributes)    
-console.log('Values: ', myform.fields['title'].getValue(), myform.fields['description'].getValue());
-
-myform.model.set({title: 'Adam', description: ''});
-myform.model.set('title', 'Adam Bertil');
-myform.fields['title'].setValue('Adam Bertil Ceasar');
-
-myform.model.save();
-
-
-Example 4
---------------------------------
-this.form = new form.SimpleForm({
-    fields: [
-        {type: 'text', name: 'aggregate_functions', label: 'Aggregate'},
-        {type: 'text', name: 'bar', label: 'Bar'},
-        {type: 'checkbox', name: 'visible', label: 'Visible', checked: true},
-        {type: 'checkbox', name: 'group', label: 'Group', checked: false}
-    ]
-});
-
 */
-
-form.ErrorMessages = {
-    initialize: function(config) {                
-        this.model.on('invalid', this.onInvalid, this);
-        this.model.on('valid', this.onValid, this);
-        this.model.on('change', this.onModelChange2, this);
-        console.log('Hayuken')
-    },
-    showError: function(field, message) {
-        var el = field.$el.parent().find('.error');
-        if(el.length) 
-            el.show().text(message);
-        else {
-            $('<div class="error"></div>').text(message).insertAfter(field.el);
-            field.$el.parent().addClass('invalid');
-        }
-    },
-    hideError: function(field) {
-        field.$el.parent().find('.error').fadeOut(function() {$(this).remove()});
-        field.$el.parent().removeClass('invalid');        
-    },
-    onInvalid: function(e) {
-        this.showError(this.fields[e.fieldName], e.error.message);
-    },
-    onValid: function(e) {
-        console.log('onValid (single field)', this.fields[e.fieldName], this.fields, e.fieldName)
-        this.hideError(this.fields[e.fieldName]);
-    },
-    onModelChange2: function(e) {
-        if(!this.model.validateOne)
-            return;
-        
-        _.each(e.changedAttributes(), function(v, k) {
-            this.model.validateOne(k);
-        }, this)
-    }
-};
-    
-
-
 form.Form = Backbone.View.extend({
     
     mixins: [form.ErrorMessages],
     
     initialize: function(config) {
         this.config = config;
-        this.ajax = config.ajax || {};
-        this.model = config.model;
-        if(!this.model)
-            this.model = new form.Model();
-        if(config.urlRoot)
-            this.model.urlRoot = config.urlRoot;
-        if(config.ajax)
-            this.model.ajax = config.ajax;
-
-        form.ErrorMessages.initialize.call(this, config); 
-        this.model.on('change', this.onModelChange, this);
         
-        // Set this.fields
-        this.fields = {};
-        _.each(config.fields, function(json, key) {
-            // UPDATE: duck-type, form.Fiels is an Object (mixin), 
-            // hence cannot use instanceof operator
-            // if(json instanceof form.Field) {
-            if(isfield(json)) { 
-                var field = json;
+        // Set this.fields and this.fieldsmap
+        this.fields = [];
+        this.fieldsmap = {};  // Todo: hmm.. now I've got two lists. Premature optimization?
+        
+        var field;
+        _.each(config.fields, function(json) {
+            if(isfield(json))
+                field = json;
+            else if(isfield(json.type)) {
+                field = json.type;
             }
             else {
                 var klass = form.types[json.type];
                 if(!klass)
                     throw new Error('Field factory form.types['+json.type+'] does not exist');
-                var field = new klass(json);
-                
-                // Todo: don't instrument Field
-                field.label = json.label || '';
+                field = new klass(json);
             }
-            field.name = key;
-            var value = this.model.get(key);
-            if(value !== undefined)
-                field.value = value;
             field.on('change', this.onFormFieldChange, this)
-            this.fields[key] = field;
+            this.fields.push(field);
+            this.fieldsmap[field.name] = field;
         }, this);    
+
+        // Set the model
         
+        this.setModel(config.model || new form.Model());            
+
+        // Todo: move this higher up
+        form.ErrorMessages.initialize.call(this, config);         
+    },
+    setModel: function(model) {
+        console.log('SETTING MODEL: ', model.attributes)
+        var conf = this.config;
+        if(conf.urlRoot)
+            model.urlRoot = conf.urlRoot;
+        if(conf.ajax)
+            model.ajax = conf.ajax;
+        if(this.model) 
+            this.model.off('change', this.onModelChange, this);
+        this.model = model;
+        this.model.on('change', this.onModelChange, this);
+
+        _.each(this.fields, function(field) {
+            var value = model.get(field.name);
+            // if(value !== undefined)
+            field.setValue(value, {silent: true});
+        });
     },
     submit: function(options) {
         options = options || {};
@@ -812,9 +763,9 @@ form.Form = Backbone.View.extend({
     },
     onModelChange: function() {
         _.each(this.model.changedAttributes(), function(v,k) {
-            if(this.fields[k]) {
-                this.fields[k].setValue(v);
-                this.fields[k].render();
+            if(this.fieldsmap[k]) {
+                this.fieldsmap[k].setValue(v);
+                this.fieldsmap[k].render();
             }
         }, this);
     },
@@ -823,6 +774,67 @@ form.Form = Backbone.View.extend({
 
 
 
+/*
+Example: Create a form with layout (SimpleForm), without passing a model
+------------------------------------------------------------------------
+// An empty this.model is implicity created
+var myform = new form.SimpleForm({
+    ajax: {
+        type: 'PUT',
+        url: '/foo/bar'
+    },
+    fields: [
+        new form.Text({name: 'title', label: 'Title'}),
+        new form.TextArea({name: 'description', label: 'Description'})
+    ]
+});
+body.append(myform.render().el);
+myform.model.save()
+
+
+Example: Create a form with layout (SimpleForm), passing a model
+----------------------------------------------------------------
+var model = new form.Model({description: 'Foo foo bar'});
+var myform = new form.SimpleForm({
+    model: model,
+    urlRoot: '/foo/bar',
+    fields: [
+        new form.Text({name: 'title', value: 'Initial title value'}),
+        new form.TextArea({name: 'description'}),
+        {type: 'text', name: 'foo'},
+        {type: new form.Text({name: 'bar'})}
+    ]
+});
+body.append(myform.render().el);
+
+console.log('Values: ', myform.model.attributes)    
+console.log('Values: ', myform.fields['title'].getValue(), myform.fields['description'].getValue());
+
+myform.model.set({title: 'Adam', description: ''});
+myform.model.set('title', 'Adam Bertil');
+myform.fields['title'].setValue('Adam Bertil Ceasar');
+
+myform.model.save();
+
+
+Example
+-------
+this.form = new form.SimpleForm({
+    fields: [
+        {type: 'text', name: 'aggregate_functions', label: 'Aggregate'},
+        {type: 'text', name: 'bar', label: 'Bar'},
+        {type: 'checkbox', name: 'visible', label: 'Visible', checked: true},
+        {type: 'checkbox', name: 'group', label: 'Group', checked: false}
+    ],
+    metadata: {
+        'aggregate_functions': {label: 'Aggregate func'},
+        'bar': {label: 'Bar'},
+        'bar': {label: 'Bar', renderer: function(..) { return '<li>...</li>'; }},     // <-- todo: add support for `renderer`
+    }
+});
+
+
+*/
 form.SimpleForm = form.Form.extend({
     className: 'gui-simpleform',
     
@@ -834,27 +846,22 @@ form.SimpleForm = form.Form.extend({
         '</li>'),    
     
     initialize: function(config) {
-        // Change the list to a dict
-        this.fieldList = config.fields;
-        fields = {};
-        _.each(config.fields, function(field) {
-            fields[field.name] = field;
-        })
-        config.fields = fields;
-        
         form.SimpleForm.__super__.initialize.call(this, config);
-        _.each(this.fieldList.slice(), function(field, i) {
-            this.fieldList[i] = this.fields[field.name];
-        }, this);
+        this.metadata = config.metadata;
     },
-
     render: function() {
         this.$el.empty().html(this.template());
         var ul = this.$('>ul');
 
-        _.each(this.fieldList, function(field) {
-            var li = $(this.rowTemplate({label: field.label, required: field.required}));
+        _.each(this.fields, function(field) {
+            var meta = this.metadata[field.name],
+                li = $(this.rowTemplate({
+                    label: meta.label, 
+                    required: field.required
+                }));
+            
             li.children('.field').append(field.render().el);
+            li.addClass(field.typeName);s
             ul.append(li);
         }, this);
         return this;        
@@ -862,9 +869,9 @@ form.SimpleForm = form.Form.extend({
 });
 
 
-
 form.CustomForm = form.Form.extend({
-    
+    className: 'gui-form customform',
+    rendered: false,
     initialize: function(config) {
         this.domTemplate = $(config.domTemplate).clone();
         
@@ -872,7 +879,7 @@ form.CustomForm = form.Form.extend({
         // Iterate all *[type] divs, and create one Field for each found.
         // Render will clone `el` and substitute all matching space-holder divs,
         // ..do this for each render().
-        var fields = {};
+        var fields = [];
         this.domTemplate.find('*[type]').each(function() {
             var div = $(this)
             var type = div.attr('type');
@@ -880,25 +887,43 @@ form.CustomForm = form.Form.extend({
             if(!Type) 
                 throw new Error('Quickform: Unknown field type: ' + div.attr('type'));
             var field = Type.createFromElement(this);
-            fields[field.name] = field;
+            fields.push(field);
         });
         config.fields = fields;
         form.CustomForm.__super__.initialize.call(this, config);
+        
+        
     },
     
     render: function() {
-        this.$el.empty();
-        var fields = this.fields;
-        var clone = $(this.domTemplate).clone();
-        clone.find('*[type]').each(function() {
-            var el = $(this);
-            var field = fields[el.attr('name')];
-            if(field.attributes)
-                field.$el.attr(field.attributes);
-            field.$el.attr('class', field.className);
-            el.replaceWith(field.render().el);
-        });
-        this.$el.append(clone);
+        // var clone = $(this.domTemplate).clone(true);
+        var rendered = this.rendered;
+        if(!rendered) {
+            var clone = $(this.domTemplate).clone();        
+            this.$el.empty();
+            var fieldsmap = this.fieldsmap;        
+            
+            // debugger
+            clone.find('*[type]').each(function() {
+                var el = $(this),
+                    field = fieldsmap[el.attr('name')];
+                
+
+                if(field.attributes)
+                    field.$el.attr(field.attributes);
+                field.$el.attr('class', field.className);
+                
+            
+                el.replaceWith(field.render().el);
+            });
+            this.rendered = true;
+            this.$el.append(clone);   
+        } 
+        else {
+            _.each(this.fields, function(field) {
+                field.render();
+            });
+        }
         return this;
     },
 });
@@ -938,12 +963,12 @@ form.NiceFormLayout = form.SimpleForm.extend({
             this.submitButton.on('click', this.onSubmitButtonClick);
         }
                 
-        this.form.on('invalid', this.onInvalid, this);
-        this.form.on('valid', this.onValid, this);
-        this.form.on('beforevalidateall', this.onBeforeValidateAll, this);
-        this.form.on('validateallfail', this.onValidateAllFail, this);        
-        this.form.on('beforesubmit', this.onBeforeSubmit, this);        
-        this.form.on('submitalways', this.onSubmitAlways, this);
+        this.on('invalid', this.onInvalid, this);
+        this.on('valid', this.onValid, this);
+        this.on('beforevalidateall', this.onBeforeValidateAll, this);
+        this.on('validateallfail', this.onValidateAllFail, this);        
+        this.on('beforesubmit', this.onBeforeSubmit, this);        
+        this.on('submitalways', this.onSubmitAlways, this);
     },
     
     render: function() {
@@ -975,7 +1000,7 @@ form.NiceFormLayout = form.SimpleForm.extend({
     },    
     onReturnKeyDown: function(e) {
         if(e.which == gui.keys.ENTER) {
-            this.form.submit();
+            this.submit();
         }
     },
     onBeforeValidateAll: function() {
@@ -1005,19 +1030,19 @@ form.NiceFormLayout = form.SimpleForm.extend({
         this.isSubmitting = false;
     },   
     onSubmitButtonClick: function() {
-        this.form.submit();
+        this.submit();
     },
     onFail: function(e) {
         try { 
             // responseText may be garbage (non-json) "always" is not triggered 
             // if there is a js error, hence the catching.
             var resp = JSON.parse(e.jqxhr.responseText || '{}');            
-            var fields = this.form.fields;
-            _.each(fields, function(v, k) {
-                if(resp[k] && fields[k])
-                    this.showError(fields[k], resp[k])
+            var fieldsmap = this.fieldsmap;
+            _.each(fieldsmap, function(v, k) {
+                if(resp[k] && fieldsmap[k])
+                    this.showError(fieldsmap[k], resp[k])
                 else
-                    this.hideError(fields[k])
+                    this.hideError(fieldsmap[k])
             });        
         } catch(e) {
             // json response was not json
@@ -1078,7 +1103,7 @@ form.Quickform = Backbone.View.extend({
 // = Fields =
 // ==========
 /** 
-A TextField
+A text field
  
    ..typing something.. 
    --> this.setValue(this.interpret($(this.el).html()))
@@ -1086,7 +1111,7 @@ A TextField
    ..model changes..
    --> this.render()
 */ 
-form.TextField = Backbone.View.extend({
+form.Text = Backbone.View.extend({
     tagName: 'div',
     className: 'textfield',
     typeName: 'text',
@@ -1095,12 +1120,14 @@ form.TextField = Backbone.View.extend({
         contentEditable: 'true'
     },
     events: {
-        'keydown': 'onKeyDown',
-        'keyup': 'onKeyUp',
         'keypress': 'onKeyPress',
         'focus': 'onFocus',
         'blur': 'onBlur'
     },
+    hotkeys: {
+        'keydown return': 'onReturnKeyDown',
+        'keydown esc': 'onEscKeyDown',
+    },    
     mixins: [form.Field],
     
     initialize: function(config) {
@@ -1134,8 +1161,13 @@ form.TextField = Backbone.View.extend({
             this.$el.removeClass('empty').html(this.format(v));
         this.$el.attr('name', this.name);
         this.delegateEvents();
-        
+
         return this;
+    },
+    focus: function() {
+        this.el.focus();
+        this.$el.moveCursorToEnd();
+        this.$el.selectAll();
     },
     abort: function() {
         $(this.el).html(this.format(this.getValue()));
@@ -1154,22 +1186,20 @@ form.TextField = Backbone.View.extend({
             this.setValue(v);
             this.render();            
         }
+        this.trigger('fieldblur');
     },
-    onKeyDown: function(e) {
-        if(e.keyCode == gui.keys.ENTER) {
-            e.preventDefault();
-            return;
-        } else if(e.keyCode == gui.keys.ESC) {
-            this.abort();
-        }
-        gui._keyDownEvent = e;
+    onReturnKeyDown: function(e) {        
+        // Set value immediately when pressing Return, as the event
+        // may continue upwards to a form, triggering a submit.
+        var v = this.interpret(this.$el.getPreText());        
+        if(v !== this.getValue()) {
+            this.setValue(v);
+        }        
+        // Don't allow newlines in a text field
+        e.preventDefault();
     },
-    onKeyUp: function(e) {
-        if(e.keyCode == gui.keys.ENTER) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        gui._keyDownEvent = null;        
+    onEscKeyDown: function(e) {
+        this.abort();
     },
     onKeyPress: function(e) {
         // On eg fututre numeric textfield, type is supposed to only 
@@ -1185,21 +1215,20 @@ form.TextField = Backbone.View.extend({
     defaultValue: ''
 });
 
+// Legacy
+form.TextField = form.Text;
 
 
-form.TextArea = form.TextField.extend({
+form.TextArea = form.Text.extend({
     className: 'textarea',
     typeName: 'textarea',
+    hotkeys: {
+        'keydown return': 'onReturnKeyDown'
+    },
+    mixins: [gui.ChildView],
     
     initialize: function(config) {
-        form.TextField.prototype.initialize.call(this, config);
-    },
-    onBlur: function(e) {        
-        var value = this.interpret(this.$el.html());
-
-        if(value !== this.getValue()) {
-            this.setValue(value);          
-        }
+        form.Text.prototype.initialize.call(this, config);
     },
     render: function() {
         var v = this.getValue();
@@ -1252,19 +1281,19 @@ form.TextArea = form.TextField.extend({
         return out.html();
     
     },        
-    onKeyDown: function(e) {
-        if(e.keyCode == gui.keys.ESC) {
-            this.abort();
-        }
-        e.stopPropagation();
-    },
-    onKeyUp: function() {
-        
-    },
     onFocus: function(e) {
-        if(this.$el.is('.empty')) {
+        if(this.$el.is('.empty'))
             this.$el.removeClass('empty').html('');
+    },
+    onBlur: function(e) {        
+        var value = this.interpret(this.$el.html());
+
+        if(value !== this.getValue()) {
+            this.setValue(value);          
         }
+    },
+    onReturnKeyDown: function(e) {
+        e.stopPropagation();
     }
 },{
     createFromElement: function(el) {
@@ -1273,18 +1302,18 @@ form.TextArea = form.TextField.extend({
 });
 
 
-form.AmountField = form.TextField.extend({
+form.AmountField = form.Text.extend({
     typeName: 'amount',
     
     initialize: function(config) {
-        form.TextField.prototype.initialize.call(config);
+        form.Text.prototype.initialize.call(config);
     },
     format: function(v) {
         // make value pretty
         return accounting.formatMoney(v);
     },
     interpret: function(v) {
-        // Todo: code dup of form.TextField.interpret
+        // Todo: code dup of form.Text.interpret
         var v = value.replace('<br>', ''); // contenteditable
         if(v === '') 
             return undefined;
@@ -1296,7 +1325,7 @@ form.AmountField = form.TextField.extend({
 
 
 
-// form.DateField = form.TextField.extend({
+// form.DateField = form.Text.extend({
 form.DateField = Backbone.View.extend({
     tagName: 'div',
     typeName: 'date',
@@ -1308,7 +1337,7 @@ form.DateField = Backbone.View.extend({
     events: {
         'keydown': 'onKeyDown',
         'keyup': 'onKeyUp',
-        'click button.calendar': 'showDatePicker'
+        'click button.calendar': 'showDatePicker',
     },
     template: _.template(''+
         '<button class="calendar"></button>'+
@@ -1320,7 +1349,7 @@ form.DateField = Backbone.View.extend({
     yyyymmdd: /^(\d{4})(\d{2})(\d{2})$/,
     yymmdd: /^(\d{2})(\d{2})(\d{2})$/,
     
-        
+    
     initialize: function(config) {
         config = config || {};
         this._format = config.format || 'YYYY-MM-DD';
@@ -1335,7 +1364,10 @@ form.DateField = Backbone.View.extend({
         this.$el.html(this.template());
         var text = this.format(val);
         this.$('.textfield').html(text);
-        this.$('.textfield').bind('blur', $.proxy(this.onBlur, this));
+        // this.$('.textfield').bind('blur', $.proxy(this.onBlur, this));
+        
+        var self = this;
+        this.$('.textfield').bind('focusleave', $.proxy(this.onTextFocusLeave, this));        
         this.$('.textfield').bind('focus', $.proxy(this.onFocus, this));
         if($.browser.ltie9)
             this.$('.textfield').iefocus();    
@@ -1443,9 +1475,16 @@ form.DateField = Backbone.View.extend({
             this.datepicker.$el.fadeOut(150);
         this.focus();
     },
-    onBlur: function(e) {
-        this._setValue();
+    onTextFocusLeave: function(e) {
+        var ae = $(document.activeElement);
+        if(!ae.is('.datepicker') && !ae.is('.datefield')) {
+            this._setValue();
+            this.trigger('fieldblur');
+        }
     },
+    // onBlur: function(e) {
+    //     this._setValue();
+    // },
 
     onChange: function(e) {
         // Update the datepicker
@@ -1473,7 +1512,7 @@ form.DateField = Backbone.View.extend({
             e.preventDefault();
             e.stopPropagation();
         } else {
-            form.TextField.prototype.onKeyDown.call(this, e);
+            form.Text.prototype.onKeyDown.call(this, e);
         }
     },
     onKeyUp: function(e) {
@@ -1651,15 +1690,17 @@ form.ComboBox = Backbone.View.extend({
         this.$('>span').focus();
     },
     getDropdown: function() {
+        // Lazy-create the dropdown
         if(!this.dropdown) {
             var dd  = new dropdown.DropdownList({
                 options: this.options,
                 overlay: this.overlay
             });
-            dd.on('select', this.onDropdownSelect, this);
+            dd.selectable.on('choose', this.onDropdownChoose, this);
             dd.$el.bind('keydown', $.proxy(this.onDropdownKeyDown, this));
             dd.on('blur', this.onDropdownBlur, this);
             dd.on('show', this.onDropdownShow, this);
+            dd.on('hide', this.onDropdownHide, this);            
             dd.$el.bind('keypress', $.proxy(this.onDropdownKeyPress, this));
             this.dropdown = dd;
         }
@@ -1668,12 +1709,13 @@ form.ComboBox = Backbone.View.extend({
     showDropdown: function() {
         var dd = this.getDropdown();
         if(!dd.$el.is(':visible')) {
-            var pos = this.$el.screen();
-            dd.showAt(pos.left, pos.top+this.$el.outerHeight());
+            // var pos = this.$el.screen();
+            // dd.show(pos.left, pos.top+this.$el.outerHeight());
+            dd.show(this.el);
             dd.$el.css({'min-width': $(this.el).outerWidth()});
-            dd.select(dd.$('li[id="'+this.getValue()+'"]'));
+            dd.selectable.select(dd.$('li[id="'+this.getValue()+'"]'));
+            dd.el.focus();
         }
-        dd.refresh();
     },
     onMouseDown: function(e) {
         var dropdown = this.getDropdown();
@@ -1683,10 +1725,16 @@ form.ComboBox = Backbone.View.extend({
         e.preventDefault();
     },
     onDropdownShow: function(dropdown) {
-        dropdown.focus();
+        dropdown.el.focus();
+        this.$el.addClass('active');
     },    
-    onDropdownSelect: function(dropdown, e, selected) {
-        this.setValue(this.interpret($(selected).attr('id')));
+    onDropdownHide: function(dropdown) {
+        dropdown.el.focus();
+        this.$el.removeClass('active');    
+    },    
+    onDropdownChoose: function(e) {
+        var option = this.dropdown.options.at($(e.selected).index());
+        this.setValue(option.id);
         this.render();
         this.focus();
     },
@@ -1735,11 +1783,12 @@ form.ComboBox = Backbone.View.extend({
             if(a!==this.$('>span')[0] && a !== this.getDropdown().el) {
                 this.trigger('blur', this);
             }
-        },this), 20); // A short delay for webkit
+        },this), 1); // A short delay for webkit
     },
     onBlur: function() {
         this.abort();
         this.$el.removeClass('focus');
+        this.trigger('fieldblur');
     }
     
 },{
@@ -1749,12 +1798,13 @@ form.ComboBox = Backbone.View.extend({
 });
 
 form.EditableComboBox = form.ComboBox.extend({
-    /* A cross between a textfield and combobox. */
+    /* A cross between a text and combobox. */
     className: 'combobox editable',
     typeName: 'editablecombo',
     attributes: {
         tabIndex: '0'
     },
+    mixins: [form.Field],
 
     render: function() {
         form.ComboBox.prototype.render.call(this);
@@ -1782,6 +1832,7 @@ form.EditableComboBox = form.ComboBox.extend({
         this.setValue(v);
         this.$el.removeClass('focus');
         this.abort();
+        this.trigger('fieldblur');
     },
     onMouseDown: function(e) {
         if($(e.target).is('.button'))
@@ -1794,6 +1845,7 @@ form.FilteringComboBox = form.ComboBox.extend({
     className: 'combobox searchable',
     typeName: 'filteringcombo',
     overlay: false,
+    mixins: [form.Field],
 
     initialize: function() {
         form.ComboBox.prototype.initialize.apply(this, arguments);
@@ -1835,19 +1887,19 @@ form.FilteringComboBox = form.ComboBox.extend({
     showDropdown: function() {
         var dd = this.getDropdown();
         if(!dd.$el.is(':visible')) {
-            var pos = this.$el.screen();
-            dd.showAt(pos.left, pos.top+this.$el.outerHeight());
+
+            dd.show(this.el);
             dd.$el.css({'min-width': $(this.el).outerWidth()});
-            dd.select(dd.$('li[id="'+this.getValue()+'"]'));
+            dd.selectable.select(dd.$('li[id="'+this.getValue()+'"]'));
             dd.filter('');
+            dd.el.focus();
         }
-        dd.refresh();
     },
     
     // dropdown events
     onDropdownShow: function(dropdown) {
         dropdown.filter('');
-        dropdown.focus();
+        dropdown.el.focus();
     },
     onDropdownKeyPress: function(e) {
         this.startTyping(String.fromCharCode(e.which));
@@ -1890,26 +1942,25 @@ form.FilteringComboBox = form.ComboBox.extend({
             var s = this.$('>span').text().replace(/\n/gi, '');
             var dropdown = this.getDropdown();
             dropdown.filter(s); 
-            if(dropdown.scrollable) 
-                dropdown.scrollable.refresh();
         }
     },
     onBlur: function() {
         // the EditableCombo does a setValue here, SearchableCombo does an abort
         this.abort();
         this.$el.removeClass('focus');
+        this.trigger('fieldblur');        
     }
 });
 
 
-form.PasswordField = form.TextField.extend({
+form.PasswordField = form.Text.extend({
     typeName: 'password',
     className: 'textfield password',
     mixins: [form.Field]
 });
 
 
-form.CheckboxField = Backbone.View.extend({
+form.Checkbox = Backbone.View.extend({
     tagName: 'div',
     typeName: 'checkbox',
     className: 'checkbox',
@@ -1967,6 +2018,8 @@ form.CheckboxField = Backbone.View.extend({
     }
 });
 
+// Legacy
+form.CheckboxField = form.Checkbox;
 
 
 form.CheckboxesField = Backbone.View.extend({

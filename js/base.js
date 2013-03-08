@@ -340,6 +340,129 @@ $.fn.focusWithoutScrolling = function(){
     window.scrollTo(x, y);
 };
 
+$.fn.getBox = function() {
+    return {
+        left: $(this).offset().left,
+        top: $(this).offset().top,
+        width: $(this).outerWidth(),
+        height: $(this).outerHeight()
+    };
+}
+
+
+/*
+Example
+-------
+$('#el1').position2('#el2', {
+    anchor: ['br', 'tr'],
+    offset: [-5, 5]
+});
+
+*/
+$.fn.position2 = function(target, options) {
+    var anchorOffsets = {t: 0, l: 0, c: 0.5, b: 1, r: 1};
+    var defaults = {
+        anchor: ['tl', 'tl'],
+        animate: false,
+        offset: [0, 0]
+    };
+    options = $.extend(defaults, options);
+
+    var targetBox = $(target).getBox();
+    var sourceBox = $(this).getBox();
+
+    //origin is at the top-left of the target element
+    var left = targetBox.left;
+    var top = targetBox.top;
+
+    //alignment with respect to source
+    top -= anchorOffsets[options.anchor[0].charAt(0)] * sourceBox.height;
+    left -= anchorOffsets[options.anchor[0].charAt(1)] * sourceBox.width;
+
+    //alignment with respect to target
+    top += anchorOffsets[options.anchor[1].charAt(0)] * targetBox.height;
+    left += anchorOffsets[options.anchor[1].charAt(1)] * targetBox.width;
+
+    //add offset to final coordinates
+    left += options.offset[0];
+    top += options.offset[1];
+
+    $(this).css({
+        left: left + 'px',
+        top: top + 'px'
+    });
+
+}
+
+
+
+$.fn.position3 = function(left, top) {
+    
+    // Get left and top
+    if(_.isObject(left)) {
+        var pos = $(left).screen(),
+        left = pos.left,
+        top = pos.top;
+    }
+    var el = $(this);
+    
+
+    // Render and insert (so we can measure the height of all options)
+    el.css({display: 'block', visibility: 'hidden', top: 'auto', bottom: 'auto', height: 'auto'});
+    
+    // Positioning
+    var height = el.outerHeight(),
+        winHeight = $(window).height();
+    
+    // height + top. Larger than window?
+    if(height+top < winHeight) {
+        // It fits, just show it
+        el.css({left: left, top: top});
+    }
+    else {
+        // Allow the dropdown top be positioned over left and top?
+        if(this.overlay) {
+
+            
+            // How much larger?                
+            if(top-height < winHeight) {
+                // less than top? just move it up a bit
+                var diff = (top+height)-winHeight;
+                el.css({left: left, top: top-diff, bottom: 'auto'});
+            }
+            else {
+                // It wont fit, glue it to top and bottom and make it scrollable
+                el.css({left: left, top: 0, bottom: 0});
+            }
+        } 
+        // put it above or below left+top, whichever is the largest, and make it scrollable
+        else {                
+            if(top < winHeight / 2) {
+                // trigger is somewhere on the upper half of the screen, go downwards
+                el.css({left: left, top: top, 'max-height': (winHeight-top)-10});                    
+            } else {
+                // go upwards
+                el.css({left: left, top: 0, height: top-30});
+            }
+        }
+    }
+    // Done, now show it
+    el.css('visibility', 'visible');
+},
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 $.fn.reverse = [].reverse;
 
 $.browser.ltie8 = $.browser.msie && parseInt($.browser.version) < 8;
@@ -550,6 +673,7 @@ _.instanceof = function(obj, klass) {
     }
 };
 
+
 /* 
 _.template2()
 -----------
@@ -706,8 +830,10 @@ gui.ChildView = {
         this.prototype.mixins = _.extend([], parentMixins, this.prototype.mixins);        
     },
     initcls: function() {
-        var parentEvents = this.__super__.events;        
+        var parentEvents = this.__super__.events,
+            parentHotkeys = this.__super__.hotkeys;
         this.prototype.events = _.extend({}, parentEvents, this.prototype.events);
+        this.prototype.hotkeys = _.extend({}, parentHotkeys, this.prototype.hotkeys);        
     }
 };
 
@@ -1232,9 +1358,10 @@ gui.addcss = function(stylesheets) {
     
     _.each(stylesheets, function(url) {
         if(!head.find('link[href="'+url+'"]').length) {
-            console.log('Add css: ', url);
-            var link = $('<link rel="stylesheet"></link>').attr('href', url);
-            $(window.document).find('head').append(link);
+            if (document.createStyleSheet) // IE
+                document.createStyleSheet(url);
+            else 
+                $('<link rel="stylesheet" type="text/css"></link>').attr('href', url).appendTo(head);
         }
     });
 }

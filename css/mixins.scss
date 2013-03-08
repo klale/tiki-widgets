@@ -2,6 +2,10 @@
 // = Colors =
 // ==========
 $selected: #3B77D5;
+$selected_grad: #aaa #888;
+$selected_grad_focused: #638CF5 #2464F3;
+
+
 
 
 @mixin selected2 {
@@ -11,6 +15,19 @@ $selected: #3B77D5;
         color: #fff;
     }
 }
+
+
+@mixin selectables() {
+    .selected {
+        @include two-color-gradient($selected_grad);
+        color: #fff;
+        border-color: #1642A4;
+    }
+    &:focus .selected {
+        @include two-color-gradient($selected_grad_focused);      
+    }    
+}
+
 
 
 // ==========
@@ -58,6 +75,13 @@ $selected: #3B77D5;
     zoom: 1; /* For IE 6/7 (trigger hasLayout) */
 }
 
+
+@mixin box-sizing($arg) {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
 @mixin gradient($start: #EEE, $stop: #FFF) {
     background: -webkit-gradient(
         linear,
@@ -75,6 +99,40 @@ $selected: #3B77D5;
         $stop 100%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{$start}', endColorstr='#{$stop}') chroma(color=#000000);                                   
     background-color: $start;    
+}
+
+@mixin two-color-gradient($gradient) {
+    $start: nth($gradient, 1);
+    $stop: nth($gradient, 2);
+    
+    background: -webkit-gradient(
+        linear,
+        left bottom,
+        left top,
+        color-stop(0, $stop),
+        color-stop(1, $start));
+    background: -ms-linear-gradient(
+        top,
+        $start 0%,
+        $stop 100%);
+    background: -moz-linear-gradient(
+        top,
+        $start 0%,
+        $stop 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{$start}', endColorstr='#{$stop}') chroma(color=#000000);                                   
+    background-color: $start;    
+}
+
+
+
+
+@mixin user-select($args) {
+    -webkit-touch-callout: $args;
+    -webkit-user-select: $args;
+    -moz-user-select: $args;
+    -ms-user-select: $args;
+    -o-user-select: $args;
+    user-select: $args;    
 }
 
 @mixin noselect {

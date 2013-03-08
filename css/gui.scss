@@ -3,6 +3,8 @@
 
 
 
+
+
 // ======================
 // = jQuery UI - v1.9.1 =
 // ======================
@@ -86,7 +88,7 @@
 .dropdownlist {
     display: block;
     min-width: 100px;
-    position: fixed; 
+    position: absolute; 
     color: #444;
     font-size: 11px;
     text-align: left;
@@ -96,84 +98,32 @@
     border-radius: 3px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);    
     z-index: 500;
-    overflow: hidden;
+    overflow-y: scroll;
     background-color: #fff;    
-}
-.dropdownlist:focus {
     outline: none;
-}
-.dropdownlist ul { 
     list-style-type: none;
     margin: 0;
-    padding: 0;
-}
-.dropdownlist li { 
-    cursor: default;
-    /* No selection */
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    -o-user-select: none;
-    user-select: none;        
-}
-.dropdownlist li.disabled a {
-    color: #aaa;
-}
-.dropdownlist > div a,
-.dropdownlist .group h3 span {
-    padding: 4px 20px;    
-    line-height: 12px;
-}
-.dropdownlist .group h3 span {
-    display: block;
-    color: #000;
-    text-transform: uppercase;
-    font-weight: bold;    
-    background: url(../img/arrows.png) no-repeat 6px -38px;    
-    cursor: pointer;    
-}
-.dropdownlist .group.collapsed h3 span  {
-    background-position: 6px 0px;        
-}
-.dropdownlist .group.collapsed ul {
-    display: none;
-}
-.dropdownlist li {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-}
-.dropdownlist a {
-    color: #444;
-    display: block;
-    padding: 4px 15px;
-    text-decoration: none;
-}
-/* gray when blurred */
-.dropdownlist .selected a,
-.dropdownlist h3.selected { 
-    background: #ddd repeat-x;
-    color: #555;
-}
-/* blue when focused */
-.dropdownlist:focus .selected a,
-.dropdownlist.focus .selected a,
-.dropdownlist:focus h3.selected,
-.dropdownlist.focus h3.selected { 
-    background: #215ff6 url(../img/menu_selected.gif) repeat-x;
-    color: #fff;
-}
+    
+    @include selectables();
+    
 
-.dropdownlist .group h3.selected span {
-    color: #fff;
-    background-position: 6px -133px;    
-}
-.dropdownlist .group.collapsed h3.selected span {
-    background-position: 6px -114px;
-}
+    > li {         
+        @include user-select(none);
+        cursor: default;
+        list-style-type: none;
+        margin: 0;
+        padding: 4px 15px;
+        color: #444;
+        display: block;
+        text-decoration: none;        
+        
+        &.disabled {
+            color: #aaa;
+        }        
+    }
 
+
+}
 
 
 /* ==================== */
@@ -299,6 +249,10 @@
     -o-user-select: none;
     user-select: none;    
 }
+.calendar.datepicker td.day > div {
+    min-height: 20px;
+    position: relative;
+}
 .calendar.datepicker td.day.selected div {
     background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#8B8B8B), color-stop(100%,#676767));
     background: -moz-linear-gradient(top, #8B8B8B 0%, #676767 100%);
@@ -314,6 +268,7 @@
     color: #fff;
     background: transparent;
 }
+
 
 
 /* =============== */
@@ -345,6 +300,12 @@
     font-style: italic;
     color: #999;
 }
+.textfield {
+    @include box-sizing(border-box);
+
+    height: 25px;
+}
+
 .textfield,
 .textarea {
     cursor: text;
@@ -352,7 +313,6 @@
     padding: 2px 5px;   
     outline: none;
     background-color: #fff;
-    min-height: 20px;
     line-height: 20px;
 }
 .textfield.password {
@@ -463,105 +423,90 @@
 /* = Combo = */
 /* ========= */
 .combobox {
-    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#fff), color-stop(100%,#e0e0e0));
-    background: -moz-linear-gradient(top, #fff 0%, #e0e0e0 100%);    
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#e0e0e0') chroma(color=#000000);
-    position: relative; /* IE */    
-    background-color: #fff; /* IE */
-
-    /* corners */
-    -webkit-border-radius: 3px;
-    -moz-border-radius: 3px;
-    border-radius: 3px;    
-
-    /* No selection */
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    -o-user-select: none;
-    user-select: none;    
-    height: 20px;    
+    position: relative;
+    @include gradient(#fff, #e0e0e0);
+    @include border-radius(3px);
+    @include user-select(none);
+    height: 24px;    
     border: 1px solid #bcbcbc;
     outline: none;
-}
-.combobox > i {
-    display: none;
-}
-.combobox span {
-    color: #444;
-    text-shadow: #fff 0px 1px;    
-    line-height: 20px;
-    cursor: default;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    display: block;
-    padding-right: 25px;
-    padding-left: 5px;
-    position: relative;
-}
-.combobox .button {
-    background: url(../img/combo.png) no-repeat center right;
-    position: absolute;
-    right: 0px;
-    width: 21px;
-    top: 0px;
-    bottom: 0px;
-}
+    
+    &.active {
+        @include gradient(#e0e0e0, #fff);
+    }
+    > i {
+        display: none;
+    }
+    span {
+        color: #444;
+        text-shadow: #fff 0px 1px;    
+        line-height: 20px;
+        cursor: default;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        display: block;
+        padding-right: 25px;
+        padding-left: 5px;
+        position: relative;
+    }
+    .button {
+        background: url(../img/combo.png) no-repeat center right;
+        position: absolute;
+        right: 0px;
+        width: 21px;
+        top: 0px;
+        bottom: 0px;
+    }
 
-
-.combobox.editable {
-    -webkit-touch-callout: text;
-    -webkit-user-select: text;
-    -khtml-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-    -o-user-select: text;
-    user-select: text;    
-}
-.combobox.editable.typing {
-}
-.combobox.editable span {
-    background-color: #fff;
-    border-top: 1px solid #ddd;
-    border-left: 1px solid #ddd;    
-    border-bottom: 1px solid #ddd;
-    height: 20px;
-    margin: 0px;
-    line-height: 20px;
-    margin-right: 20px;
-    padding-right: 0px;
-    cursor: text;
-    position: relative;
-    left: -1px;
-    top: -1px;
-    -webkit-border-radius: 2px;
-    -moz-border-radius: 2px;
-}
-.combobox span {
-    text-overflow: clip;
-    outline: none;
-    text-shadow: none;
-}
+    &.editable {
+        @include user-select(text);
+    }
+    &.editable.typing {
+    }
+    &.editable span {
+        background-color: #fff;
+        border-top: 1px solid #ddd;
+        border-left: 1px solid #ddd;    
+        border-bottom: 1px solid #ddd;
+        height: 20px;
+        margin: 0px;
+        line-height: 20px;
+//        margin-right: 0px;
+        padding-right: 0px;
+        cursor: text;
+        position: relative;
+        left: -1px;
+        top: -1px;
+        -webkit-border-radius: 2px;
+        -moz-border-radius: 2px;
+    }
+    span {
+        text-overflow: clip;
+        outline: none;
+        text-shadow: none;
+    }
 
 
 
-/* Add a magnifying glass icon when typing in a searchable dropdown */
-.combobox.searchable.editable > i {
-    display: block;
-    width: 16px;
-    height: 16px;
-    background: url(../img/icons.png) no-repeat 0 0;
-    position: absolute;
-    top: 2px;
-    left: 3px;
-    z-index:1;
+    /* Add a magnifying glass icon when typing in a searchable dropdown */
+    &.searchable.editable > i {
+        display: block;
+        width: 16px;
+        height: 16px;
+        background: url(../img/icons.png) no-repeat 0 0;
+        position: absolute;
+        top: 2px;
+        left: 3px;
+        z-index:1;
+    }
+    &.searchable.editable span {
+        margin-left: 22px;
+        border-color: #aaa;
+        @include border-radius(0);
+    }    
 }
-.combobox.searchable.editable span {
-    padding-left: 20px;
-}
+
 
 
 /*.combobox.editable span {
@@ -658,10 +603,11 @@
     position: relative;
     outline: none;
 }
+
 .datefield > button {
     position: absolute;
-    left: 0px;
-    top: 0px;
+    left: 4px;
+    top: 2px;
     width: 20px;
     filter: none;
 }
@@ -670,7 +616,6 @@
     min-height: 20px;
     line-height: 20px;
     text-indent: 22px;    
-    padding: 0;
     background-color: #fff;
 }
 
@@ -683,7 +628,7 @@
 .textfield:focus,.textfield.focus, /* IE */
 .textarea:focus,.textarea.focus,
 .combobox:focus,.combobox.focus,
-.combobox.editable span:focus, .combobox.editable.focus span,
+//.combobox.editable span:focus, .combobox.editable.focus span,
 button:focus,button.focus,
 .slider:focus .handle,.slider.focus .handle,
 .datefield:focus .textfield,.datefield.focus .textfield {
@@ -1066,78 +1011,6 @@ button:focus,button.focus,
 
 
 
-.gui-table {
-    outline: none;
-    cursor: default;
-    position: relative;
-}
-.gui-table table {
-//    table-layout: fixed;
-    width: 100%;
-    border-collapse: collapse;
-}
-.gui-table table tbody tr.odd td { 
-    background-color: #f4f4f4;
-}
-.gui-table table tbody td > div {
-    padding: 2px 20px 2px 0;
-//    padding-right: 20px !important;    
-}
-.gui-table table thead th {
-    padding-right: 8px;
-    padding-bottom: 5px;
-}
-
-.gui-table table {
-    outline: none;
-}
-.gui-table table td {
-    border-top: 1px solid #fff;
-}
-/* head */
-.gui-table table thead th {
-    color: #777;
-    position: relative;
-    text-align: left;
-}
-.gui-table thead th .resize {
-    float: right;
-    cursor: col-resize;
-    width: 10px;
-    height: 100%;
-    height: 14px;
-}
-
-/* body */
-.gui-table tbody tr:first-child td {
-    border-top: 1px solid #ccc;
-}
-.gui-table tbody td div {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.gui-table tbody tr.selected td {
-    background: #A6A6A6;
-    color: #fff;
-}
-.gui-table:focus tbody tr.selected td,
-.gui-table.focus tbody tr.selected td {    
-    background-color: #3B77D5;
-    color: #fff;
-}
-.gui-table.focus tbody tr.selected td a,
-.gui-table:focus tbody tr.selected td a {
-    color: #fff;
-}
-
-.gui-table tbody tr:nth-child(2n) td {
-    background-color: #f5f5f5;
-}
-
-
-
-
 
 .gui-unselectable {
     -webkit-touch-callout: none;
@@ -1439,28 +1312,176 @@ pre .xml .cdata {
 // ==============
 .filterview {
     li {
-        overflow: hidden;
-        margin-bottom: 5px;
+        @include clearfloat();
+        margin-bottom: 3px;
     }
     .title {
         width: 70px;
         overflow: hidden;
         text-overflow: ellipsis;
-        float: left;
-        margin-right: 20px;
         font-weight: bold;
         line-height: 25px;
     }
-    .combobox, .datefield, .textfield {
-        width: 150px;
-        float: left;
-        margin-right: 20px;
+    .fields {
+        >.combobox, >.datefield, >.textfield {
+            width: 150px;
+            display: inline-block;
+            margin-left: 20px;
+            box-sizing: border-box;
+        }
+        >*:first-child {
+            margin-left: 0px;
+        }
     }
-    overflow: hidden;
+    .gui-form > * {
+//        display: inline-block;
+        margin-right: 20px;
+        height: 26px;
+        overflow: hidden;
+        float: left;
+    }
+    
+
     margin-bottom: 20px;
     margin-top: 20px;
+    .tools { 
+        button {
+            @include button();
+            height: 26px;
+        }
+        button.remove:hover {
+            @include button();
+            padding-left: 25px;
+        }
+        button.remove {
+            border-color: transparent;
+            background: none;
+            padding-left: 25px;
+            position: relative;
+            
+            &:before {
+                z-index: 1;
+                content: '';
+                display: inline-block;
+                overflow: hidden;
+                position: absolute;
+                left: 6px;
+                top: 7px;
+                width: 13px;
+                height: 13px;
+                background: url(../img/icons/remove.png) no-repeat;
+            }
+
+        }
+        
+    }
 }
 
 
+// ==============
+// = .gui-table =
+// ==============
+.gui-table {
+    outline: none;
+    cursor: default;
+    position: relative;
 
+    &:focus tbody tr.selected td,
+    &:focus tbody tr td.selected {    
+        background-color: #3B77D5;
+        color: #fff;
+        a {
+            color: #fff;
+        }
+        .textfield {
+            color: #000;
+        }
+    }
+
+
+
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        outline: none;
+
+        td {
+            border-top: 1px solid #fff;
+        }
+
+        thead {            
+            th {
+                padding-right: 8px;
+                padding-bottom: 5px;
+                color: #777;
+                position: relative;
+                text-align: left;
+                
+                .resize {
+                    float: right;
+                    cursor: col-resize;
+                    width: 10px;
+                    height: 100%;
+                    height: 14px;
+                }
+                .sort {
+                    display: none;
+//                    border: 1px solid red;
+//                    display: inline-block;
+                    margin-left: 10px;
+                    height: 17px;
+                    width: 20px;
+                    background-color: #eee;
+                    @include border-radius(10px);
+                }
+            }
+
+        }
+        tbody {
+            tr.odd td { 
+//                background-color: #f4f4f4;
+            }
+            td > div {
+                padding: 2px 20px 2px 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;                
+            }
+            tr:first-child td {
+                border-top: 1px solid #ccc;
+            }
+//            tr.selected td {
+//                background: #A6A6A6;
+//                color: #fff;
+//            }
+            tr:nth-child(2n) td {
+                background-color: #f5f5f5;
+            }
+
+            tr.selected td,
+            tr td.selected {    
+                background-color: #B6B6B6;
+                color: #fff;
+                a {
+                    color: #fff;
+                }
+                .textfield {
+                    color: #000;
+                }
+            }
+            
+        }
+    }    
+}
+.gui-table-column-ghost {
+    background-color: rgba(255,255,255,0.8);
+    position: absolute;
+    border: 1px solid #ccc;
+    @include box-shadow(0 2px 20px rgba(0,0,0,0.3));
+    @include border-radius(3px);
+    >div {
+        padding: 10px;
+    }
+}
 

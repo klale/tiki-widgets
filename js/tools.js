@@ -4,10 +4,26 @@ define([
     'backbone',
     'moment',    
     './base',
-], function($, _, Backbone, moment, gui) {
+    './tools',    
+], function($, _, Backbone, moment, gui, tools) {
 
 
     var tools = {};
+
+
+
+    function reverseSortBy(sortByFunction) {
+        return function(left, right) {
+            var l = sortByFunction(left);
+            var r = sortByFunction(right);
+
+            if (l === void 0) return -1;
+            if (r === void 0) return 1;
+
+            return l < r ? 1 : l > r ? -1 : 0;
+        };
+    }
+
 
 
     tools.FileDropper = Backbone.View.extend({
@@ -121,14 +137,31 @@ define([
     });
 
 
+    // keydown enter .selector
+    // click .selector
+    var splitter = /^(\S+)\s+(\S+)\s*(.*)$/
+    // var eventSplitter = /^(\S+)\s*(.*)$/;
+    
+    
+    /**
+    Example 1
+    ---------
+    this.selectable = new tools.Selectable({
+        el: this.el,              // common ancestor for the selectables
+        selectables: 'li',        // a selector expression
+        chooseOnClick: true,
+        chooseOnDblClick: false,
 
+        // triggerChooseOn: ['keydown enter', 'mousedown li'] // this is not yet implemented        
+    });
+    this.selectable.on('choose', this.onSelectableChoose, this);
+    */
     tools.Selectable = Backbone.View.extend({
-        events: {
-            'keydown': 'onSelectableKeyDown',
-        },
+        // events: {
+        //     'keydown': 'onSelectableKeyDown',
+        // },
 
-    
-    
+        
         /*        
         var s = Selectable({
             el: '#table',
@@ -137,10 +170,38 @@ define([
         s.render();
         */
         initialize: function(config) {
-            _.bindAll(this, 'onSelectableMouseDown', 'onSelectableKeyDown', 'onSelectableDblClick')
+            _.bindAll(this, 'onSelectableMouseDown', 'onSelectableDblClick', 'onSelectableKeyDown')
             this.selectables = config.selectables;
+            this.$el.on('keydown', this.onSelectableKeyDown);            
             this.$el.on('mousedown', config.selectables, this.onSelectableMouseDown);
-            this.$el.on('dblclick', config.selectables, this.onSelectableDblClick);            
+            
+            // Todo: Replace this semi-silly arguments with the out-commented code below?
+            if(config.chooseOnDblClick)
+                this.$el.on('dblclick', config.selectables, this.onSelectableDblClick);
+            if(config.chooseOnClick)
+                this.$el.on('click', config.selectables, this.onSelectableDblClick);            
+            
+        
+            // this.triggerChooseOn = config.triggerChooseOn || ['keydown enter', 'dblclick li'];
+            // _.each(this.triggerChooseOn, function(evtstr) {
+            //     var matches = evtstr.match(splitter),
+            //         eventName = match[1], 
+            //         hotkey = match[2] || '',
+            //         selector = match[3] || '';
+            //                         
+            //     if(_.indexOf(['keydown', 'keypress', 'keyup')], matches[1]) {
+            //         // register hotkey
+            //         this.$el.on(eventName, selector || null, hotkey, this.chooseSelected);
+            //     } else {
+            //         this.$el.on(eventName, match[2] + ' ' + match[3], this.chooseSelected);                    
+            //     }
+            // })
+        },
+
+        off: function() {
+            this.$el.off('mousedown', this.selectables, this.onSelectableMouseDown);
+            this.$el.off('dblclick', this.selectables, this.onSelectableDblClick);            
+            this.$el.off('keydown', this.onSelectableKeyDown);            
         },
         onSelectableMouseDown: function(e) {
             var el = $(e.currentTarget);
@@ -204,6 +265,14 @@ define([
             this.select(el);
             el.make('head').make('tail');
         },
+        selectAll: function() {
+            this.deselectAll();
+            this.$(this.selectables).addClass('selected');
+            this.$(this.selectables).first().addClass('tail');
+            this.$(this.selectables).last().addClass('head');
+            this.trigger('select');
+            this.trigger('change');
+        },
         deselect: function(el) {
             $(el).removeClass('selected');
             this.trigger('deselect');
@@ -220,6 +289,20 @@ define([
         moveDown: function(steps) {
         
         },
+        selectRight: function() {
+            
+        },
+        selectLeft: function() {
+            
+        },
+        selectUp: function() {
+            
+        },
+        selectDown: function() {
+            
+        },
+        
+        
         onSelectableKeyDown: function(e) {
             if(e.which == gui.keys.ENTER) {
                 var sel = this.getSelected();
@@ -239,6 +322,22 @@ define([
                     tail = this.$('.tail'),
                     prev = head.prevAll(':visible:first'),
                     next = head.nextAll(':visible:first');
+
+                // within visible viewport? next, down and outside?
+                if(e.which == gui.keys.DOWN)
+                    if(next[0]) {
+                        var height = next.outerHeight(),
+                            bottom = next[0].offsetTop+height,
+                            diff = bottom - this.$el.outerHeight();
+                        if(bottom > this.$el.outerHeight()) {
+                            this.$el.scrollTop(diff+8);
+                        }
+                    }
+
+                // next[0].scrollIntoView(); //e.which == gui.keys.UP alignWithTop
+                // next.css('border', '1px solid blue');
+                e.preventDefault();
+                e.stopPropagation()
             
                 if(!e.shiftKey) {
                     if(e.which == gui.keys.DOWN && next[0]) 
@@ -293,26 +392,111 @@ define([
     
     */
     
+    tools.TableColumnModel = Backbone.Model.extend({
+        defaults: {
+            visible: true,
+            sort: null, //'asc',
+            sortprio: null , // 1
+            name: null, // 'title'
+            title: null, // 'Title',
+            
+        }
+    });
+    
     tools.TableColumn = Backbone.View.extend({
         tagName: 'th',
         template: _.template2(''+
             '<div>'+
                 '<i></i>' + 
                 '${obj.title}'+
+                '<span class="sort ${obj.sort || ""}"></span>' +
                 '<span class="resize ui-draggable"></span>' +
             '</div>'), 
+        events: {
+            'click': 'onClick',
+            'dragdown': 'onDragDown',
+            'draginit': 'onDragInit',
+            'dragend': 'onDragEnd',
+            'dragover': 'onDragOver'
+        },
             
         initialize: function(config) {
             this.config = config;
             this.model = config.model;
             if(!this.model)
-                this.model = new Backbone.Model();
+                this.model = new tools.TableColumnModel();
+        
+            this.model.on('change:sort', this.onSortChange, this);
             
+            
+            // Table columns are draggable (for reordering columns)
+            // this.$el
+            // $('.mydraggable', 'ondraginit', function(e, drag) {
+            //    drag.horizontal()
+            //    drag.steps(...)
+            //    drag.ghost()     <-- clone a ghost to follow the mouse pointer.
+            //    // ..etc, configure the drag here..
+            // 
+            //    drag.element    <-- the (jquery) element dragged
+            //    drag.delegate   <-- the parent-ish element (eg .acm-desktop) that 'dragstart' is registerd to. (Often you bind one listener on a container element instead of multiple listeners on each individual child)
+            // 
+            // });
+        },
+        onDragDown: function(e, drag) {
+            e.preventDefault()
+            drag.mousedownPosition = {left: e.offsetX, top: e.offsetY};
+            drag.distance(5);
+        },
+        onDragOver: function(e, drag) {
+            console.log('Over: ', e, drag)
+        },
+
+        onDragInit: function(e, drag) {
+            console.log('Soooo pretty2: ', drag, 'e:', e)
+            var tablecont = this.$el.parents('.gui-table');
+            var foo = $('<div><div></div></div>').appendTo(document.body); // tablecont
+            foo.children('div').html(this.$el.text());
+            foo.css({width: this.$el.width(), height: tablecont.height()})
+            foo.addClass('gui-table-column-ghost')
+            drag.representative(foo, drag.mousedownPosition.left, drag.mousedownPosition.top)
+            drag.ghostEl = foo;
+            drag.columnModel = this.model;
+            // drag.ghost();
+            // drag.horizontal(0);
+            
+        },
+        onDragEnd: function(e, drag) {
+            drag.ghostEl.remove();
         },
         render: function() {
             this.$el.html(this.template(this.model.toJSON()));
             return this;
-        }
+        },
+        onSortChange: function(model, newval, changedValues) {
+            this.$('.sort').toggle(!!newval)
+            if(newval) {
+                this.$('.sort').html(newval)
+            }
+        },
+
+        onClick: function(e) {
+            // the click handler just updates the model
+            
+            return;
+            
+            var sort = this.model.get('sort')
+            
+            // var popup = new HypPopup({table: this.table, column: column});            
+            // popup.show(e.target);
+            if(!sort)
+                this.model.set('sort', 'asc')
+            else if(sort=='asc')
+                this.model.set('sort', 'desc')
+            else if(sort=='desc')
+                this.model.set('sort', 'asc')
+            
+        },
+        
     });
     
     tools.Table = Backbone.View.extend({
@@ -329,6 +513,7 @@ define([
             '</table>'),
 
 
+
         initialize: function(config) {
             config = config || {};
             if(config.el) {
@@ -340,6 +525,7 @@ define([
                 this.columns = config.columns;
             else
                 this.columns = new Backbone.Collection(config.columns);
+            this.columns.on('change:sort', this.onColumnSortChange, this)
 
             // Add a rows collection
             if(config.rows instanceof Backbone.Collection)
@@ -443,7 +629,22 @@ define([
         onRowRemove: function(model, collection) {
             var el = this.$el.find('#'+model.id);
             el.remove();
-        }
+        },
+        onColumnSortChange: function(column, sort) {
+
+            if(sort) {            
+                var fn = function(model) {
+                    return model.get(column.get('name'));
+                }
+                if(sort == 'desc')
+                    fn = reverseSortBy(fn)
+            
+                this.rows.comparator = fn;
+            }
+            
+            this.rows.sort();
+            this.render();                    
+        }        
     });
 
 
@@ -579,8 +780,7 @@ define([
     [hours]         >1                          int     
     [billable]      true
     [tags]          all/any [hyp]               List(Str)
-    
-    
+
     
     Date
     --------------------------------------------
@@ -616,9 +816,8 @@ define([
                 title: 'Tags',
                 predicate: 'is'
                 value: 'hyp'
-            }
-        ]
-    })   
+            }]
+    });
     
     >>> f.getQueryString() 
     "?filtertype=and&date=between,2012-11-01,2012-11-30&rate=atleast,1&tags=is,hyp"
@@ -627,245 +826,45 @@ define([
     /clients/448472/slaps?[...]
     
     
+    Example 1
+    -------------------------------------
+    var filterview = new tools.FilterView({
+        filterType: 'and',
+        filters: [{
+                name: 'paper_date',
+                type: 'date', 
+                title: 'Paper date', 
+                defaults: {predicate: 'between', value: '2012-11-01', value2: '2012-11-15'}
+            },{
+                name: 'amount',
+                type: 'number', 
+                title: 'Amount', 
+                defaults: {predicate: 'atleast'}
+            },{
+                name: 'comment',
+                type: 'text', 
+                title: 'Comments', 
+                defaults: {predicate: 'contains'}
+            }],
+        state: [{
+                name: 'paper_date',
+                predicate: 'atleast',
+                value: '2012-11-01',
+            },{
+                name: 'amount',
+                predicate: 'atleast',
+                value: '1000',
+            },{
+                name: 'comment',
+                predicate: 'contains',
+                value: 'foo',
+            }]        
+    });
+    $(document.body).append(filterview.render().el);
     */
-    tools.FilterView = Backbone.View.extend({
-        tagName: 'div',
-        className: 'filterview',
-        events: {
-            'fieldchange': 'onFieldChange'
-        },
-        template: _.template2(''+
-        '<ul></ul>'+
-        '<div class="tools">'+
-            '<button class="add">Add</button>'+
-            '<button class="apply">Apply</button>'+
-        '</div>'),
-        
-        initialize: function(config) {
-            this.config = config;
-            this.filterType = config.filterType || 'and';
-            this.filters = [];
-            this.applied = [];
-        },
-        
-        render: function() {
-            this.$el.html(this.template());
-            var ul = this.$('ul');
-            
-            _.each(this.config.filters, function(filterconf) {
-                var factory = tools.filters[filterconf.type];
-                var f = new factory(filterconf);
-                this.filters.push(f);
-                
-                if(filterconf.value) {
-                    this.applied.push(f);
-                    ul.append(f.render().el);
-                }
-                
-            }, this);
-            return this;
-        },
-        getQueryString: function() {
-            var q = _.map(this.filters, function(filter) {
-                return filter.getQueryString();
-            });
-            q.splice(0,0, 'filterType='+this.filterType);
-            return q.join('&')
-        },
-        
-        onFieldChange: function(e) {
-            console.log('HEHE: ', this.getQueryString())
-        },
-        
-        
-    });
 
 
-    // tools.FilterGroup = Backbone.View.extend({
-    //     tagName: 'ul',
-    //     className: 'filter-group'
-    //     
-    //     initialize: function(config) {
-    //         // Type can be "and" or "or"
-    //         this.type = config.type;
-    //         this.filters = config.filters;
-    //     },
-    //     render: function() {
-    //         
-    //     }        
-    // });
-    tools.Filter = Backbone.View.extend({
-        tagName: 'li',
-        rowTemplate: _.template2(''+
-            '<div class="title">${obj.title}</div>'+
-            '<div class="filter"></div>'+
-            '<div class="tools">'+
-                '<button class="remove">Remove</button>'+
-            '</div>'),
-        events: {
-            'click .remove': 'remove'
-        },
-        
-        initialize: function(config) {
-            this.name = config.name;
-            this.title = config.title;
-            this.predicate = config.predicate;
-            this.value = config.value;
-        },
-        remove: function() {
-            
-        }
-        
-    });
-    
-    tools.filters = {};
-    tools.filters.datetime = tools.Filter.extend({
-        
-        // template: _.template(''
-        //     'Slap-date: [is,between,atleast,atmost]   [picker1] and [picker2]'),
-        
-        initialize: function(config) {
-            tools.Filter.prototype.initialize.call(this, config)
 
-            // Create predicate combo
-            this.predicateCombo = new form.ComboBox({
-                options: [
-                    {id: 'is', text: 'exactly'},
-                    {id: 'between', text: 'betweeen'},
-                    {id: 'atleast', text: 'At least'},
-                    {id: 'atmost', text: 'At most'},
-                ],
-                value: this.predicate
-            });
-            this.predicateCombo.on('change', this.onPredicateComboChange, this);
-            
-            var values = (this.value || '').split(',')
-            this.dateField = new form.DateField({value: values[0]})
-            this.dateField2 = new form.DateField({value: values[1]})
-        },
-        render: function() {
-            this.$el.html(this.rowTemplate(this));
-            var cont = this.$('.filter');
-            
-            cont.append(this.predicateCombo.render().el);
-            this.predicateCombo.delegateEvents()
-
-            // There is at least one datefield
-            cont.append(this.dateField.render().el);                
-            
-            if(this.predicate == 'between') {
-                // Add the second datefield
-                cont.append(this.dateField2.render().el);                
-            }
-            
-            return this;
-        },
-        getQueryString: function() {
-            var s = this.name+'='+this.predicateCombo.getValue()+','+this.dateField.getValue();
-            if(this.predicate == 'between')
-                s += ','+this.dateField2.getValue();
-            return s;
-        },
-        onPredicateComboChange: function(e) {
-            this.predicate = e.value;
-            this.render();
-        }
-    });
-
-
-    tools.filters.number = tools.Filter.extend({
-        
-        // template: _.template(''
-        //     'Slap-date: [is,between,atleast,atmost]   [picker1] and [picker2]'),
-        
-        initialize: function(config) {
-            tools.Filter.prototype.initialize.call(this, config)
-
-            // Create predicate combo
-            this.predicateCombo = new form.ComboBox({
-                options: [
-                    {id: 'is', text: 'exactly'},
-                    {id: 'between', text: 'betweeen'},
-                    {id: 'atleast', text: 'At least'},
-                    {id: 'atmost', text: 'At most'},
-                ],
-                value: this.predicate
-            });
-            this.predicateCombo.on('change', this.onPredicateComboChange, this);
-
-            // Create textfield
-            this.textfield = new form.TextField({
-                value: this.value || ''
-            });
-            // this.textfield.on('change', this.onTextFieldChange, this);
-
-            // Create textfield
-            this.textfield2 = new form.TextField({
-                value: this.value2 || ''
-            });
-
-        },
-        render: function() {
-            this.$el.html(this.rowTemplate(this));
-            var cont = this.$('.filter');
-            cont.append(this.predicateCombo.render().el);
-            this.predicateCombo.delegateEvents();
-            cont.append(this.textfield.render().el);
-            if(this.predicate == 'between') {
-                cont.append(this.textfield2.render().el);                
-            }
-            return this;
-        },
-        getQueryString: function() {
-            var s = this.name+'='+this.predicateCombo.getValue()+','+this.textfield.getValue();
-            if(this.predicate == 'between')
-                s += ','+this.textfield2.getValue();
-            return s;
-        },
-    });
-
-    tools.filters.text = tools.Filter.extend({
-        
-        // template: _.template(''
-        //     'Slap-date: [is,between,atleast,atmost]   [picker1] and [picker2]'),
-        
-        initialize: function(config) {
-            tools.Filter.prototype.initialize.call(this, config)
-
-            // Create predicate combo
-            this.predicateCombo = new form.ComboBox({
-                options: [
-                    {id: 'is', text: 'equals'},
-                    {id: 'contains', text: 'contains'},
-                    {id: 'startswith', text: 'Starts with'},
-                    {id: 'endswith', text: 'Ends with'},
-                ],
-                value: this.predicate
-            });
-            
-            // Create a textfield
-            this.textfield = new form.TextField({
-                value: this.value || ''
-            });
-            this.textfield.on('change', this.onTextFieldChange, this);
-
-        },
-        render: function() {
-            this.$el.html(this.rowTemplate(this));
-            var cont = this.$('.filter');
-            
-            cont.append(this.predicateCombo.render().el);
-            this.predicateCombo.delegateEvents();
-            
-            cont.append(this.textfield.render().el);
-            return this;
-        },
-        getQueryString: function() {
-            var s = this.name+'='+this.predicateCombo.getValue()+','+this.textfield.getValue();
-            return s;
-        },
-    });    
-        
 
     /*
     A small single-line editor
