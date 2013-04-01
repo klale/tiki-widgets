@@ -7,7 +7,7 @@ define([
     'jquerypp'
 ], function($, _, Backbone, gui, moment) {
 
-var calendar = {};    
+var exp = {};    
 
 
 // =================
@@ -17,9 +17,8 @@ var calendar = {};
 /**
  * A month calendar.
  */
-calendar.MonthCalendar = Backbone.View.extend({
-    tagName: 'div',
-    className: 'calendar',
+exp.MonthCalendar = Backbone.View.extend({
+    className: 'gui-calendar',
     
     template: _.template(''+
         '<table>'+
@@ -148,5 +147,5 @@ calendar.MonthCalendar = Backbone.View.extend({
 });
 
 
-return calendar;
+return exp;
 });

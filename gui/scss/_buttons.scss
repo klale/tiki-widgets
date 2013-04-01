@@ -1,0 +1,31 @@
+
+// ===========
+// = Buttons =
+// ===========
+.gui-btn {
+    @include button2($start: #fdfdfd, $end: #e1e1e1);
+
+    
+    &.btn-link {
+        background: none;
+        border-color: transparent;
+        cursor: pointer;
+        filter: none;    
+        color: #000;    
+        @include box-shadow(none);
+        &:hover {
+//            text-decoration: underline;            
+        }
+    }
+    &.btn-primary {
+        @include button2color($start: #638CF5, $end: #2464F3, $neg: true);
+//        font-weight: bold;
+    }
+    &.btn-disabled {    
+        @include button2color($start: #bbb, $end: #bbb);
+        text-shadow: #999 0px -1px;
+        border: 1px solid #9e9e9e;
+        color: #fff;
+    }
+}
+

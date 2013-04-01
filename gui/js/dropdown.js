@@ -42,9 +42,25 @@ var Option = Backbone.View.extend({
     },
 });
 
+
+
+/**
+
+Example:
+var dd = new DropdownList({
+    options: [
+        {id: '123', text: 'foo'}
+        {id: '456', text: 'bar'}
+    ]
+});
+
+dd.show(alignToThisEl);
+
+
+*/
 var DropdownList = Backbone.View.extend({
     tagName: 'ul', 
-    className: 'dropdownlist',
+    className: 'gui-dropdownlist',
     attributes: {
         tabindex: 0
     },
@@ -111,7 +127,6 @@ var DropdownList = Backbone.View.extend({
         $(document.body).append(this.render().el);
 
         if(el) {
-            console.log('FOO')
             // this.$el.position2($(el), {
             //     anchor: ['tl', 'br'],
             //     // offset: [-5, 5]

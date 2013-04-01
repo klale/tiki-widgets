@@ -1,0 +1,306 @@
+/* ========== */
+/* = Fields = */
+/* ========== */
+.gui-text {
+    @include box-sizing(border-box);
+    @include glowoutline();
+
+    cursor: text;
+    border: 1px solid #ccc;
+    padding: 2px 5px;   
+    outline: none;
+    background-color: #fff;
+    line-height: 20px;
+    height: 25px;    
+    &.empty {
+        font-style: italic;
+        color: #999;
+    }
+}
+
+.gui-password {
+    @extend .gui-text;
+    -webkit-text-security: disc;    
+}
+
+.gui-textarea {
+    @extend .gui-text;
+    height: auto;
+    min-height: 40px;
+    line-height: 16px;
+    div, p {
+        margin: 0 !important; /* ie required important, todo: who's overriding? */
+    }
+}
+
+.gui-upload {
+    input[type="file"] {
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        height: 20px;
+        opacity: 0;  
+        filter:progid:DXImageTransform.Microsoft.Alpha(opacity=0);
+        width: 1px;
+        min-width: 80px;
+        height: 20px;
+    }
+    .browse-container {
+        height: 20px;
+        position: relative;
+    }
+
+    .queue li {
+        white-space: nowrap;
+        padding-right: 120px;
+        position: relative;
+        margin-top: 3px;
+        padding-top: 3px;
+        border-top: 1px dashed #ccc;
+        height: 18px;
+        line-height: 18px;
+        &:first-child {
+            border-top: none;            
+        }
+        &.uploading {
+            @include gradient(#828282, #A1A1A1);
+        }
+        &.uploading .progressbar {
+            @include gradient(#6289f8, #215ff6);
+            position: absolute;
+            top: 0px;
+            bottom: 0px;
+            left: 0px;
+        }
+    
+        // filename
+        & .name {
+            position: absolute;
+            left: 0px;
+            right: 120px;
+            top: 0px;
+            bottom: 0px;
+            line-height: 24px;
+            overflow: hidden;
+            text-overflow: ellipsis;    
+        }
+        &.uploading .name {
+            color: #fff;
+            padding-left: 5px;
+        }
+
+        // size
+        & .size {
+            position: absolute;
+            right: 75px;
+            top: 0px;
+            width: 35px;
+            font-size: 10px;
+            color: #999;
+            height: 19px;
+            line-height: 24px;
+            text-align: right;
+        }
+        &.uploading .size {
+            color: #fff;
+        }
+        // remove button
+        & button.remove {
+            position: absolute;
+            right: 0px;
+            top: 0px;
+            @include buttonstyle(#fdfdfd, #e1e1e1);
+        }                    
+    }
+}
+
+
+/* ========= */
+/* = Combo = */
+/* ========= */
+.gui-combobox {
+    @include gradient(#fff, #e0e0e0);
+    @include border-radius(3px);
+    @include user-select(none);
+    position: relative;
+    height: 24px;    
+    border: 1px solid #bcbcbc;
+
+    
+//    &.active {
+//        @include gradient(#B8B8B8, #E0E0E0);
+//        @include box-shadow(inset 0px 2px 6px rgba(0, 0, 0, 0.4));
+//    }
+    > i {
+        display: none;
+    }
+    &.focus {
+        @include box-shadow(0 0 5px rgba(14, 158, 211, 0.4));
+        border-color: rgb(14, 158, 211) !important;
+        outline: none;
+    }
+    
+    span {
+//        @include glowoutline();
+        color: #444;
+        text-shadow: #fff 0px 1px;    
+        line-height: 20px;
+        cursor: default;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        display: block;
+        padding-right: 25px;
+        padding-left: 5px;
+        position: relative;
+        outline: none;
+        text-shadow: none;        
+    }
+    .button {
+        background: url(../img/combo.png) no-repeat center right;
+        position: absolute;
+        right: 0px;
+        width: 21px;
+        top: 0px;
+        bottom: 0px;
+    }
+
+    &.editable {
+        @include user-select(text);
+    }
+    &.editable.typing {
+    }
+    &.editable span {
+        background-color: #fff;
+        border-top: 1px solid #ddd;
+        border-left: 1px solid #ddd;    
+        border-bottom: 1px solid #ddd;
+        height: 20px;
+        margin: 0px;
+        line-height: 20px;
+//        margin-right: 0px;
+        padding-right: 0px;
+        cursor: text;
+        position: relative;
+        left: -1px;
+        top: -1px;
+        -webkit-border-radius: 2px;
+        -moz-border-radius: 2px;
+    }
+
+    /* Add a magnifying glass icon when typing in a searchable dropdown */
+    &.searchable.editable > i {
+        display: block;
+        width: 16px;
+        height: 16px;
+        background: url(../img/icons.png) no-repeat 0 0;
+        position: absolute;
+        top: 2px;
+        left: 3px;
+        z-index:1;
+    }
+    &.searchable.editable span {
+        margin-left: 22px;
+        border-color: #aaa;
+        @include border-radius(0);
+    }    
+}
+
+
+.gui-hidden {
+    display: none;
+}
+
+
+/* ========== */
+/* = Slider = */
+/* ========== */
+.gui-slider {    
+    @include user-select(none);
+    @include glowoutline();
+    position: relative;
+    outline: none;
+    height: 20px;
+    
+
+        
+
+    
+    .container {
+        margin-right: 16px;
+        height: 20px;
+        position: relative;
+    }
+    .range,
+    .range-min {
+        position: absolute;
+        left: 0px;    
+        top: 7px;    
+        height: 6px;        
+        border: 1px solid #bcbcbc;
+        @include border-radius(3); 
+    }    
+    .range {
+        right: 0px;
+        background-color: #fff;
+    }
+    .range-min {
+        @include two-color-gradient(#adadad #ccc);
+    }
+    .range-max {
+    }
+    .slider {
+    }
+    .handle {
+        @include two-color-gradient(#fff #e0e0e0);
+        @include border-radius(3);
+        top: 0px;
+        width: 16px;
+        height: 20px;
+        background-color: #999;
+        position: absolute;
+        height: 20px;
+        border: 1px solid #bcbcbc;
+        div {
+            height: 20px;
+            background: url(../img/slider.png) no-repeat center center;            
+        }
+    }
+}
+
+
+
+/* ============= */
+/* = DateField = */
+/* ============= */
+.gui-datefield {
+    position: relative;
+    display: inline-block;
+    
+    > button {
+        @include glowoutline();
+        position: absolute;
+        left: 4px;
+        top: 2px;
+        width: 20px;
+        filter: none;
+    }
+    .textfield {
+        @extend .gui-text;
+//        @include glowoutline();
+        border: 1px solid #ccc;
+//        min-height: 20px;
+//        line-height: 20px;
+        text-indent: 22px;    
+//        background-color: #fff;
+    }
+}
+
+
+
+
+
+/* ========= */
+/* = Focus = */
+/* ========= */
+

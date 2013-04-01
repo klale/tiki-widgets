@@ -12,17 +12,17 @@ define([
 
 
 
-    function reverseSortBy(sortByFunction) {
-        return function(left, right) {
-            var l = sortByFunction(left);
-            var r = sortByFunction(right);
+function reverseSortBy(sortByFunction) {
+    return function(left, right) {
+        var l = sortByFunction(left);
+        var r = sortByFunction(right);
 
-            if (l === void 0) return -1;
-            if (r === void 0) return 1;
+        if (l === void 0) return -1;
+        if (r === void 0) return 1;
 
-            return l < r ? 1 : l > r ? -1 : 0;
-        };
-    }
+        return l < r ? 1 : l > r ? -1 : 0;
+    };
+}
 
 
 
@@ -169,6 +169,12 @@ define([
         });
         s.render();
         */
+        events: {
+            'mousedown': 'onMouseDown',
+        },
+        hotkeys: {
+            'keydown meta+a': 'onMetaAKeyDown'
+        },
         initialize: function(config) {
             _.bindAll(this, 'onSelectableMouseDown', 'onSelectableDblClick', 'onSelectableKeyDown')
             this.selectables = config.selectables;
@@ -202,6 +208,14 @@ define([
             this.$el.off('mousedown', this.selectables, this.onSelectableMouseDown);
             this.$el.off('dblclick', this.selectables, this.onSelectableDblClick);            
             this.$el.off('keydown', this.onSelectableKeyDown);            
+        },
+        onMouseDown: function(e) {
+            if(!$(e.target).parentsUntil(this.el, this.selectables).length || e.target == this.el)
+                this.deselectAll();
+        },
+        onMetaAKeyDown: function(e) {
+            this.selectAll();
+            e.preventDefault();
         },
         onSelectableMouseDown: function(e) {
             var el = $(e.currentTarget);
@@ -372,7 +386,157 @@ define([
     });
 
 
+    function headOrTail(e, el) {
+        e.pageX == 400
+        el.offset().left == 300
+        el.width() == 120
+        var left = $(el).offset().left,
+            center = $(el).outerWidth() / 2 + left;
+        return e.pageX > center ? 'tail' : 'head';
+    }
 
+    
+    tools.Sortable = Backbone.View.extend({
+        className: 'gui-sortable',
+        events: {
+            // 'draginit': 'onDragInit',
+        },
+
+        initialize: function(config) {
+            this.config = config;
+            this.sortables = config.sortables; // a selector string
+            this.collection = config.collection; // optional
+            /*
+            var sortable = new tools.Sortable({
+                el: el,
+                sortables: 'li'
+            })
+            */
+            _.bindAll(this, 'onDragInit', 'onDragEnter', 'onDragLeave', 'onDragEnd', 'onDropOverHead', 'onDropOverTail', 'onDropOn');
+                        
+            this.$el.on('dragdown', config.sortables, this.onDragDown);
+            this.$el.on('draginit', config.sortables, this.onDragInit);
+            this.$el.on('dragenter', config.sortables, this.onDragEnter);
+            this.$el.on('dragleave', config.sortables, this.onDragLeave);
+            
+            this.$el.on('dragend', config.sortables, this.onDragEnd);
+            // this.$el.on('dropinit', config.sortables, this.onDropInit);
+            this.$el.on('dropover', config.sortables, this.onDropOver);
+            this.$el.on('dropmove', config.sortables, this.onDropMove);
+            this.$el.on('dropoverhead', config.sortables, this.onDropOverHead);
+            this.$el.on('dropovertail', config.sortables, this.onDropOverTail);
+            this.$el.on('dropon', this.onDropOn);            
+                        
+            this.spaceholder = $('<div class="spaceholder" style="display: inline-block;"></div>');
+        },
+        
+        
+        
+        render: function() {
+            return this;
+        },
+        
+        // Drag events
+        onDragDown: function(e, drag) {
+            drag.distance(5);
+            e.preventDefault();
+        },
+        onDragInit: function(e, drag) {
+            if(this.collection)
+                drag.model = this.collection.at(drag.element.index())
+                        
+            drag.ghostEl = drag.element.clone().appendTo(document.body)
+            drag.ghostEl.css({position: 'absolute'})
+            drag.element.remove()
+            drag.representative(drag.ghostEl)
+
+            drag.name = 'gui-sort';
+            drag.sortmode = 'horizontal';
+            this.spaceholder.width(drag.ghostEl.outerWidth());
+            this.trigger('draginit', e, drag)
+
+        },
+        
+        // Drop events
+        onDropOver: function(e, drop, drag) {            
+            drag.currOver = drop.element;
+        },        
+        onDropMove: function(e, drop, drag) {
+            var dragel = drag.element, //drag.ghostEl,
+                dropel = drop.element;
+                
+            if(dropel[0] == dragel[0])
+                return
+                        
+            var part = headOrTail(e, drop.element);
+            if(part != drag.currOver.part) {
+                drop.element.trigger('dropover'+part, [drop, drag])
+                drag.currOver.part = part;
+            }            
+        },
+        onDropOverHead: function(e, drop, drag) {
+            var prev = drop.element.prev(),
+                afterSpaceholder = !!drop.element.prevAll('*.spaceholder')[0];
+            drag.index = drop.element.index();
+            if(afterSpaceholder)
+                drag.index -= 1
+                
+            // console.log('Index:', index, 'part: ', part)            
+            if(!prev || !prev.is('.spaceholder')) {
+                this.spaceholder.insertBefore(drop.element);
+            }
+        },
+        onDropOverTail: function(e, drop, drag) {
+            // check if next el is ".spaceholder". If not, add it.
+            var next = drop.element.next(),
+                afterSpaceholder = !!drop.element.prevAll('*.spaceholder')[0];
+            drag.index = drop.element.index();
+            if(afterSpaceholder)
+                drag.index -= 1
+                
+            if(!next || !next.is('.spaceholder')) {
+                this.spaceholder.insertAfter(drop.element);
+            }
+        },
+        onDropOn: function(e, drop, drag) {
+            var part = headOrTail(e, drop.element);
+
+
+            var dragModel = drag.model;
+            // var dropModel = this.collection.at(drag.index);
+
+            
+            // console.log('Index:', drag.index)
+            if(this.collection) {
+                this.collection.remove(dragModel, {options: 'silent'});
+                this.collection.add(dragModel, {at: drag.index, options: 'silent'});
+            }
+            
+            if(drag.name == 'gui-sort') {
+                // drag.element.css({left: 'auto', top: 'auto', position: 'relative'})
+                // this.spaceholder.replaceWith(drag.element);
+                // console.log('spaceholder: ', this.spaceholder)
+                console.log('TRIGGER')
+                this.trigger('sort')
+            }
+        },
+        onDragEnd: function(e, drag) {
+            this.spaceholder.replaceWith(drag.element);
+            // this.spaceholder.remove();
+            // drag
+        },
+        onDragLeave: function(e, drag) {
+            console.log('leave')
+        },
+        onDragEnter: function(e, drag) {
+            console.log('Enter')
+        }
+        
+    });
+    /*
+    1. Man drar
+    2. 
+    */
 
 
     /*
@@ -407,10 +571,9 @@ define([
         tagName: 'th',
         template: _.template2(''+
             '<div>'+
-                '<i></i>' + 
                 '${obj.title}'+
-                '<span class="sort ${obj.sort || ""}"></span>' +
-                '<span class="resize ui-draggable"></span>' +
+                '<span class="direction"></span>' +
+                '<span class="resize"></span>' +
             '</div>'), 
         events: {
             'click': 'onClick',
@@ -426,7 +589,8 @@ define([
             if(!this.model)
                 this.model = new tools.TableColumnModel();
         
-            this.model.on('change:sort', this.onSortChange, this);
+            // this.model.on('change:sort', this.onSortChange, this);
+            this.model.on('change:direction', this.render, this);
             
             
             // Table columns are draggable (for reordering columns)
@@ -442,13 +606,14 @@ define([
             // 
             // });
         },
+
         onDragDown: function(e, drag) {
             e.preventDefault()
             drag.mousedownPosition = {left: e.offsetX, top: e.offsetY};
             drag.distance(5);
         },
         onDragOver: function(e, drag) {
-            console.log('Over: ', e, drag)
+            // console.log('Over: ', e, drag)
         },
 
         onDragInit: function(e, drag) {
@@ -460,7 +625,7 @@ define([
             foo.addClass('gui-table-column-ghost')
             drag.representative(foo, drag.mousedownPosition.left, drag.mousedownPosition.top)
             drag.ghostEl = foo;
-            drag.columnModel = this.model;
+            drag.model = this.model;
             // drag.ghost();
             // drag.horizontal(0);
             
@@ -470,31 +635,20 @@ define([
         },
         render: function() {
             this.$el.html(this.template(this.model.toJSON()));
+            var dir = this.model.get('direction');
+            if(dir)
+                this.$('.direction').addClass(dir == 'asc' ? 'icon-arrow-up' : 'icon-arrow-down');            
             return this;
         },
-        onSortChange: function(model, newval, changedValues) {
-            this.$('.sort').toggle(!!newval)
-            if(newval) {
-                this.$('.sort').html(newval)
-            }
-        },
-
         onClick: function(e) {
-            // the click handler just updates the model
-            
-            return;
-            
-            var sort = this.model.get('sort')
-            
-            // var popup = new HypPopup({table: this.table, column: column});            
-            // popup.show(e.target);
-            if(!sort)
-                this.model.set('sort', 'asc')
-            else if(sort=='asc')
-                this.model.set('sort', 'desc')
-            else if(sort=='desc')
-                this.model.set('sort', 'asc')
-            
+            // change sort direction
+            var dir = this.model.get('direction');
+            if(!dir)
+                this.model.set('direction', 'asc')
+            else if(dir=='asc')
+                this.model.set('direction', 'desc')
+            else if(dir=='desc')
+                this.model.set('direction', '')            
         },
         
     });
@@ -533,6 +687,7 @@ define([
             else
                 this.rows = new (Backbone.Collection.extend({url: config.url}))(config.rows);
             this.rows.on('add', this.onRowAdd, this);
+            this.rows.on('reset', this.onRowsReset, this);            
             this.rows.on('destroy remove', this.onRowRemove, this);
             
             var tr = this.$('thead > tr');
@@ -576,9 +731,8 @@ define([
                 var c = $('<col/>').css('width', model.get('width')).addClass(model.get('className'));
                 colgroup.append(c);
 
-                // Append a th to the header table                
-                var th = new tools.TableColumn({model: model})
-                tr.append(th.render().el);                    
+                // Append a th to the header table
+                tr.append(this.renderOneColumn(model));                    
             }, this);
 
             // ..and finally some rows, from this.rows, if any.
@@ -618,6 +772,10 @@ define([
             this.$('>.head').ieunselectable();        
             return this;
         },
+        renderOneColumn: function(model) {
+            var th = new tools.TableColumn({model: model})
+            return th.render().el;
+        },
         renderOne: function(model) {
             return this.rowTemplate(model.toJSON());
         },
@@ -625,6 +783,9 @@ define([
             options = options || {};
             var tr = this.renderOne(model);
             this.$('table.body tbody').insertAt(options.index || -1, tr);
+        },
+        onRowsReset: function() {
+            this.render();
         },
         onRowRemove: function(model, collection) {
             var el = this.$el.find('#'+model.id);
@@ -871,47 +1032,139 @@ define([
     */
     tools.Edit = Backbone.View.extend({
         events: {
-            'blur': 'finish'
+            'blur': 'apply',
+            'mousedown': 'stopPropagation',
+            'keydown': 'stopPropagation',
         },
         hotkeys: {
-            'keydown return': 'finish',
-            'keydown left': 'foo',
-            'keydown right': 'foo',
-            'keydown up': 'foo',
-            'keydown down': 'foo',
+            'keydown return': 'apply',
+            'keydown esc': 'abort'
         },
-        foo: function(e) {
-            e.stopPropagation();
-        },
+
         initialize: function(config) {
             this.config = config;
             this.$el.attr('contenteditable', 'true');
+            this.$el.addClass('gui-edit');
+            this.prevfoc = document.activeElement;
+            console.log('PREVFOC: ', document.activeElement)
+
             this.$el.focus();
             this.$el.selectAll();
+            this.text = this.$el.text();
         },
-        finish: function(e) {
+        abort: function(e) {
+            e.stopPropagation();            
+            e.stopImmediatePropagation();
+            this.off();
             this.$el.attr('contenteditable', 'false');
+            this.$el.removeClass('gui-edit');
+            this.$el.text(this.text);
+            this._restoreFocus();
+
+        },
+        apply: function(e) {
+            this.$el.attr('contenteditable', 'false');
+            this.$el.removeClass('gui-edit');
+            this.prevfoc.focus();
             this.trigger('edit', {el: this.el, '$el': this.$el})
             if(e) {
                 e.preventDefault();
                 e.stopPropagation();
-            }            
-        }
+            }
+            this._restoreFocus();            
+        },
+        stopPropagation: function(e) {
+            e.stopPropagation();
+        },        
+        _restoreFocus: function() {
+            window.setTimeout(_.bind(function() {
+               this.prevfoc.focus(); 
+            }, this), 500)            
+        },        
     });
 
+
+
+
+    /**
+    A mixin for intercepting paste (ctrl+v) operations.
+    When user hits ctrl+v, the default paste is cancelled, and
+    instead an event "paste" is triggered, carrying the browser
+    event and the pasted text.
+
+    Example
+    --------------------
+    var MyTextField = form.Text.extend({
+        mixins: [form.Field, tools.InterceptPaste],
+    
+        initialize: function(config) {
+            form.Text.prototype.initialize.call(this, config);
+            tools.InterceptPaste.initialize.call(this);
+            this.on('paste', this.onPaste, this);
+        },
+        onPaste: function(e) {
+            var data = e.data.replace(/kalle/g, 'hassan');
+            WysiHat.Commands.insertHTML(data);
+        }
+    });
+    */
+    tools.InterceptPaste = {
+        initialize: function() {
+            this.$el.bind('paste', $.proxy(this._onPaste, this));
+        },
+        _onPaste: function(e) {
+            var ev = e.originalEvent,
+                el = $('<div></div>')[0],
+                savedcontent = el.innerHTML,
+                data = '';
+            if(ev && ev.clipboardData && ev.clipboardData.getData) { // Webkit
+                if (/text\/html/.test(ev.clipboardData.types)) {
+                    var data = ev.clipboardData.getData('text/html');
+                }
+                else if (/text\/plain/.test(ev.clipboardData.types)) {
+                    var data = ev.clipboardData.getData('text/plain');
+                }
+                this.trigger('paste', {e: e, data: data});
+                e.stopPropagation();
+                e.preventDefault();
+                return false;
+            } else {
+                function wait() {
+                    if(el.childNodes && el.childNodes.length > 0)
+                        this.processPaste(el.innerHTML);
+                    else
+                        setTimeout(wait,1000);         
+                }
+                wait();
+                return true;
+            }        
+        }
+    };
+
+    tools.TabChain = {
+        render: function() {
+            var focusable = this.$('*:focusable');
+            var first = focusable.first(),
+                last = focusable.last();
+            focusable.first().on('keydown', function(e) {
+                if(e.which == gui.keys.TAB && e.shiftKey) { 
+                    last.focus();
+                    e.preventDefault();
+                }               
+            });            
+            focusable.last().on('keydown', function(e) {
+                if(e.which == gui.keys.TAB && !e.shiftKey) {
+                    first.focus();
+                    e.preventDefault();
+                }
+            });            
+        }
+    }
 
 
 return tools;
 
 });
-
-
-
-
-
-
-
-
 
 
 

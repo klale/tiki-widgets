@@ -37,8 +37,6 @@ gui.keys = {
 // ==================
 String.trim = String.trim || _.trim;
     
-
-    
 $(function() {
     
     $(document.body).bind('keydown', function(e) {
@@ -556,6 +554,17 @@ $.ajaxTransport("multipart", function( options, originalOptions, jqXHR ) {
 This adds support for mixins and a method called initcls 
 which is run once when a Function is created */
 (function(Backbone) {
+    
+    // A simple class supporting events and initialize
+    Backbone.Class = function() {
+        if(this.initialize)
+            this.initialize.apply(this, arguments)
+    }
+    Backbone.Class.extend = Backbone.Model.extend;
+    _.extend(Backbone.Class, Backbone.Events);
+    
+    
+    
     _.each(["Model", "Collection", "View", "Router"], function(klass) {
         var extend = Backbone[klass].extend;
 

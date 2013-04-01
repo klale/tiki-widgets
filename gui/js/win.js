@@ -45,29 +45,27 @@ define([
         className: 'gui-win',
         _template: _.template(''+
             '<header><div class="title"><%= obj.title %></div></header>'+
-            '<div class="content"></div>'+
-            '<footer>'+
-                '<div class="buttons"></div>'+
-            '</footer>'+
+            '<div class="content"></div>'+          
             '<div class="resize"></div>'
         ),
-        mixins: [
-            gui.ChildView
-        ],
+        mixins: [gui.ChildView],
         events: {
             'mousedown': 'bringToTop',
-            'click .buttons .close': 'close',
-            'focusin': '_onFocusIn',            
-        },
-                
+            'focusin': 'onFocusIn',
+            'draginit header': 'onHeaderDragInit',
+            'draginit .resize': 'onResizeDragInit',
+            'dragmove .resize': 'onResizeDragMove',
+            'dragend .resize': 'onResizeDragEnd'            
+        },                
         initialize: function(config) {
-            this.title = config.title || this.title || 'asdee';
+            config = config || {};
+            this.title = config.title || this.title;
             this.template = config.template || this.template;
         },    
         render: function() {
             this.$el.html(this._template({title: this.title}));
 
-        
+            // Add a dropshadow in old ie
             if($.browser.ltie9) {
                 var divs = ['ds_l','ds_r','ds_t','ds_b','ds_tl','ds_tr','ds_bl','ds_br'];
                 _.each(divs, function(item) {
@@ -76,62 +74,9 @@ define([
                 this.$el.iefocus();
                 this.$('> header h2, > header, > .resize').attr('unselectable', 'on');
             }
-            // this.renderContent();
-            
-            // Draggable
-            var foo = this.el,
-                header = this.$('>header'),
-                xtra = {x:0, y:0};
-            header.on('draginit', function(e, drag) {
-                var xtra = header.getOffsetPadding();
-                drag.only();
-                drag.representative(foo, e.offsetX+xtra.x, e.offsetY+xtra.y);
-                return drag
-            })
-            
-            // Resizable
-            this.$('>.resize').on('draginit', function(e, drag) {
-                // snapshot the window's x and y
-                drag.winpos = $(foo).offset();
-                drag.only();
-            }).on('dragmove', function(e, drag) {
-                var w = e.pageX - drag.winpos.left,
-                    h = e.pageY - drag.winpos.top;
-                $(foo).css({'width': w, 'height': h});
-            }).on('dragend', function(e, drag) {
-                drag.element.attr('style', '');
-            });
-            
             return this;
         },
-        // renderContent: function() {
-        //     this.$('>.content').html(this.template());            
-        // },
-        alignTo: function(el, align) {
-            // if(align=='right') {
-            // 
-            //     elLeft = el.offset().left,
-            //     rightSpace = $(document).width() - (elLeft + el.width()),
-            //     winWidth = this.$el.outerWidth();
-            // 
-            // if(winWidth < rightSpace) {
-            //     // right
-            //     win.$el.css({left: tdLeft + td.width()});
-            // }
-            // else {
-            //     // left
-            //     win.$el.css({left: tdLeft - winWidth});                    
-            // }
-            // win.$el.css({top: td.offset().top});
-            // 
-        },
 
-        _onFocusIn: function(e) {
-            this.bringToTop();
-        },
-                
-        
-        
         show: function() {
             if(!this.el.parentNode)
                 $(document.body).append(this.render().el);
@@ -153,8 +98,8 @@ define([
             this.$el.css('z-index', (dialogs.length-1) + 100);
         },
         close: function() {
-            this.trigger('close');
             this.$el.remove();
+            this.trigger('close');            
         },
         center: function(args) {            
             var el = $(this.el),
@@ -169,9 +114,51 @@ define([
             // var top = 10;
 
             el.css({left: left, top: top});
-        }
+        },
+
+
+        onFocusIn: function(e) {
+            this.bringToTop();
+        },
+        onHeaderDragInit: function(e, drag) {
+            var xtra = this.$('>header').getOffsetPadding();
+            drag.only();
+            drag.representative(this.el, e.offsetX+xtra.x, e.offsetY+xtra.y);
+        },
+        onResizeDragInit: function(e, drag) {
+            drag.winpos = $(this.el).offset();
+            drag.only();
+        },
+        onResizeDragMove: function(e, drag) {
+            var w = e.pageX - drag.winpos.left,
+                h = e.pageY - drag.winpos.top;
+            this.$el.css({'width': w, 'height': h});            
+        },
+        onResizeDragEnd: function(e, drag) {
+            drag.element.attr('style', '');
+        },
+
+
 
     });
+
+
+    win.Dialog = win.Window.extend({
+        className: 'gui-dialog',
+        _template: _.template(''+
+            '<header><div class="title"><%= obj.title %></div></header>'+
+            '<div class="content"></div>'+
+            '<footer>'+
+                '<div class="buttons"></div>'+
+            '</footer>'+
+            '<div class="resize"></div>'
+        ),
+    })
+
+    // win.Info
+    // win.Warning
+    // win.Confirm
+
 
 
     return win;

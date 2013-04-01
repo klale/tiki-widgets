@@ -87,7 +87,6 @@ function pasteHtmlAtCaret(html) {
 * Adding a dropupload 
 */
 // api.FileDropper = Backbone.View.extend({
-//     tagName: 'div',
 //     className: 'dropupload',
 //     attributes: {
 //         'ondragover': "return false"
@@ -234,7 +233,7 @@ api.Quicklook = win.Window.extend({
 
 
 api.FileView = Backbone.View.extend({
-    tagName: 'div',
+
     className: 'fileview',
     attributes: {
         contenteditable: 'false',
@@ -385,7 +384,6 @@ api.FileView = Backbone.View.extend({
 
 */
 api.CodeView = Backbone.View.extend({
-    tagName: 'div',
     className: 'codeview',
     attributes: {
         // tabindex: '-1',
@@ -399,7 +397,7 @@ api.CodeView = Backbone.View.extend({
         'keydown': 'onKeyDown',
         'mouseup': 'saveRange'
     },
-    mixins: [form.Field, form.InterceptPaste],
+    mixins: [form.Field, tools.InterceptPaste],
     
     onMouseDown: function(e) {
         e.stopPropagation();
@@ -433,7 +431,7 @@ api.CodeView = Backbone.View.extend({
         window.curr = this.range;        
     },    
     initialize: function(config) {
-        form.InterceptPaste.initialize.call(this);
+        tools.InterceptPaste.initialize.call(this);
         this.lang = config.lang;
         this.value = config.value;
         // this._mode = config.mode || 'pretty';
@@ -559,7 +557,7 @@ api.Editor = Backbone.View.extend({
         'dragstart': 'onDragStart',
         'drop': 'onDrop'
     },
-    mixins: [form.Field, form.InterceptPaste],
+    mixins: [form.Field, tools.InterceptPaste],
 
 
     onDragStart: function(e) {        
@@ -625,7 +623,7 @@ api.Editor = Backbone.View.extend({
             config.value = $(config.el).html().trim();
         }
         form.Field.initialize.call(this, config);
-        form.InterceptPaste.initialize.call(this);
+        tools.InterceptPaste.initialize.call(this);
             
         // A dict of dicts of file metadata used by FileViews if any.
         this.files = config.files;
