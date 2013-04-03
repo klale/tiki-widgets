@@ -246,16 +246,19 @@ $.fn.moveCursorToEnd = function(el) {
     });
     return this;
 };
-$.fn.insertAt = function(i, el) {
-    this.each(function() {
-        if(i === 0)
-            $(this).prepend(el);
-        else if(i === -1)
-            $(this).append(el);
-        else
-            $(this).children(':nth-child('+i+')').after(el);
-    });
-};
+
+$.fn.insertAt = function(index, element) {
+    var lastIndex = this.children().size();
+    if(index < 0) {
+        index = Math.max(0, lastIndex + 1 + index);
+    }
+    this.append(element);
+    if(index < lastIndex) {
+        this.children().eq(index).before(this.children().last());
+    }
+    return this;
+}
+
 $.fn.make = function(className) {
     this.each(function() {
         $(this).parent().children('.'+className).removeClass(className);
@@ -563,7 +566,37 @@ which is run once when a Function is created */
     Backbone.Class.extend = Backbone.Model.extend;
     _.extend(Backbone.Class, Backbone.Events);
     
+
+    Backbone.Collection.prototype.move = function(model, toIndex, options) {
+        var fromIndex = this.indexOf(model),
+            options = options || {};
+        if(fromIndex == -1) {
+            throw new Error("Can't move a model that's not in the collection");
+        }
+        if(fromIndex !== toIndex) {
+            this.models.splice(toIndex, 0, this.models.splice(fromIndex, 1)[0]);
+            if(!options.silent)
+                this.trigger('move', {model: model, toIndex: toIndex, fromIndex: fromIndex});
+        }
+    };
     
+    var backboneset = Backbone.Model.prototype.set;
+    Backbone.Model.prototype.set = function(key, value, options) {
+        var attrs, attr, val;
+        if(_.isObject(key) || key == null) {
+            attrs = key;
+            options = value;
+        } else {
+            attrs = {};
+            attrs[key] = value;
+        }            
+        _.each(attrs, function(value, key) {
+             var setter = 'set_' + key;                 
+             typeof this[setter] === 'function' &&
+                 (attrs[key] = this[setter](value, this.attributes[key], options));
+        }, this);
+        return backboneset.call(this, attrs, options);
+    };
     
     _.each(["Model", "Collection", "View", "Router"], function(klass) {
         var extend = Backbone[klass].extend;
@@ -681,6 +714,14 @@ _.instanceof = function(obj, klass) {
         return false;
     }
 };
+_.isNumeric = function(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
+};
+_.listToDict = function(list, key) {
+    return _.object(_.map(list, function(f) {
+        return [f[key], f];
+    }));
+};
 
 
 /* 
@@ -689,7 +730,7 @@ _.template2()
 A modified copy of Underscore.template (v1.3.3), adding the `settings` 
 variable to the rendering scope, along with the usual 'obj' and '_'.
 */
-(function(_) {
+;(function(_) {
     var noMatch = /.^/;
 
     var settings = {
@@ -770,58 +811,6 @@ variable to the rendering scope, along with the usual 'obj' and '_'.
 
       return template;
     };
-
-
-
-
-
-
-
-
-    _.template3 = function(text, helpers) {      
-      // Don't trust ordering of keys in `helpers` object
-      var helpers = _.map(helpers || {}, function(v,k) { return {k:k,v:v}});
-      var keys = _.map(helpers, function(v) { return v.k});
-      var helpersArgs = _.map(helpers, function(v) { return v.v});
-      
-      var source = "__p+='" + text
-        .replace(escaper, function(match) {
-          return '\\' + escapes[match];
-        })
-        .replace(settings.escape || noMatch, function(match, code) {
-          return "'+\n_.escape(" + unescape(code) + ")+\n'";
-        })
-        .replace(settings.interpolate || noMatch, function(match, code) {
-          return "'+\n(" + unescape(code) + ")+\n'";
-        })
-        .replace(settings.evaluate || noMatch, function(match, code) {
-          return "';\n" + unescape(code) + "\n;__p+='";
-        }) + "';\n";
-
-      // If a variable is not specified, place data values in local scope.
-      if (!settings.variable) source = 'with(obj||{}){\n' + source + '}\n';
-
-      source = "var __p='',cache={},i=0;" +
-        "var print=function(){__p+=Array.prototype.join.call(arguments, '')};\n" +
-        source + "return __p;\n";
-
-      // build argument list
-      var args = [settings.variable || 'obj', '_', 'settings'].concat(keys);
-      var render = new Function(args, source);
-      
-      var template = function(data) {
-        var args = [data, _, settings].concat(helpersArgs);
-        return render.apply(this, args);
-      };
-
-      // Provide the compiled function source as a convenience for build time
-      // precompilation.
-      template.source = 'function(' + (settings.variable || 'obj') + '){\n' +
-        source + '}';
-
-      return template;
-    };
-
 
 
 })(_);
@@ -1361,14 +1350,15 @@ gui.pasteHtmlAtCaret = function(html) {
 }
 
 
-gui.addcss = function(stylesheets) {
+gui.addcss = function(stylesheets, win) {
     if(!_.isArray(stylesheets)) stylesheets = [stylesheets];
-    var head = $(window.document).find('head');
+    win = win || window;
+    var head = $(win.document).find('head');
     
     _.each(stylesheets, function(url) {
         if(!head.find('link[href="'+url+'"]').length) {
-            if (document.createStyleSheet) // IE
-                document.createStyleSheet(url);
+            if (win.document.createStyleSheet) // IE
+                win.document.createStyleSheet(url);
             else 
                 $('<link rel="stylesheet" type="text/css"></link>').attr('href', url).appendTo(head);
         }

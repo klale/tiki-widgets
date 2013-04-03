@@ -1,23 +1,64 @@
+/* YUI reset */
+/* line 3, ../scss/_reset.scss */
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, fieldset, input, textarea, p, blockquote, th, td {
+  margin: 0;
+  padding: 0; }
+
+/* line 7, ../scss/_reset.scss */
+table {
+  border-collapse: collapse;
+  border-spacing: 0; }
+
+/* line 11, ../scss/_reset.scss */
+fieldset, img {
+  border: 0; }
+
+/* line 14, ../scss/_reset.scss */
+address, caption, cite, code, dfn, em, strong, th, var {
+  font-style: normal;
+  font-weight: normal; }
+
+/* line 18, ../scss/_reset.scss */
+ol, ul {
+  list-style: none; }
+
+/* line 21, ../scss/_reset.scss */
+caption, th {
+  text-align: left; }
+
+/* line 24, ../scss/_reset.scss */
+h1, h2, h3, h4, h5, h6 {
+  font-size: 100%;
+  font-weight: normal; }
+
+/* line 28, ../scss/_reset.scss */
+q:before, q:after {
+  content: ''; }
+
+/* line 31, ../scss/_reset.scss */
+abbr, acronym {
+  border: 0; }
+
 @-webkit-keyframes overPulse {
-  /* line 371, ../scss/_mixins.scss */
+  /* line 373, ../scss/_mixins.scss */
   from {
     box-shadow: 0 0 3px rgba(14, 158, 211, 0.4);
     -moz-box-shadow: 0 0 3px rgba(14, 158, 211, 0.4);
     -webkit-box-shadow: 0 0 3px rgba(14, 158, 211, 0.4); }
 
-  /* line 374, ../scss/_mixins.scss */
+  /* line 376, ../scss/_mixins.scss */
   50% {
     box-shadow: 0 0 18px rgba(14, 158, 211, 0.4);
     -moz-box-shadow: 0 0 18px rgba(14, 158, 211, 0.4);
     -webkit-box-shadow: 0 0 18px rgba(14, 158, 211, 0.4); }
 
-  /* line 377, ../scss/_mixins.scss */
+  /* line 379, ../scss/_mixins.scss */
   to {
     box-shadow: 0 0 3px rgba(14, 158, 211, 0.4);
     -moz-box-shadow: 0 0 3px rgba(14, 158, 211, 0.4);
     -webkit-box-shadow: 0 0 3px rgba(14, 158, 211, 0.4); } }
 
-/* line 381, ../scss/_mixins.scss */
+/* line 383, ../scss/_mixins.scss */
 .gui-over {
   background-color: #f2f7fc !important;
   border-color: #0e9ed3;
@@ -220,7 +261,7 @@ pre .xml .cdata {
   background-color: #fdfdfd;
   color: #555;
   text-shadow: white 0px 1px; }
-  /* line 303, ../scss/_mixins.scss */
+  /* line 305, ../scss/_mixins.scss */
   .gui-btn:not(.btn-disabled):active {
     background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e4e4e4), color-stop(1, #c8c8c8));
     background: -ms-linear-gradient(top, #c8c8c8 0%, #e4e4e4 100%);
@@ -250,7 +291,7 @@ pre .xml .cdata {
     background-color: #638cf5;
     color: #fff;
     text-shadow: black 0px -1px; }
-    /* line 303, ../scss/_mixins.scss */
+    /* line 305, ../scss/_mixins.scss */
     .gui-btn.btn-primary:not(.btn-disabled):active {
       background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #3369f2), color-stop(1, #0c4bd8));
       background: -ms-linear-gradient(top, #0c4bd8 0%, #3369f2 100%);
@@ -273,7 +314,7 @@ pre .xml .cdata {
     text-shadow: #999999 0px -1px;
     border: 1px solid #9e9e9e;
     color: #fff; }
-    /* line 303, ../scss/_mixins.scss */
+    /* line 305, ../scss/_mixins.scss */
     .gui-btn.btn-disabled:not(.btn-disabled):active {
       background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #a2a2a2), color-stop(1, #a2a2a2));
       background: -ms-linear-gradient(top, #a2a2a2 0%, #a2a2a2 100%);
@@ -473,7 +514,7 @@ pre .xml .cdata {
 /* ========== */
 /* = Fields = */
 /* ========== */
-/* line 4, ../scss/_form.scss */
+/* line 12, ../scss/_form.scss */
 .gui-text, .gui-password, .gui-textarea, .gui-datefield .textfield {
   box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -492,26 +533,26 @@ pre .xml .cdata {
     -webkit-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     border-color: #0e9ed3 !important;
     outline: none; }
-  /* line 15, ../scss/_form.scss */
+  /* line 23, ../scss/_form.scss */
   .gui-text.empty, .empty.gui-password, .empty.gui-textarea, .gui-datefield .empty.textfield {
     font-style: italic;
     color: #999; }
 
-/* line 21, ../scss/_form.scss */
+/* line 29, ../scss/_form.scss */
 .gui-password {
   -webkit-text-security: disc; }
 
-/* line 26, ../scss/_form.scss */
+/* line 34, ../scss/_form.scss */
 .gui-textarea {
   height: auto;
   min-height: 40px;
   line-height: 16px; }
-  /* line 31, ../scss/_form.scss */
+  /* line 39, ../scss/_form.scss */
   .gui-textarea div, .gui-textarea p {
     margin: 0 !important;
     /* ie required important, todo: who's overriding? */ }
 
-/* line 37, ../scss/_form.scss */
+/* line 45, ../scss/_form.scss */
 .gui-upload input[type="file"] {
   position: absolute;
   left: 0px;
@@ -522,11 +563,11 @@ pre .xml .cdata {
   width: 1px;
   min-width: 80px;
   height: 20px; }
-/* line 48, ../scss/_form.scss */
+/* line 56, ../scss/_form.scss */
 .gui-upload .browse-container {
   height: 20px;
   position: relative; }
-/* line 53, ../scss/_form.scss */
+/* line 61, ../scss/_form.scss */
 .gui-upload .queue li {
   white-space: nowrap;
   padding-right: 120px;
@@ -536,17 +577,17 @@ pre .xml .cdata {
   border-top: 1px dashed #cccccc;
   height: 18px;
   line-height: 18px; }
-  /* line 62, ../scss/_form.scss */
+  /* line 70, ../scss/_form.scss */
   .gui-upload .queue li:first-child {
     border-top: none; }
-  /* line 65, ../scss/_form.scss */
+  /* line 73, ../scss/_form.scss */
   .gui-upload .queue li.uploading {
     background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #a1a1a1), color-stop(1, #828282));
     background: -ms-linear-gradient(top, #828282 0%, #a1a1a1 100%);
     background: -moz-linear-gradient(top, #828282 0%, #a1a1a1 100%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#828282', endColorstr='#a1a1a1') chroma(color=black);
     background-color: #828282; }
-  /* line 68, ../scss/_form.scss */
+  /* line 76, ../scss/_form.scss */
   .gui-upload .queue li.uploading .progressbar {
     background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #215ff6), color-stop(1, #6289f8));
     background: -ms-linear-gradient(top, #6289f8 0%, #215ff6 100%);
@@ -557,7 +598,7 @@ pre .xml .cdata {
     top: 0px;
     bottom: 0px;
     left: 0px; }
-  /* line 77, ../scss/_form.scss */
+  /* line 85, ../scss/_form.scss */
   .gui-upload .queue li .name {
     position: absolute;
     left: 0px;
@@ -567,11 +608,11 @@ pre .xml .cdata {
     line-height: 24px;
     overflow: hidden;
     text-overflow: ellipsis; }
-  /* line 87, ../scss/_form.scss */
+  /* line 95, ../scss/_form.scss */
   .gui-upload .queue li.uploading .name {
     color: #fff;
     padding-left: 5px; }
-  /* line 93, ../scss/_form.scss */
+  /* line 101, ../scss/_form.scss */
   .gui-upload .queue li .size {
     position: absolute;
     right: 75px;
@@ -582,10 +623,10 @@ pre .xml .cdata {
     height: 19px;
     line-height: 24px;
     text-align: right; }
-  /* line 104, ../scss/_form.scss */
+  /* line 112, ../scss/_form.scss */
   .gui-upload .queue li.uploading .size {
     color: #fff; }
-  /* line 108, ../scss/_form.scss */
+  /* line 116, ../scss/_form.scss */
   .gui-upload .queue li button.remove {
     position: absolute;
     right: 0px;
@@ -607,13 +648,13 @@ pre .xml .cdata {
     background-color: white;
     /* Hack until the border bug is fixed */ }
     @media screen and (-webkit-min-device-pixel-ratio: 0) {
-      /* line 108, ../scss/_form.scss */
+      /* line 116, ../scss/_form.scss */
       .gui-upload .queue li button.remove {
         border: none;
         padding: #fefefe #e2e2e2;
         /* compensate for missing border */
         box-shadow: 0px 0px 0px 1px #6d6d6d; } }
-    /* line 330, ../scss/_mixins.scss */
+    /* line 332, ../scss/_mixins.scss */
     .gui-upload .queue li button.remove:active {
       background: -webkit-gradient(linear, left bottom, left top, color-stop(0, white), color-stop(1, lightgrey));
       background: -ms-linear-gradient(top, lightgrey 0%, white 100%);
@@ -624,7 +665,7 @@ pre .xml .cdata {
 /* ========= */
 /* = Combo = */
 /* ========= */
-/* line 121, ../scss/_form.scss */
+/* line 129, ../scss/_form.scss */
 .gui-combobox {
   background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e0e0e0), color-stop(1, white));
   background: -ms-linear-gradient(top, white 0%, #e0e0e0 100%);
@@ -644,17 +685,17 @@ pre .xml .cdata {
   height: 24px;
   border: 1px solid #bcbcbc;
   /* Add a magnifying glass icon when typing in a searchable dropdown */ }
-  /* line 134, ../scss/_form.scss */
+  /* line 142, ../scss/_form.scss */
   .gui-combobox > i {
     display: none; }
-  /* line 137, ../scss/_form.scss */
+  /* line 145, ../scss/_form.scss */
   .gui-combobox.focus {
     box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     -moz-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     -webkit-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     border-color: #0e9ed3 !important;
     outline: none; }
-  /* line 143, ../scss/_form.scss */
+  /* line 151, ../scss/_form.scss */
   .gui-combobox span {
     color: #444;
     text-shadow: white 0px 1px;
@@ -669,7 +710,7 @@ pre .xml .cdata {
     position: relative;
     outline: none;
     text-shadow: none; }
-  /* line 159, ../scss/_form.scss */
+  /* line 167, ../scss/_form.scss */
   .gui-combobox .button {
     background: url(../img/combo.png) no-repeat center right;
     position: absolute;
@@ -677,7 +718,7 @@ pre .xml .cdata {
     width: 21px;
     top: 0px;
     bottom: 0px; }
-  /* line 168, ../scss/_form.scss */
+  /* line 176, ../scss/_form.scss */
   .gui-combobox.editable {
     -webkit-touch-callout: text;
     -webkit-user-select: text;
@@ -685,7 +726,7 @@ pre .xml .cdata {
     -ms-user-select: text;
     -o-user-select: text;
     user-select: text; }
-  /* line 173, ../scss/_form.scss */
+  /* line 181, ../scss/_form.scss */
   .gui-combobox.editable span {
     background-color: #fff;
     border-top: 1px solid #dddddd;
@@ -701,7 +742,7 @@ pre .xml .cdata {
     top: -1px;
     -webkit-border-radius: 2px;
     -moz-border-radius: 2px; }
-  /* line 192, ../scss/_form.scss */
+  /* line 200, ../scss/_form.scss */
   .gui-combobox.searchable.editable > i {
     display: block;
     width: 16px;
@@ -711,7 +752,7 @@ pre .xml .cdata {
     top: 2px;
     left: 3px;
     z-index: 1; }
-  /* line 202, ../scss/_form.scss */
+  /* line 210, ../scss/_form.scss */
   .gui-combobox.searchable.editable span {
     margin-left: 22px;
     border-color: #aaa;
@@ -719,14 +760,14 @@ pre .xml .cdata {
     -moz-border-radius: 0;
     border-radius: 0; }
 
-/* line 210, ../scss/_form.scss */
+/* line 218, ../scss/_form.scss */
 .gui-hidden {
   display: none; }
 
 /* ========== */
 /* = Slider = */
 /* ========== */
-/* line 218, ../scss/_form.scss */
+/* line 226, ../scss/_form.scss */
 .gui-slider {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -744,12 +785,12 @@ pre .xml .cdata {
     -webkit-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     border-color: #0e9ed3 !important;
     outline: none; }
-  /* line 229, ../scss/_form.scss */
+  /* line 237, ../scss/_form.scss */
   .gui-slider .container {
     margin-right: 16px;
     height: 20px;
     position: relative; }
-  /* line 235, ../scss/_form.scss */
+  /* line 243, ../scss/_form.scss */
   .gui-slider .range,
   .gui-slider .range-min {
     position: absolute;
@@ -760,18 +801,18 @@ pre .xml .cdata {
     -webkit-border-radius: 3;
     -moz-border-radius: 3;
     border-radius: 3; }
-  /* line 243, ../scss/_form.scss */
+  /* line 251, ../scss/_form.scss */
   .gui-slider .range {
     right: 0px;
     background-color: #fff; }
-  /* line 247, ../scss/_form.scss */
+  /* line 255, ../scss/_form.scss */
   .gui-slider .range-min {
     background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #cccccc), color-stop(1, #adadad));
     background: -ms-linear-gradient(top, #adadad 0%, #cccccc 100%);
     background: -moz-linear-gradient(top, #adadad 0%, #cccccc 100%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#adadad', endColorstr='#cccccc') chroma(color=black);
     background-color: #adadad; }
-  /* line 254, ../scss/_form.scss */
+  /* line 262, ../scss/_form.scss */
   .gui-slider .handle {
     background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e0e0e0), color-stop(1, white));
     background: -ms-linear-gradient(top, white 0%, #e0e0e0 100%);
@@ -788,7 +829,7 @@ pre .xml .cdata {
     position: absolute;
     height: 20px;
     border: 1px solid #bcbcbc; }
-    /* line 264, ../scss/_form.scss */
+    /* line 272, ../scss/_form.scss */
     .gui-slider .handle div {
       height: 20px;
       background: url(../img/slider.png) no-repeat center center; }
@@ -796,11 +837,11 @@ pre .xml .cdata {
 /* ============= */
 /* = DateField = */
 /* ============= */
-/* line 276, ../scss/_form.scss */
+/* line 284, ../scss/_form.scss */
 .gui-datefield {
   position: relative;
   display: inline-block; }
-  /* line 280, ../scss/_form.scss */
+  /* line 288, ../scss/_form.scss */
   .gui-datefield > button {
     position: absolute;
     left: 4px;
@@ -814,7 +855,7 @@ pre .xml .cdata {
       -webkit-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
       border-color: #0e9ed3 !important;
       outline: none; }
-  /* line 288, ../scss/_form.scss */
+  /* line 296, ../scss/_form.scss */
   .gui-datefield .textfield {
     border: 1px solid #cccccc;
     text-indent: 22px; }
@@ -879,11 +920,11 @@ pre .xml .cdata {
     /* Left, right */
     /* Bottom */
     /* Top */ }
-    /* line 408, ../scss/_mixins.scss */
+    /* line 410, ../scss/_mixins.scss */
     .ie8 .gui-win .ds, .ie8 .gui-dialog .ds {
       position: absolute;
       overflow: hidden; }
-    /* line 414, ../scss/_mixins.scss */
+    /* line 416, ../scss/_mixins.scss */
     .ie8 .gui-win .ds_l, .ie8 .gui-dialog .ds_l,
     .ie8 .gui-win .ds_r,
     .ie8 .gui-dialog .ds_r {
@@ -891,52 +932,52 @@ pre .xml .cdata {
       bottom: 20px;
       width: 20px;
       overflow: hidden; }
-    /* line 420, ../scss/_mixins.scss */
+    /* line 422, ../scss/_mixins.scss */
     .ie8 .gui-win .ds_l, .ie8 .gui-dialog .ds_l {
       left: -20px;
       background: url(../img/ds_vert.png) repeat-y; }
-    /* line 424, ../scss/_mixins.scss */
+    /* line 426, ../scss/_mixins.scss */
     .ie8 .gui-win .ds_r, .ie8 .gui-dialog .ds_r {
       right: -20px;
       background: url(../img/ds_vert.png) repeat-y top right; }
-    /* line 430, ../scss/_mixins.scss */
+    /* line 432, ../scss/_mixins.scss */
     .ie8 .gui-win .ds_bl, .ie8 .gui-dialog .ds_bl,
     .ie8 .gui-win .ds_br,
     .ie8 .gui-dialog .ds_br {
       width: 40px;
       height: 50px;
       bottom: -30px; }
-    /* line 435, ../scss/_mixins.scss */
+    /* line 437, ../scss/_mixins.scss */
     .ie8 .gui-win .ds_bl, .ie8 .gui-dialog .ds_bl {
       left: -20px;
       background: url(../img/ds_corners.png) no-repeat bottom left; }
-    /* line 439, ../scss/_mixins.scss */
+    /* line 441, ../scss/_mixins.scss */
     .ie8 .gui-win .ds_br, .ie8 .gui-dialog .ds_br {
       right: -20px;
       background: url(../img/ds_corners.png) no-repeat bottom right; }
-    /* line 443, ../scss/_mixins.scss */
+    /* line 445, ../scss/_mixins.scss */
     .ie8 .gui-win .ds_b, .ie8 .gui-dialog .ds_b {
       bottom: -30px;
       left: 20px;
       right: 20px;
       height: 30px;
       background: url(../img/ds_hor.png) repeat-x left bottom; }
-    /* line 452, ../scss/_mixins.scss */
+    /* line 454, ../scss/_mixins.scss */
     .ie8 .gui-win .ds_tl, .ie8 .gui-dialog .ds_tl,
     .ie8 .gui-win .ds_tr,
     .ie8 .gui-dialog .ds_tr {
       height: 25px;
       top: -5px;
       width: 40px; }
-    /* line 457, ../scss/_mixins.scss */
+    /* line 459, ../scss/_mixins.scss */
     .ie8 .gui-win .ds_tl, .ie8 .gui-dialog .ds_tl {
       left: -20px;
       background: url(../img/ds_corners.png) no-repeat top left; }
-    /* line 461, ../scss/_mixins.scss */
+    /* line 463, ../scss/_mixins.scss */
     .ie8 .gui-win .ds_tr, .ie8 .gui-dialog .ds_tr {
       right: -20px;
       background: url(../img/ds_corners.png) no-repeat top right; }
-    /* line 465, ../scss/_mixins.scss */
+    /* line 467, ../scss/_mixins.scss */
     .ie8 .gui-win .ds_t, .ie8 .gui-dialog .ds_t {
       left: 20px;
       right: 20px;
@@ -963,7 +1004,7 @@ pre .xml .cdata {
 /* ============ */
 /* = Dropdown = */
 /* ============ */
-/* line 15, ../scss/gui.scss */
+/* line 16, ../scss/gui.scss */
 .gui-dropdownlist {
   display: block;
   min-width: 100px;
@@ -984,21 +1025,18 @@ pre .xml .cdata {
   margin: 0; }
   /* line 87, ../scss/_mixins.scss */
   .gui-dropdownlist .selected {
-    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #888888), color-stop(1, #aaaaaa));
-    background: -ms-linear-gradient(top, #aaaaaa 0%, #888888 100%);
-    background: -moz-linear-gradient(top, #aaaaaa 0%, #888888 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#aaaaaa', endColorstr='#888888') chroma(color=black);
-    background-color: #aaaaaa;
+    background-color: #7c7c7c;
     color: #fff;
-    border-color: #1642A4; }
-  /* line 92, ../scss/_mixins.scss */
+    border-color: #494949; }
+  /* line 93, ../scss/_mixins.scss */
   .gui-dropdownlist:focus .selected {
     background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #2464f3), color-stop(1, #638cf5));
     background: -ms-linear-gradient(top, #638cf5 0%, #2464f3 100%);
     background: -moz-linear-gradient(top, #638cf5 0%, #2464f3 100%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#638cf5', endColorstr='#2464f3') chroma(color=black);
-    background-color: #638cf5; }
-  /* line 37, ../scss/gui.scss */
+    background-color: #638cf5;
+    border-color: #1e498c; }
+  /* line 38, ../scss/gui.scss */
   .gui-dropdownlist > li {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -1013,22 +1051,22 @@ pre .xml .cdata {
     color: #444;
     display: block;
     text-decoration: none; }
-    /* line 47, ../scss/gui.scss */
+    /* line 48, ../scss/gui.scss */
     .gui-dropdownlist > li.disabled {
       color: #aaa; }
 
 /* ============ */
 /* = Calendar = */
 /* ============ */
-/* line 62, ../scss/gui.scss */
+/* line 63, ../scss/gui.scss */
 .gui-calendar, .gui-datepicker {
   outline: none; }
-  /* line 64, ../scss/gui.scss */
+  /* line 65, ../scss/gui.scss */
   .gui-calendar table, .gui-datepicker table {
     border-collapse: collapse;
     table-layout: fixed;
     width: 100%; }
-  /* line 69, ../scss/gui.scss */
+  /* line 70, ../scss/gui.scss */
   .gui-calendar thead, .gui-datepicker thead {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -1036,18 +1074,18 @@ pre .xml .cdata {
     -ms-user-select: none;
     -o-user-select: none;
     user-select: none; }
-    /* line 71, ../scss/gui.scss */
+    /* line 72, ../scss/gui.scss */
     .gui-calendar thead th, .gui-datepicker thead th {
       text-align: center; }
-    /* line 74, ../scss/gui.scss */
+    /* line 75, ../scss/gui.scss */
     .gui-calendar thead .header, .gui-datepicker thead .header {
       position: relative;
       height: 30px; }
-    /* line 78, ../scss/gui.scss */
+    /* line 79, ../scss/gui.scss */
     .gui-calendar thead .monthname, .gui-datepicker thead .monthname {
       font-size: 14px;
       text-align: center; }
-  /* line 85, ../scss/gui.scss */
+  /* line 86, ../scss/gui.scss */
   .gui-calendar .nextmonth, .gui-datepicker .nextmonth,
   .gui-calendar .prevmonth,
   .gui-datepicker .prevmonth {
@@ -1059,20 +1097,20 @@ pre .xml .cdata {
     top: 7px;
     left: 7px;
     cursor: pointer; }
-  /* line 95, ../scss/gui.scss */
+  /* line 96, ../scss/gui.scss */
   .gui-calendar .nextmonth, .gui-datepicker .nextmonth {
     left: auto;
     right: 5px; }
-  /* line 99, ../scss/gui.scss */
+  /* line 100, ../scss/gui.scss */
   .gui-calendar td, .gui-datepicker td {
     border: 1px solid #dddddd;
     white-space: nowrap;
     padding: 0; }
-    /* line 104, ../scss/gui.scss */
+    /* line 105, ../scss/gui.scss */
     .gui-calendar td.day > div, .gui-datepicker td.day > div {
       padding: 1px;
       overflow: hidden; }
-      /* line 107, ../scss/gui.scss */
+      /* line 108, ../scss/gui.scss */
       .gui-calendar td.day > div .date, .gui-datepicker td.day > div .date {
         position: absolute;
         top: 2px;
@@ -1082,26 +1120,26 @@ pre .xml .cdata {
         text-align: right;
         color: #999;
         font-size: 11px; }
-    /* line 119, ../scss/gui.scss */
+    /* line 120, ../scss/gui.scss */
     .gui-calendar td.gray > div, .gui-datepicker td.gray > div {
       color: #aaa; }
-    /* line 122, ../scss/gui.scss */
+    /* line 123, ../scss/gui.scss */
     .gui-calendar td.over, .gui-datepicker td.over {
       outline: 3px solid #a7bac6; }
-    /* line 125, ../scss/gui.scss */
+    /* line 126, ../scss/gui.scss */
     .gui-calendar td.today, .gui-datepicker td.today {
       background-color: #ffefb9 !important; }
-    /* line 128, ../scss/gui.scss */
+    /* line 129, ../scss/gui.scss */
     .gui-calendar td.weekend, .gui-datepicker td.weekend {
       background-color: #f8f8f8; }
-    /* line 131, ../scss/gui.scss */
+    /* line 132, ../scss/gui.scss */
     .gui-calendar td.selected, .gui-datepicker td.selected {
       background-color: #f8f8f8; }
 
 /* ============== */
 /* = DatePicker = */
 /* ============== */
-/* line 143, ../scss/gui.scss */
+/* line 144, ../scss/gui.scss */
 .gui-datepicker {
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
@@ -1122,42 +1160,39 @@ pre .xml .cdata {
   cursor: default; }
   /* line 87, ../scss/_mixins.scss */
   .gui-datepicker .selected {
-    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #888888), color-stop(1, #aaaaaa));
-    background: -ms-linear-gradient(top, #aaaaaa 0%, #888888 100%);
-    background: -moz-linear-gradient(top, #aaaaaa 0%, #888888 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#aaaaaa', endColorstr='#888888') chroma(color=black);
-    background-color: #aaaaaa;
+    background-color: #7c7c7c;
     color: #fff;
-    border-color: #1642A4; }
-  /* line 92, ../scss/_mixins.scss */
+    border-color: #494949; }
+  /* line 93, ../scss/_mixins.scss */
   .gui-datepicker:focus .selected {
     background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #2464f3), color-stop(1, #638cf5));
     background: -ms-linear-gradient(top, #638cf5 0%, #2464f3 100%);
     background: -moz-linear-gradient(top, #638cf5 0%, #2464f3 100%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#638cf5', endColorstr='#2464f3') chroma(color=black);
-    background-color: #638cf5; }
-  /* line 155, ../scss/gui.scss */
+    background-color: #638cf5;
+    border-color: #1e498c; }
+  /* line 156, ../scss/gui.scss */
   .gui-datepicker td.day > div {
     min-height: 20px;
     position: relative; }
 
-/* line 168, ../scss/gui.scss */
+/* line 169, ../scss/gui.scss */
 .gui-filterview {
   margin-bottom: 20px;
   margin-top: 20px; }
-  /* line 169, ../scss/gui.scss */
+  /* line 170, ../scss/gui.scss */
   .gui-filterview li {
     zoom: 1;
     /* For IE 6/7 (trigger hasLayout) */
     margin-bottom: 3px; }
-    /* line 135, ../scss/_mixins.scss */
+    /* line 137, ../scss/_mixins.scss */
     .gui-filterview li:before, .gui-filterview li:after {
       content: "";
       display: table; }
-    /* line 139, ../scss/_mixins.scss */
+    /* line 141, ../scss/_mixins.scss */
     .gui-filterview li:after {
       clear: both; }
-  /* line 173, ../scss/gui.scss */
+  /* line 174, ../scss/gui.scss */
   .gui-filterview .title {
     display: inline-block;
     width: 70px;
@@ -1165,31 +1200,31 @@ pre .xml .cdata {
     text-overflow: ellipsis;
     font-weight: bold;
     line-height: 25px; }
-  /* line 181, ../scss/gui.scss */
+  /* line 182, ../scss/gui.scss */
   .gui-filterview .fields {
     display: inline-block; }
-    /* line 183, ../scss/gui.scss */
+    /* line 184, ../scss/gui.scss */
     .gui-filterview .fields > .gui-combobox, .gui-filterview .fields > .gui-date, .gui-filterview .fields > .gui-text, .gui-filterview .fields > .gui-password, .gui-filterview .fields > .gui-textarea, .gui-filterview .gui-datefield .fields > .textfield, .gui-datefield .gui-filterview .fields > .textfield, .gui-filterview .fields > .gui-datefield {
       width: 150px;
       display: inline-block;
       margin-left: 20px;
       box-sizing: border-box; }
-    /* line 189, ../scss/gui.scss */
+    /* line 190, ../scss/gui.scss */
     .gui-filterview .fields > *:first-child {
       margin-left: 0px; }
-  /* line 193, ../scss/gui.scss */
+  /* line 194, ../scss/gui.scss */
   .gui-filterview .gui-form > * {
     margin-right: 20px;
     height: 26px;
     overflow: hidden;
     float: left; }
-  /* line 204, ../scss/gui.scss */
+  /* line 205, ../scss/gui.scss */
   .gui-filterview .buttons {
     margin-top: 10px; }
-  /* line 207, ../scss/gui.scss */
+  /* line 208, ../scss/gui.scss */
   .gui-filterview .tools {
     display: inline-block; }
-    /* line 209, ../scss/gui.scss */
+    /* line 210, ../scss/gui.scss */
     .gui-filterview .tools button {
       display: inline-block;
       cursor: default;
@@ -1218,7 +1253,7 @@ pre .xml .cdata {
       color: #555;
       text-shadow: white 0px 1px;
       height: 26px; }
-      /* line 270, ../scss/_mixins.scss */
+      /* line 272, ../scss/_mixins.scss */
       .gui-filterview .tools button:not(.disabled):active {
         background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e6e6e6), color-stop(1, #c8c8c8));
         background: -ms-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
@@ -1228,10 +1263,10 @@ pre .xml .cdata {
         box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3);
         -moz-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3);
         -webkit-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3); }
-      /* line 275, ../scss/_mixins.scss */
+      /* line 277, ../scss/_mixins.scss */
       .gui-filterview .tools button.disabled {
         color: #aaaaaa !important; }
-    /* line 213, ../scss/gui.scss */
+    /* line 214, ../scss/gui.scss */
     .gui-filterview .tools button.remove:hover {
       display: inline-block;
       cursor: default;
@@ -1260,7 +1295,7 @@ pre .xml .cdata {
       color: #555;
       text-shadow: white 0px 1px;
       padding-left: 25px; }
-      /* line 270, ../scss/_mixins.scss */
+      /* line 272, ../scss/_mixins.scss */
       .gui-filterview .tools button.remove:hover:not(.disabled):active {
         background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e6e6e6), color-stop(1, #c8c8c8));
         background: -ms-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
@@ -1270,16 +1305,16 @@ pre .xml .cdata {
         box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3);
         -moz-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3);
         -webkit-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3); }
-      /* line 275, ../scss/_mixins.scss */
+      /* line 277, ../scss/_mixins.scss */
       .gui-filterview .tools button.remove:hover.disabled {
         color: #aaaaaa !important; }
-    /* line 217, ../scss/gui.scss */
+    /* line 218, ../scss/gui.scss */
     .gui-filterview .tools button.remove {
       border-color: transparent;
       background: none;
       padding-left: 25px;
       position: relative; }
-      /* line 223, ../scss/gui.scss */
+      /* line 224, ../scss/gui.scss */
       .gui-filterview .tools button.remove:before {
         z-index: 1;
         content: '';
@@ -1292,44 +1327,44 @@ pre .xml .cdata {
         height: 13px;
         background: url(../img/icons/remove.png) no-repeat; }
 
-/* line 243, ../scss/gui.scss */
+/* line 244, ../scss/gui.scss */
 .gui-table {
   outline: none;
   cursor: default;
   position: relative; }
-  /* line 249, ../scss/gui.scss */
+  /* line 250, ../scss/gui.scss */
   .gui-table:focus tbody tr.selected td, .gui-table:focus tbody tr td.selected {
     background-color: #3B77D5;
     color: #fff; }
-    /* line 252, ../scss/gui.scss */
+    /* line 253, ../scss/gui.scss */
     .gui-table:focus tbody tr.selected td a, .gui-table:focus tbody tr td.selected a {
       color: #fff; }
-    /* line 255, ../scss/gui.scss */
+    /* line 256, ../scss/gui.scss */
     .gui-table:focus tbody tr.selected td .textfield, .gui-table:focus tbody tr td.selected .textfield {
       color: #000; }
-  /* line 263, ../scss/gui.scss */
+  /* line 264, ../scss/gui.scss */
   .gui-table table {
     width: 100%;
     border-collapse: collapse;
     outline: none; }
-    /* line 268, ../scss/gui.scss */
+    /* line 269, ../scss/gui.scss */
     .gui-table table td {
       border-top: 1px solid white; }
-    /* line 273, ../scss/gui.scss */
+    /* line 274, ../scss/gui.scss */
     .gui-table table thead th {
       padding-right: 8px;
       padding-bottom: 5px;
       color: #777;
       position: relative;
       text-align: left; }
-      /* line 280, ../scss/gui.scss */
+      /* line 281, ../scss/gui.scss */
       .gui-table table thead th .resize {
         float: right;
         cursor: col-resize;
         width: 10px;
         height: 100%;
         height: 14px; }
-      /* line 287, ../scss/gui.scss */
+      /* line 288, ../scss/gui.scss */
       .gui-table table thead th .direction {
         margin-left: 5px;
         height: 17px;
@@ -1337,33 +1372,33 @@ pre .xml .cdata {
         -webkit-border-radius: 10px;
         -moz-border-radius: 10px;
         border-radius: 10px; }
-    /* line 300, ../scss/gui.scss */
+    /* line 301, ../scss/gui.scss */
     .gui-table table tbody td > div {
       padding: 2px 20px 2px 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap; }
-    /* line 306, ../scss/gui.scss */
+    /* line 307, ../scss/gui.scss */
     .gui-table table tbody tr:first-child td {
       border-top: 1px solid #cccccc; }
-    /* line 313, ../scss/gui.scss */
+    /* line 314, ../scss/gui.scss */
     .gui-table table tbody tr:nth-child(2n) td {
       background-color: #f5f5f5; }
-    /* line 318, ../scss/gui.scss */
+    /* line 319, ../scss/gui.scss */
     .gui-table table tbody tr.selected td,
     .gui-table table tbody tr td.selected {
       background-color: #B6B6B6;
       color: #fff; }
-      /* line 321, ../scss/gui.scss */
+      /* line 322, ../scss/gui.scss */
       .gui-table table tbody tr.selected td a,
       .gui-table table tbody tr td.selected a {
         color: #fff; }
-      /* line 324, ../scss/gui.scss */
+      /* line 325, ../scss/gui.scss */
       .gui-table table tbody tr.selected td .textfield,
       .gui-table table tbody tr td.selected .textfield {
         color: #000; }
 
-/* line 332, ../scss/gui.scss */
+/* line 333, ../scss/gui.scss */
 .gui-table-column-ghost {
   background-color: rgba(255, 255, 255, 0.8);
   position: absolute;
@@ -1374,11 +1409,11 @@ pre .xml .cdata {
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
   border-radius: 3px; }
-  /* line 338, ../scss/gui.scss */
+  /* line 339, ../scss/gui.scss */
   .gui-table-column-ghost > div {
     padding: 10px; }
 
-/* line 349, ../scss/gui.scss */
+/* line 350, ../scss/gui.scss */
 .gui-edit {
   -webkit-touch-callout: text;
   -webkit-user-select: text;
@@ -1389,10 +1424,11 @@ pre .xml .cdata {
   cursor: text; }
 
 /* line 365, ../scss/gui.scss */
-.gui-sortable .spaceholder {
-  border: 1px solid green; }
+.gui-spaceholder {
+  border: 1px solid green;
+  visibility: hidden; }
 
-/* line 370, ../scss/gui.scss */
+/* line 371, ../scss/gui.scss */
 .gui-token {
   position: relative;
   display: inline-block;

@@ -125,27 +125,15 @@ function reverseSortBy(sortByFunction) {
         land: function() {
             this.clone.remove();
             this.clone = null;
-            // this.$el.css({
-            //     position: this.position,
-            //     top: 'auto',
-            //     left: 'auto',
-            //     width: 'auto',
-            //     height: this.height
-            // })
-            // this.$el.removeClass('flying');
         }
     });
 
 
-    // keydown enter .selector
-    // click .selector
     var splitter = /^(\S+)\s+(\S+)\s*(.*)$/
-    // var eventSplitter = /^(\S+)\s*(.*)$/;
-    
     
     /**
-    Example 1
-    ---------
+    Example
+    -------
     this.selectable = new tools.Selectable({
         el: this.el,              // common ancestor for the selectables
         selectables: 'li',        // a selector expression
@@ -157,18 +145,6 @@ function reverseSortBy(sortByFunction) {
     this.selectable.on('choose', this.onSelectableChoose, this);
     */
     tools.Selectable = Backbone.View.extend({
-        // events: {
-        //     'keydown': 'onSelectableKeyDown',
-        // },
-
-        
-        /*        
-        var s = Selectable({
-            el: '#table',
-            selectable: 'td'
-        });
-        s.render();
-        */
         events: {
             'mousedown': 'onMouseDown',
         },
@@ -181,13 +157,12 @@ function reverseSortBy(sortByFunction) {
             this.$el.on('keydown', this.onSelectableKeyDown);            
             this.$el.on('mousedown', config.selectables, this.onSelectableMouseDown);
             
-            // Todo: Replace this semi-silly arguments with the out-commented code below?
+            // Todo: Replace these silly arguments with the out-commented code below?
             if(config.chooseOnDblClick)
                 this.$el.on('dblclick', config.selectables, this.onSelectableDblClick);
             if(config.chooseOnClick)
                 this.$el.on('click', config.selectables, this.onSelectableDblClick);            
             
-        
             // this.triggerChooseOn = config.triggerChooseOn || ['keydown enter', 'dblclick li'];
             // _.each(this.triggerChooseOn, function(evtstr) {
             //     var matches = evtstr.match(splitter),
@@ -397,44 +372,39 @@ function reverseSortBy(sortByFunction) {
 
     
     tools.Sortable = Backbone.View.extend({
-        className: 'gui-sortable',
-        events: {
-            // 'draginit': 'onDragInit',
+        hotkeys: {
+            'keydown esc': 'onEscKeyDown'
         },
 
         initialize: function(config) {
             this.config = config;
             this.sortables = config.sortables; // a selector string
             this.collection = config.collection; // optional
-            /*
-            var sortable = new tools.Sortable({
-                el: el,
-                sortables: 'li'
-            })
-            */
             _.bindAll(this, 'onDragInit', 'onDragEnter', 'onDragLeave', 'onDragEnd', 'onDropOverHead', 'onDropOverTail', 'onDropOn');
-                        
+            
             this.$el.on('dragdown', config.sortables, this.onDragDown);
             this.$el.on('draginit', config.sortables, this.onDragInit);
             this.$el.on('dragenter', config.sortables, this.onDragEnter);
             this.$el.on('dragleave', config.sortables, this.onDragLeave);
-            
             this.$el.on('dragend', config.sortables, this.onDragEnd);
-            // this.$el.on('dropinit', config.sortables, this.onDropInit);
             this.$el.on('dropover', config.sortables, this.onDropOver);
             this.$el.on('dropmove', config.sortables, this.onDropMove);
             this.$el.on('dropoverhead', config.sortables, this.onDropOverHead);
             this.$el.on('dropovertail', config.sortables, this.onDropOverTail);
-            this.$el.on('dropon', this.onDropOn);            
-                        
-            this.spaceholder = $('<div class="spaceholder" style="display: inline-block;"></div>');
+            this.$el.on('dropon', this.onDropOn);
         },
-        
-        
-        
         render: function() {
             return this;
         },
+        abort: function() {
+            var container = this.drag.orgContainer;
+            this.drag.spaceholder.remove();
+            container.insertAt(this.drag.orgIndex, this.drag.element[0])
+            this.drag.cancel();
+            this.drag.ghostEl.remove();
+            this.trigger('abort', {drag: this.drag});
+        },
+
         
         // Drag events
         onDragDown: function(e, drag) {
@@ -444,17 +414,25 @@ function reverseSortBy(sortByFunction) {
         onDragInit: function(e, drag) {
             if(this.collection)
                 drag.model = this.collection.at(drag.element.index())
-                        
+            
+            this.drag = drag;
+            drag.orgIndex = drag.element.index();
+            drag.spaceholder = drag.element.clone();
+            drag.spaceholder.addClass('gui-spaceholder');
+            drag.orgContainer = drag.element.parent();
+
+            var x = e.offsetX, 
+                y = e.offsetY; // important to access offsetX/Y props here
+            
             drag.ghostEl = drag.element.clone().appendTo(document.body)
             drag.ghostEl.css({position: 'absolute'})
+            drag.index = drag.element.index();            
             drag.element.remove()
-            drag.representative(drag.ghostEl)
+            drag.representative(drag.ghostEl, x, y)
 
             drag.name = 'gui-sort';
             drag.sortmode = 'horizontal';
-            this.spaceholder.width(drag.ghostEl.outerWidth());
             this.trigger('draginit', e, drag)
-
         },
         
         // Drop events
@@ -462,7 +440,7 @@ function reverseSortBy(sortByFunction) {
             drag.currOver = drop.element;
         },        
         onDropMove: function(e, drop, drag) {
-            var dragel = drag.element, //drag.ghostEl,
+            var dragel = drag.element,
                 dropel = drop.element;
                 
             if(dropel[0] == dragel[0])
@@ -480,10 +458,9 @@ function reverseSortBy(sortByFunction) {
             drag.index = drop.element.index();
             if(afterSpaceholder)
                 drag.index -= 1
-                
-            // console.log('Index:', index, 'part: ', part)            
+
             if(!prev || !prev.is('.spaceholder')) {
-                this.spaceholder.insertBefore(drop.element);
+                drag.spaceholder.insertBefore(drop.element);
             }
         },
         onDropOverTail: function(e, drop, drag) {
@@ -495,42 +472,47 @@ function reverseSortBy(sortByFunction) {
                 drag.index -= 1
                 
             if(!next || !next.is('.spaceholder')) {
-                this.spaceholder.insertAfter(drop.element);
+                drag.spaceholder.insertAfter(drop.element);
             }
         },
         onDropOn: function(e, drop, drag) {
-            var part = headOrTail(e, drop.element);
-
-
+            // Did we drop within the sortable-container? 
+            if(drop.element[0] != drag.delegate)
+                return;
+                
+            var part = headOrTail(e, drop.element);                
+            drag.success = true;
             var dragModel = drag.model;
-            // var dropModel = this.collection.at(drag.index);
 
-            
-            // console.log('Index:', drag.index)
-            if(this.collection) {
-                this.collection.remove(dragModel, {options: 'silent'});
-                this.collection.add(dragModel, {at: drag.index, options: 'silent'});
-            }
-            
+            if(this.collection)
+                this.collection.move(dragModel, drag.index);
+        
             if(drag.name == 'gui-sort') {
-                // drag.element.css({left: 'auto', top: 'auto', position: 'relative'})
-                // this.spaceholder.replaceWith(drag.element);
-                // console.log('spaceholder: ', this.spaceholder)
-                console.log('TRIGGER')
-                this.trigger('sort')
+                if(this.collection)
+                    this.collection.each(function(item, i) {
+                        console.log(i+': ', item.get('title'))
+                    });                
             }
         },
         onDragEnd: function(e, drag) {
-            this.spaceholder.replaceWith(drag.element);
-            // this.spaceholder.remove();
-            // drag
+            if(drag.success) {
+                drag.spaceholder.replaceWith(drag.element);
+            }
+            else {
+                this.abort()
+            }
         },
         onDragLeave: function(e, drag) {
             console.log('leave')
         },
         onDragEnter: function(e, drag) {
             console.log('Enter')
-        }
+        },
+        onEscKeyDown: function(e) {
+            this.abort();
+            e.preventDefault();
+        },        
+        
         
     });
     /*

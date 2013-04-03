@@ -1,7 +1,7 @@
 // ==========
 // = Colors =
 // ==========
-$selected: #9B9B9B;
+$selected: #7C7C7C;
 $selected_focused: #3B77D5;
 $selected_grad: #aaa #888;
 $selected_grad_focused: #638CF5 #2464F3;
@@ -85,12 +85,14 @@ $selected_grad_focused: #638CF5 #2464F3;
 
 @mixin selectables() {
     .selected {
-        @include two-color-gradient($selected_grad);
+//        @include two-color-gradient($selected_grad);
+        background-color: $selected;
         color: #fff;
-        border-color: #1642A4;
+        border-color: darken($selected, 20%);
     }
     &:focus .selected {
         @include two-color-gradient($selected_grad_focused);      
+        border-color: darken($selected_focused, 20%);        
     }    
 }
 
