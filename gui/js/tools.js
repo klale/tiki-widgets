@@ -10,8 +10,6 @@ define([
 
     var tools = {};
 
-
-
     function reverseSortBy(sortByFunction) {
         return function(left, right) {
             var l = sortByFunction(left);
@@ -766,8 +764,6 @@ define([
         }        
     });
 
-
-
     
     // Some common table column renderers
     tools.renderers = {
@@ -788,108 +784,6 @@ define([
 
 
 
-
-
-
-
-
-    /*
-    Silly class assuming a lot of things.
-    */
-    tools.ItemTable = tools.Table.extend({    
-
-        className: 'gui-table item-table',
-
-        
-        template: _.template('' + 
-            '<div class="head"><table><colgroup></colgroup><thead><tr></tr></thead></table></div>'+
-            '<div class="scroll">'+
-                '<table class="body">'+
-                    '<colgroup></colgroup>' +
-                    '<tbody></tbody>' +
-                '</table>'+
-            '</div>'+
-            '<div class="tools"><ul>'+
-                '<li><button class="add">Add row</button></li>'+
-            '</ul></div>'            ),        
-        
-        events: {
-            'click .add': 'onAddClick',
-            'click tr': 'onRowClick',
-            'keydown': 'onKeyDown'
-        },
-        mixins: [
-            gui.ChildView,
-            // tools.selectable()
-        ],
-    
-    
-        initialize: function(config) {
-            tools.ItemTable.__super__.initialize.call(this, config)
-            this.filterView = config.filterView;  // optional
-            if(this.filterView) {
-                this.filterView.on('change', this.onFilterViewChange, this)
-            }
-            this.url = config.url;
-            this.rows.url = config.url;
-            this.rows.on('add', this.onRowAdd, this);
-            this.rows.on('destroy remove', this.onRowRemove, this);            
-        },
-        render: function() {
-            return tools.ItemTable.__super__.render.call(this)
-        },
-        comparator: function(row) {
-            return row.get('period');
-        },
-
-        populate: function() {
-            
-        },
-        onFilterViewChange: function() {
-            var url = this.url + '?' + this.filterView.getQueryString();
-            this.rows.url = url;
-        },
-        onAddClick: function() {
-            this.trigger('addclick')
-        },
-        onRowClick: function(e) {
-            this.$('tr.selected').removeClass('selected');
-            $(e.target).parents('tr:first').addClass('selected')
-        },
-        onKeyDown: function(e) {
-            // tools.ItemTable.__super__.onKeyDown.call(this, e);
-            if(e.which == gui.keys.BACKSPACE && confirm('Delete this row?')) {
-                var id = this.$('tr.selected').attr('id'),
-                    row = this.rows.get(id);
-                row.destroy();
-            }
-        },
-        onRowAdd: function(model, collection, metadata) {
-            // options = options || {};
-            // var tr = this.rowTemplate(row.toJSON());
-            // // this.$('tbody').insertAt(options.index || -1);
-            // this.$('tbody').insertAt(options.index || -1);
-            this.render();
-            this.el.focus();
-            this.selectable.selectOne(this.$('#'+model.id));
-        },
-        onRowRemove: function(row, collection) {
-            var el = this.$el.find('#'+row.id);
-            el.fadeOut(300, function() {this.remove();});
-            var next = el.next();
-            if(next[0]) 
-                this.selectable.selectOne(el.next())
-                // el.next().addClass('selected');
-            else 
-                this.selectable.selectOne(el.prev())            
-                // el.prev().addClass('selected');
-            this.el.focus();
-        },    
-        
-    
-    
-    });
-    
 
 
     /*    
@@ -981,10 +875,8 @@ define([
     });
     $(document.body).append(filterview.render().el);
     */
-
-
-
-
+    
+    
     /*
     A small single-line editor
     */
