@@ -1,0 +1,219 @@
+
+
+
+
+.gui-editor {
+    position: relative;
+    outline: none;
+    
+    .toolbar {
+        height: 30px;
+        li {
+            float: left;
+            margin-right: 5px;
+        }
+    }
+    
+    .left {
+        float: left;
+        width: 100%;
+    }
+    .right {
+        float: right;
+        width: 0;
+    }
+    .clear {
+        overflow: hidden;
+    }
+
+
+    
+    .pane {
+        border: none;
+        padding: 0;
+//        font: 11px Monaco;
+        font: 12px 'Trebuchet MS';
+        outline: none;
+        color: #555;
+        min-height: 40px;
+
+        section {
+            margin-bottom: 20px;
+            padding: 10px;
+        
+            padding-left: 13px;
+            border: 1px solid #ccc;
+            background-color: #fafafa;
+            @include border-radius(5px);
+        }
+
+        pre {
+            font-size: 13px;
+            background-color: #f1f1f1;
+            padding: 10px;
+            margin: 20px 0;
+            display: block;
+        }
+        pre code {
+            background-color: #f1f1f1;
+        }
+
+        p {
+            margin-bottom: 10px;
+            &:last-child  {
+                margin-bottom: 0px;
+            }
+        }
+        h1,h2,h3 {
+            color: #000;
+        }
+        h2 {
+            border: none;
+            font-size: 17px;
+        }
+        
+        h3 {
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 5px;
+            padding-bottom: 3px;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-top: 25px;
+        }
+        strong {
+            font-weight: bold;
+            color: #000;
+        }
+
+        ul {
+            list-style-type: disc;            
+            margin: 20px 0 20px 20px;            
+        }    
+        li {
+            margin-bottom: 5px;
+            padding-left: 5px;
+        }
+        section > div {
+            border: 1px solid red;
+        }
+        section > div.fileview,
+        section > div.codeview {
+            border: none;
+        }        
+    }
+    pre.html {
+        padding: 10px;
+        padding-left: 25px;
+        white-space: pre-wrap;        
+        display: none;
+    }
+    
+}    
+
+
+
+
+
+
+
+// ============
+// = FileView =
+// ============
+.fileview {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #f1f1f1;
+    outline: none;
+
+    .file {
+        width: 128px;
+        height: 150px;
+        display: inline-block;        
+        margin-right: 10px;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    .file .icon {
+        width: 128px;
+        height: 128px;
+        margin-bottom: 8px;
+
+//        border: 3px solid #fff;
+//        margin-right: 5px;
+//        @include box-shadow(0 2px 5px rgba(0,0,0,0.3))
+    }
+    .file .name {
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 112px;
+        height: 16px;
+        font: 11px 'Trebuchet MS';
+        padding: 3px 8px;
+        @include border-radius(10px);
+        height: 12px;
+    }
+    .file {
+        .icon {
+            text-align: center;
+            @include verticalcenter();
+//            display: table-cell;
+//            vertical-align: middle;
+        }
+        .icon img {
+            //width: auto;
+            //height: auto;        
+            max-width: 128px;
+            max-height: 128px;       
+
+            //background-size: contain;
+            //background-repeat: no-repeat;
+            //background-position: center center;
+            border: 1px solid #fff;
+            @include box-shadow(0 2px 5px rgba(0,0,0,0.3))
+
+        }
+    }
+    .file.new.psd .icon {    
+        background: url(/img/icons/psd.png) no-repeat;
+    }
+    .file.new.pdf .icon {    
+        background: url(/img/icons/pdf.png) no-repeat;
+    }
+
+    // Gray selection maker
+    .file.selected {
+        .icon img {
+            outline: 1px solid #999;
+        }
+        .name {
+            background-color: #999;
+            color: #fff;
+            display: inline-block;
+        }
+    }    
+    // Blue, if fileview has focus
+    &:focus .file.selected {
+        .icon img {
+            outline: 1px solid #3B77D5;
+        }
+        .name {
+            background-color: #3B77D5;
+        }
+    }
+        
+}
+.fileview-quicklook {
+    left: 0px;
+    right: 0px;
+    top: 0px;
+    bottom: 0px;
+    position: fixed;
+    border: 1px solid red;
+    text-align: center;
+}
+.fileview-quicklook {
+}

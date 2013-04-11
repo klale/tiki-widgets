@@ -1,7 +1,9 @@
 define([
     'jquery',
     'underscore',
-    'backbone'
+    'backbone',
+    'jquery-hotkeys',
+    'jquerypp'
 ], function($, _, Backbone) {
     
 
@@ -28,91 +30,47 @@ gui.keys = {
 };
 
 
+// ================
+// = IE polyfills =
+// ================
+String.trim = String.trim || _.trim;
+
+
 
     
-$(function() {
-    
+$(function() {    
     $(document.body).bind('keydown', function(e) {
         gui._keyDownEvent = e;
     });
     $(document.body).bind('keyup', function(e) {
         gui._keyDownEvent = null;
-    })    
-    /*
-    $("li:has(ul.popUpMenu)").focusin(function(e) {
-        $(this).children().fadeIn('slow');
     });
-    
-    $('body').focusin(function(e) {
-        if (!$(e.target).parent().is('ul.popUpMenu li')) {
-          $('ul.popUpMenu').fadeOut('slow');
-        }
-      });
-    */
+
+
     var newFocused,
         prevFocused, 
         justLostFocus;
     $(document.body).bind('focusout', function(e) {
-        // something that had focus, lost it, but we don't now to what yet
-
-
+        // Something that had focus, lost it, but we don't now to what yet
         justLostFocus = e.target;
-        
-        // // andSelf() reverses parents for some reason, restore order 
-        // // with another reverse()
-        // $(justLostFocus).parents().andSelf().reverse().each(function(i, parent) {
-        //     if(newFocused && ($(parent).contains(newFocused) || parent === newFocused)) {
-        //         // we have traversed up to a common ancestor
-        //         return false; // break
-        //     }
-        //     else {
-        //         // fire a non-bubbling focusleave
-        //         // $(parent).triggerHandler('focusleave');
-        //         $(parent).trigger('focusleave', {newFocused: newFocused});                
-        //     }
-        // });        
-        
     });
     $(document.body).bind('focusin', function(e) {
-        // console.log('FOCUS IN: ', e.target)
+        // Now a new element has received the focus, and we can compare the two
         newFocused = e.target;
-
-        // Now the new thing has received the focus, and we can compare the two
-        
-        // a focusleave should be triggered starting at justLostFocus, 
-        // continuing up to the common ancestor shared with newFocus. 
-        // (or one level above the common ancestor to be correct)
-        // Maybe add: any element with tabindex=0 along the way will have
-        // a focusin class toggled accoringly
 
         if(!justLostFocus)
             return // first ever focus, thus no focusleave
 
-        // var commonAncestor; 
-        // andSelf() reverses parents for some reason, restore order 
-        // with another reverse()
-        // console.log('focusleave: ', justLostFocus);        
-        // $(justLostFocus).triggerHandler('focusleave');
         $(justLostFocus).parents().andSelf().reverse().each(function(i, parent) {
-            // if($(newFocused).attr('name') == 'start_at') {
-            //     debugger;
-            // }
             if($(parent).contains(newFocused) || parent === newFocused) {
-                // we have traversed up to a common ancestor
-                // commonAncestor = parent;
-                // console.log('COMMON ancestor', parent)
-                // justLostFocus = newFocused;
-                // console.log('im here2')                
                 return false; // break
             }
             else {
                 // fire a non-bubbling focusleave
-                // console.log('focusleave: ', parent, 'newFocused: ', newFocused)
                 // $(parent).triggerHandler('focusleave');
                 $(parent).trigger('focusleave', {newFocused: newFocused, justLostFocus: justLostFocus});                
             }
         });
-
     });
     $(document.body).attr('tabindex', '-1');
 });
@@ -157,11 +115,37 @@ $.fn.screen = function() {
     return {left: left, top: top};
 };
 $.fn.iefocus = function() {
-    this.each(function() {
-        $(this).bind('focus', function(e) { $(e.target).addClass('focus')});
-        $(this).bind('blur', function(e) { $(e.target).removeClass('focus')});
-        this.hideFocus = true;
+    if($.browser.ltie10) {
+        this.each(function() {
+            $(this).on('mousedown', function(e) { 
+                window.setTimeout(_.bind(function() {
+                    this.focus(); 
+                }, this), 1);
+                this.focus();
+                e.stopPropagation();
+            });
+            if($.browser.ltie8) {
+                this.hideFocus = true;                                    
+                $(this).bind('focus', function(e) { $(e.target).addClass('focus'); });
+                $(this).bind('blur', function(e) { $(e.target).removeClass('focus'); });
+            }
+        });
+    }
+};
+$.fn.ieunselectable = function() { 
+    this.each(function() { 
+        if($.browser.ltie10)
+            $(this).find('*').each(function() { this.unselectable = "on"; });
     });
+    return this;
+};
+gui.iepreventTextSelection = function(e) {
+    // IE7-IE8 cannot abort text selection buy calling 
+    // e.preventDefault() on the mousedown event.    
+    if($.browser.ltie9) {
+        e.srcElement.onselectstart = function () { return false; };
+        window.setTimeout(function () { e.srcElement.onselectstart = null; }, 0);
+    }
 };
 $.fn.blink = function(callback) {
     this.each(function() {
@@ -213,16 +197,27 @@ $.fn.moveCursorToEnd = function(el) {
     });
     return this;
 };
-$.fn.insertAt = function(i, el) {
+
+$.fn.insertAt = function(index, element) {
+    var lastIndex = this.children().size();
+    if(index < 0) {
+        index = Math.max(0, lastIndex + 1 + index);
+    }
+    this.append(element);
+    if(index < lastIndex) {
+        this.children().eq(index).before(this.children().last());
+    }
+    return this;
+}
+
+$.fn.make = function(className) {
     this.each(function() {
-        if(i === 0)
-            $(this).prepend(el);
-        else if(i === -1)
-            $(this).append(el);
-        else
-            $(this).children(':nth-child('+i+')').after(el);
+        $(this).parent().children('.'+className).removeClass(className);
+        $(this).addClass(className);
     });
-};
+    return this;
+}
+
 $.fn.containedBy = function(parent) {
     var isContainedBy = false;
     var parent = $(parent)[0];
@@ -297,6 +292,61 @@ $.fn.focusWithoutScrolling = function(){
     window.scrollTo(x, y);
 };
 
+$.fn.box = function() {
+    return {
+        left: $(this).offset().left,
+        top: $(this).offset().top,
+        width: $(this).outerWidth(),
+        height: $(this).outerHeight()
+    };
+}
+
+
+/*
+Example
+-------
+$('.foo').align({
+    my: 'lt',
+    at: 'rt',
+    of: $('.bar'),
+    offset: [-5, 5]
+});
+
+Todo: Add "within" param
+
+*/
+$.fn.align = function(options) {
+    // defaults
+    options = $.extend({
+        offset: [0, 0]
+    }, options);
+
+    var offsets = {t: 0, l: 0, b: 1, r: 1},
+        my = options.my,
+        at = options.at,
+        of = options.of;
+    
+    var source = $(this).box();
+    var target = $(options.of).box();
+    var left = targetBox.left;
+    var top = targetBox.top;
+
+    top -= offsets[my.charAt(0)] * source.height;
+    left -= offsets[my.charAt(1)] * source.width;
+    top += offsets[at.charAt(0)] * target.height;
+    left += offsets[at.charAt(1)] * target.width;
+    left += options.offset[0];
+    top += options.offset[1];
+    $(this).css({
+        left: left + 'px',
+        top: top + 'px'
+    });
+}
+
+
+$.fn.reverse = [].reverse;
+
+$.browser.ltie8 = $.browser.msie && parseInt($.browser.version) < 8;
 $.browser.ltie9 = $.browser.msie && parseInt($.browser.version) < 9;
 $.browser.ltie10 = $.browser.msie && parseInt($.browser.version) < 10;
 
@@ -331,6 +381,54 @@ $.extend($.expr[':'], {
 });
 
 
+// ==========================
+// = jQuery Ajax transports =
+// ==========================
+$.ajaxTransport("multipart", function( options, originalOptions, jqXHR ) {
+    /* Will only be called for "multipart" requests */
+    return {
+        send: function(headers, completeCallback) {
+            
+            // Build a completely new body to post
+            var jsonstr = originalOptions.data; // its already a json string
+            var formdata = new FormData();            
+            
+            // Add _json
+            try {
+                var blob = new Blob(jsonstr, {type: "application/json"});
+                formdata.append('_json', blob);
+            } catch (e) {
+                formdata.append('_json', jsonstr);
+            }
+            
+            // Add files
+            _.each(originalOptions.files || [], function(f) {
+                var name = f.name,
+                    file = f.file;
+                formdata.append(f.name, f.file)
+            });
+
+            // Add some ajax settings
+            _.extend(options, {
+                cache: false,                
+                dataType: 'json',
+                data: formdata,
+                contentType: false,
+                processData: false
+            });
+            
+            // Send request
+            $.ajax(options);            
+        },
+        abort: function() {
+            
+        }
+    }
+    
+});
+
+
+
 
 // =====================================
 // = Backbone and Underscore extension =
@@ -339,6 +437,47 @@ $.extend($.expr[':'], {
 This adds support for mixins and a method called initcls 
 which is run once when a Function is created */
 (function(Backbone) {
+    
+    // A simple class supporting events and initialize
+    Backbone.Class = function() {
+        if(this.initialize)
+            this.initialize.apply(this, arguments)
+    }
+    Backbone.Class.extend = Backbone.Model.extend;
+    _.extend(Backbone.Class, Backbone.Events);
+    
+
+    Backbone.Collection.prototype.move = function(model, toIndex, options) {
+        var fromIndex = this.indexOf(model),
+            options = options || {};
+        if(fromIndex == -1) {
+            throw new Error("Can't move a model that's not in the collection");
+        }
+        if(fromIndex !== toIndex) {
+            this.models.splice(toIndex, 0, this.models.splice(fromIndex, 1)[0]);
+            if(!options.silent)
+                this.trigger('move', {model: model, toIndex: toIndex, fromIndex: fromIndex});
+        }
+    };
+    
+    var backboneset = Backbone.Model.prototype.set;
+    Backbone.Model.prototype.set = function(key, value, options) {
+        var attrs, attr, val;
+        if(_.isObject(key) || key == null) {
+            attrs = key;
+            options = value;
+        } else {
+            attrs = {};
+            attrs[key] = value;
+        }            
+        _.each(attrs, function(value, key) {
+             var setter = 'set_' + key;                 
+             typeof this[setter] === 'function' &&
+                 (attrs[key] = this[setter](value, this.attributes[key], options));
+        }, this);
+        return backboneset.call(this, attrs, options);
+    };
+    
     _.each(["Model", "Collection", "View", "Router"], function(klass) {
         var extend = Backbone[klass].extend;
 
@@ -354,6 +493,14 @@ which is run once when a Function is created */
             var child = this, // were starting of alike..
                 inits = [],
                 mixins = protoProps.mixins || [];
+
+            _.each(mixins.slice(), function(mixin) {
+                if(mixin.beforeinitcls) // collect initcls functions to run later
+                    mixin.beforeinitcls.call(child);
+            });
+            if(protoProps.beforeinitcls) 
+                protoProps.beforeinitcls.call(child);
+                
             if(protoProps.initcls)
                 inits.push(protoProps.initcls)
 
@@ -365,17 +512,76 @@ which is run once when a Function is created */
                     inits.push(mixin.initcls);
             });
 
+
+            if(klass == 'View') {
+                // protoProps.constructor = function(options) {
+                //     Backbone.View.call(this, options);
+                //     console.log('Fooooo!')
+                // 
+                // }
+                protoProps.delegateEvents = function(events) {
+                    Backbone.View.prototype.delegateEvents.call(this, events);
+                    this._delegateHotkeys(this.hotkeys);
+                }                
+            }
+
             // Then exend as usual
             child = extend.call(child, protoProps, classProps);                    
             
             // Call initcls
             for(var i=0, l=inits.length; i<l; i++)
                 inits[i].call(child);
-            return child;
+            
+            return child;            
         }
     });
+    
+    /*
+    hotkeys: {
+        "keydown shift+a .sune": "myHandler"
+    }
+    */
+    var delegateHotkeySplitter = /^(\S+)\s+(\S+)\s*(.*)$/;    
+    Backbone.View.prototype._delegateHotkeys = function(events) {    
+        if(!this.hotkeys) return;
+        
+        var events = this.hotkeys;
+        for (var key in events) {
+            var method = events[key];
+            if (!_.isFunction(method)) method = this[events[key]];
+            if (!method) throw new Error('Method "' + events[key] + '" does not exist');
+            var match = key.match(delegateHotkeySplitter);
+            var eventName = match[1], 
+                hotkey = match[2],
+                selector = match[3];
+                
+            method = _.bind(method, this);
+            eventName += '.delegateEvents' + this.cid;
+    
+            this.$el.on(eventName, selector || null, hotkey, method);
+        }      
+    }
 })(Backbone);
 
+
+
+
+
+_.instanceof = function(obj, klass) {
+    try {
+        return _.indexOf(obj.mixins || [], klass) !== -1 || obj instanceof klass;
+    } catch(e) {
+        return false;
+    }
+};
+_.isNumeric = function(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
+};
+_.listToDict = function(list, key) {
+    return _.object(_.map(list, function(f) {
+        return [f[key], f];
+    }));
+};
 
 
 /* 
@@ -384,7 +590,7 @@ _.template2()
 A modified copy of Underscore.template (v1.3.3), adding the `settings` 
 variable to the rendering scope, along with the usual 'obj' and '_'.
 */
-(function(_) {
+;(function(_) {
     var noMatch = /.^/;
 
     var settings = {
@@ -466,6 +672,7 @@ variable to the rendering scope, along with the usual 'obj' and '_'.
       return template;
     };
 
+
 })(_);
 
 
@@ -476,9 +683,15 @@ variable to the rendering scope, along with the usual 'obj' and '_'.
 // ==========
 /* A mixin for inheriting events declared on parent view classes. */
 gui.ChildView = {
+    beforeinitcls: function() {
+        var parentMixins = this.__super__.mixins;        
+        this.prototype.mixins = _.extend([], parentMixins, this.prototype.mixins);        
+    },
     initcls: function() {
-        var parentEvents = this.__super__.events;        
+        var parentEvents = this.__super__.events,
+            parentHotkeys = this.__super__.hotkeys;
         this.prototype.events = _.extend({}, parentEvents, this.prototype.events);
+        this.prototype.hotkeys = _.extend({}, parentHotkeys, this.prototype.hotkeys);        
     }
 };
 
@@ -555,46 +768,6 @@ gui.Drag = gui.Observable.extend({
             conf.ondrag(e, conf);
         }
         
-        // if(startDrag || this.dragging) {
-        //     if(startDrag) {
-        //         this.scrollLeft = $(window).scrollLeft()
-        //         this.scrollTop = $(window).scrollTop()
-        //         // `conf.ev` is the mousedown event
-        //         var e = this.conf.ev;
-        //     }
-        //     // Add some extra drag-related attributes to the `mousemove` event
-        //     e.pageX = e.clientX + this.scrollLeft;
-        //     e.pageY = e.clientY + this.scrollTop;
-        // 
-        //     console.log('aa:', e.clientX + this.scrollLeft, e.pageX)
-        //     e.conf = this.conf;
-        //     if(startDrag) {
-        //         var conf = this.conf;
-        //         if(conf.onstart)
-        //             conf.onstart(e, this.conf);
-        //         this.dragging = true;
-        //         
-        //         if(this.conf.el) {
-        //             // move the proxy el
-        //             console.log('MOVE!', e.clientX, this._init.offsetX)
-        //             this.conf.el.css({
-        //                 left: e.pageX - this._init.offsetX, 
-        //                 top: e.pageY - this._init.offsetY
-        //             });
-        //             this.conf.el.show();                
-        //         }  
-        //     } else if(this.dragging) {
-        //         if(this.conf.el) {
-        //             // move the proxy el
-        //             this.conf.el.css({
-        //                 left: e.pageX - this._init.offsetX, 
-        //                 top: e.pageY - this._init.offsetY
-        //             });
-        //         }
-        //         if(this.conf.ondrag)
-        //             this.conf.ondrag(e, this.conf);
-        //     }            
-        // }
     },
     onBodyMouseOver: function(e) {
         if(this.dragging && this.prefix) {
@@ -636,95 +809,7 @@ gui.drag = new gui.Drag();
 
 
 
-
-
-// ==============
-// = Scrollable =
-// ==============
-gui.Scrollable = gui.Observable.extend({
-    initialize: function(conf) {
-        this.container = $(conf.container);
-        this.content = $(conf.content);        
-        this.scrollbar = $('<div class="miniscrollbar"></div>').appendTo(this.container);
-        this.vhandle = $('<div class="vhandle"></div>').appendTo(this.scrollbar);
-        
-        this.content.mousewheel($.proxy(this.onMouseWheel, this));
-        this.refresh();
-    },
-    isOverflowing: function() {
-        return this._containerHeight < this._contentHeight;
-    },
-    getStripOfWhite: function() {
-        var scrolltop = this.getScrollTop();
-        var white = ((scrolltop*-1) + this._containerHeight) - this._contentHeight;
-        return Math.max(0, white);
-    },
-    refresh: function() {
-        if(!this.content || !this.content.outerHeight()) {
-            return
-        }
-        // ie7 must cache container height here (neg. margin impacts when 
-        // scrolling to bottom)
-        this._containerHeight = this.container.height(); 
-        this._contentHeight = this.content.outerHeight()
-        
-        if(this.isOverflowing()) {
-            this.scrollbar.show();
-            var h = this._containerHeight / this._contentHeight;
-            this.vhandle.css('height', h*100 + '%');
-            this.vhandle_height = h            
-
-            // if a strip of white is showing in the bottom,
-            // do a scrollToBottom.            
-            if(this.getStripOfWhite())
-                this.scrollToBottom();
-        }
-        else {
-            this.scrollbar.hide();
-        }
-    },
-    scrollToBottom:function() {
-        var diff = this._contentHeight - this._containerHeight;
-        this.scrollTo(diff*-1);
-    },    
-    getScrollTop: function() {
-        return parseInt(this.content.css('margin-top')) || 0;
-    },
-    scrollTo: function(top) {
-        // top is less than or equal to 0
-        if(this.getScrollTop() == top) {
-            return
-        }        
-        // Respect boundaries                
-        if(this.content) {
-            top = Math.min(top, 0);
-            if(this._contentHeight) {
-                top = Math.max(top, (this._containerHeight - this._contentHeight))
-            }
-            this.content.css('margin-top', top + 'px');        
-            this.vhandle.css('top', (top*-1)*this.vhandle_height + 'px');
-            // Fire scroll event
-            this.container.trigger('scroll', top);
-        }
-    },
-    onMouseWheel: function(e, delta) {
-        if(this.isOverflowing()) {
-            this.scrollTo(this.getScrollTop() + delta*8)            
-        }   
-        e.preventDefault();
-    }
-});
-$.fn.scrollable = function() {
-    $(this).each(function() {
-        var a = new gui.Scrollable({
-            container: $(this),
-            content: $(this).children()[0]
-        });
-    })
-};
-
-
-$.fn.getPreText = function () {
+$.fn.getPreText = function (trim) {
     var ce = this.clone();
     if($.browser.webkit || $.browser.chrome)
         ce.find("div").replaceWith(function() { return "\n" + this.innerHTML; });
@@ -734,158 +819,50 @@ $.fn.getPreText = function () {
         ce.find("br").replaceWith("\n");
     }
 
-    var lines = ce.text().split('\n');
-    var lines = _.compact(_.map(lines, function(line) {
-        return $.trim(line);
-    }));
-    return lines.join('\n');
+    if(trim) {
+        var lines = ce.text().split('\n');
+        var lines = _.compact(_.map(lines, function(line) {
+            return $.trim(line);
+        }));
+        return lines.join('\n');
+    }
+    else
+        return ce.text();
+    
+};
+
+
+function getNumericStyleProperty(style, prop){
+    return parseInt(style.getPropertyValue(prop),10) ;
+}
+$.fn.getOffsetPadding = function() {
+    var el = this[0]
+
+    var x = 0, y = 0;
+    var inner = true ;
+    do {
+        var style = getComputedStyle(el, null);
+        var borderTop = getNumericStyleProperty(style,"border-top-width");
+        var borderLeft = getNumericStyleProperty(style,"border-left-width");
+        y += borderTop;
+        x += borderLeft;
+        if (inner) {
+            var paddingTop = getNumericStyleProperty(style,"padding-top");
+            var paddingLeft = getNumericStyleProperty(style,"padding-left");
+            y += paddingTop;
+            x += paddingLeft;
+        }
+        inner = false;
+    } 
+    while (el = el.offsetParent);
+    return {x: x, y: y};
+
 };
 
 
 $.fn.reverse = [].reverse;
 
 
-// ==========
-// = Colors =
-// ==========
-
-gui.color = new function() {
-
-    function rgbToHsl(r, g, b){
-        r /= 255, g /= 255, b /= 255;
-        var max = Math.max(r, g, b), min = Math.min(r, g, b);
-        var h, s, l = (max + min) / 2;
-
-        if(max == min) {
-            h = s = 0; // achromatic
-        } else {
-            var d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch(max){
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                case b: h = (r - g) / d + 4; break;
-            }
-            h /= 6;
-        }
-        return [h, s, l];
-    }
-
-    function hslToRgb(h, s, l) {
-        var r, g, b;
-        if(s == 0) {
-            r = g = b = l; // achromatic
-        } else {
-            function hue2rgb(p, q, t) {
-                if(t < 0) t += 1;
-                if(t > 1) t -= 1;
-                if(t < 1/6) return p + (q - p) * 6 * t;
-                if(t < 1/2) return q;
-                if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-                return p;
-            }
-            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            var p = 2 * l - q;
-            r = hue2rgb(p, q, h + 1/3);
-            g = hue2rgb(p, q, h);
-            b = hue2rgb(p, q, h - 1/3);
-        }
-        return [r * 255, g * 255, b * 255];
-    }
-
-    function lpad(str, padString, length) {
-        while (str.length < length)
-            str = padString + str;
-        return str;
-    }
-    
-    function hex(num) {
-        return lpad(parseInt(num).toString(16), '0', 2);
-    }
-    
-    this.brightness = function(color, amount) {
-        var r = parseInt(color.substr(1, 2), 16);
-        var g = parseInt(color.substr(3, 2), 16);
-        var b = parseInt(color.substr(5, 2), 16);
-        hsl = rgbToHsl(r, g, b);
-        // ensure lightness+amount is between 0 and 1 
-        l = Math.max(Math.min(hsl[2] + amount, 1), 0)
-
-        rgb = hslToRgb(hsl[0], hsl[1], l);
-        
-        return '#' + hex(rgb[0]) + hex(rgb[1]) + hex(rgb[2]);
-    };
-    
-    
-};
-
-
-gui.stylesheet = new function() {
-    
-    this.addClass = function(selector, style) {
-        if(!document.styleSheets)
-            return;
-        if(document.getElementsByTagName("head").length == 0) 
-            return;
- 
-        var stylesheet;
-        var mediaType;
-        if(document.styleSheets.length > 0) {
-            for(i = 0; i < document.styleSheets.length; i++) {
-                if(document.styleSheets[i].disabled) {
-                    continue;
-                }
-                var media = document.styleSheets[i].media;
-                mediaType = typeof media;
- 
-                if(mediaType == "string") {
-                    if (media == "" || (media.indexOf("screen") != -1))
-                        styleSheet = document.styleSheets[i];
-                } else if (mediaType == "object") {
-                    if (media.mediaText == "" || (media.mediaText.indexOf("screen") != -1)) 
-                        styleSheet = document.styleSheets[i];
-                }
- 
-                if(typeof styleSheet != "undefined")
-                    break;
-            }
-        }
-        if(typeof styleSheet == "undefined") {
-            var styleSheetElement = document.createElement("style");
-            styleSheetElement.type = "text/css";
- 
-            document.getElementsByTagName("head")[0].appendChild(styleSheetElement);
- 
-            for (i = 0; i < document.styleSheets.length; i++) {
-                if (document.styleSheets[i].disabled)
-                    continue;
-                styleSheet = document.styleSheets[i];
-            }
-            var media = styleSheet.media;
-            mediaType = typeof media;
-        }
- 
-        if (mediaType == "string") {
-            for (i = 0; i < styleSheet.rules.length; i++) {
-                if (styleSheet.rules[i].selectorText.toLowerCase() == selector.toLowerCase()) {
-                    styleSheet.rules[i].style.cssText = style;
-                    return;
-                }
-            }
- 
-            styleSheet.addRule(selector, style);
-        } else if (mediaType == "object") {
-            for (i = 0; i < styleSheet.cssRules.length; i++) {
-                if (styleSheet.cssRules[i].selectorText.toLowerCase() == selector.toLowerCase()) {
-                    styleSheet.cssRules[i].style.cssText = style;
-                    return;
-                }
-            }
- 
-            styleSheet.insertRule(selector + "{" + style + "}", 0);
-        }
-    };    
-};
 
 gui.format = new function() {
     this.filesize = function(bytes) {
@@ -910,10 +887,68 @@ gui.isArrowKey = function(e) {
 
 gui.parseQueryString = function(url) {
     var vars = {};
+    url = url || document.location.href;
     url.replace(
         new RegExp("([^?=&]+)(=([^&]*))?", "g"),
         function($0, $1, $2, $3) { vars[$1] = $3; });
     return vars;
+};
+
+gui.randhex = function(len) {
+    var out = [],
+        chars = "abcdef0123456789"
+        len = len || 32;
+    for(var i=0; i<len; i++)
+        out.push(chars.charAt(Math.floor(Math.random() * chars.length)));
+    return out.join('');
+};
+
+gui.pasteHtmlAtCaret = function(html) {
+    var sel, range;
+    if(window.getSelection) {
+        sel = window.getSelection();
+        if(sel.getRangeAt && sel.rangeCount) {
+            range = sel.getRangeAt(0);
+            range.deleteContents();
+
+            var el = document.createElement("div");
+            el.innerHTML = html;
+            var frag = document.createDocumentFragment(), node, lastNode;
+            while((node = el.firstChild)) {
+                lastNode = frag.appendChild(node);
+            }
+            range.insertNode(frag);
+
+            // Preserve the selection
+            if(lastNode) {
+                range = range.cloneRange();
+                range.setStartAfter(lastNode);
+                range.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+    } 
+    else if(document.selection && document.selection.type != "Control") {
+        // ie<9
+        document.selection.createRange().pasteHTML(html);
+    }
+};
+
+
+gui.addcss = function(stylesheets, win) {
+    if(!_.isArray(stylesheets)) stylesheets = [stylesheets];
+    win = win || window;
+    var head = $(win.document).find('head');
+    
+    _.each(stylesheets, function(url) {
+        if(!head.find('link[href="'+url+'"]').length) {
+            if (win.document.createStyleSheet) // IE
+                win.document.createStyleSheet(url);
+            else 
+                $('<link rel="stylesheet" type="text/css"></link>').attr('href', url).appendTo(head);
+        }
+    });
 };
 
 

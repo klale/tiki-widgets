@@ -1,0 +1,474 @@
+// ==========
+// = Colors =
+// ==========
+$selected: #7C7C7C;
+$selected_focused: #3B77D5;
+$selected_grad: #aaa #888;
+$selected_grad_focused: #638CF5 #2464F3;
+
+
+
+@mixin glowtext() {
+    color: rgb(14, 158, 211);
+    text-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+}
+
+@mixin glowoutline() {
+    // Cyan glow
+    &:focus {
+        @include box-shadow(0 0 5px rgba(14, 158, 211, 0.4));
+        border-color: rgb(14, 158, 211) !important;
+        outline: none;
+    }
+}
+
+@mixin icon($icon: '') {
+    font-family: 'icons';
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+//    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+
+    @if $icon {
+        &:before {
+            content: $icon;
+        };
+    }
+}
+
+
+@mixin icon-before($icon) {
+    font-family: 'icons';
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+//    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+
+    @if $icon {
+        &:before {
+            content: $icon;
+        };
+    }
+}
+
+@mixin icon-after($icon) {
+    font-family: 'icons';
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+//    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    
+    &:after {
+        content: $icon;
+    };
+}
+
+
+
+@mixin selected2 {
+    background-color: #3B77D5;
+    color: #fff;
+    a {
+        color: #fff;
+    }
+}
+
+
+@mixin selectables() {
+    .selected {
+//        @include two-color-gradient($selected_grad);
+        background-color: $selected;
+        color: #fff;
+        border-color: darken($selected, 20%);
+    }
+    &:focus .selected {
+        @include two-color-gradient($selected_grad_focused);      
+        border-color: darken($selected_focused, 20%);        
+    }    
+}
+
+
+
+
+// ==========
+// = Mixins =
+// ==========
+@mixin transform($arg) {
+    -webkit-transform: $arg;
+    -moz-transform: $arg;
+    -ms-transform: $arg;
+    transform: $arg;
+}
+
+@mixin focusstyle {
+    border-color: rgb(14, 158, 211) !important; 
+    @include box-shadow(0 0 5px rgba(14, 158, 211, 0.4));
+    outline: none;
+}
+
+@mixin verticalcenter {
+    display: -webkit-box;
+    -webkit-box-orient: horizontal;
+    -webkit-box-pack: center;
+    -webkit-box-align: center;
+
+    display: -moz-box;
+    -moz-box-orient: horizontal;
+    -moz-box-pack: center;
+    -moz-box-align: center;
+
+    display: box;
+    box-orient: horizontal;
+    box-pack: center;
+    box-align: center;
+}
+
+@mixin clearfloat {
+    &:before,
+    &:after {
+        content:"";
+        display:table;
+    }
+    &:after {
+        clear:both;
+    }
+    zoom: 1; /* For IE 6/7 (trigger hasLayout) */
+}
+
+
+@mixin box-sizing($arg) {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+@mixin gradient($start: #EEE, $stop: #FFF) {
+    background: -webkit-gradient(
+        linear,
+        left bottom,
+        left top,
+        color-stop(0, $stop),
+        color-stop(1, $start));
+    background: -ms-linear-gradient(
+        top,
+        $start 0%,
+        $stop 100%);
+    background: -moz-linear-gradient(
+        top,
+        $start 0%,
+        $stop 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{$start}', endColorstr='#{$stop}') chroma(color=#000000);                                   
+    background-color: $start;    
+}
+
+@mixin two-color-gradient($gradient) {
+    $start: nth($gradient, 1);
+    $stop: nth($gradient, 2);
+    
+    background: -webkit-gradient(
+        linear,
+        left bottom,
+        left top,
+        color-stop(0, $stop),
+        color-stop(1, $start));
+    background: -ms-linear-gradient(
+        top,
+        $start 0%,
+        $stop 100%);
+    background: -moz-linear-gradient(
+        top,
+        $start 0%,
+        $stop 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{$start}', endColorstr='#{$stop}') chroma(color=#000000);                                   
+    background-color: $start;    
+}
+
+
+
+
+@mixin user-select($args) {
+    -webkit-touch-callout: $args;
+    -webkit-user-select: $args;
+    -moz-user-select: $args;
+    -ms-user-select: $args;
+    -o-user-select: $args;
+    user-select: $args;    
+}
+
+
+@mixin box-shadow($args) {
+    box-shadow: $args;
+    -moz-box-shadow: $args;
+    -webkit-box-shadow: $args;
+}
+@mixin small-shadow() {
+    @include box-shadow(0 2px 5px rgba(0,0,0,0.3))
+}
+@mixin large-shadow() {
+    @include box-shadow(0 8px 12px rgba(0,0,0,0.3))
+}
+
+
+@mixin border-radius ($size) {
+    -webkit-border-radius: $size;
+    -moz-border-radius: $size;
+    border-radius: $size;    
+}
+
+@mixin border-radius2($topleft: 0, $topright: 0, $bottomleft: 0, $bottomright: 0) {
+    @if $topleft {
+        -webkit-border-top-left-radius: $topleft;
+        -moz-border-top-left-radius: $topleft;
+        border-top-left-radius: $topleft;
+    }
+    @if $topright {
+        -webkit-border-top-right-radius: $topright;
+        -moz-border-top-right-radius: $topright;
+        border-top-right-radius: $topright;
+    }
+    @if $bottomleft {
+        -webkit-border-bottom-left-radius: $bottomleft;
+        -moz-border-bottom-left-radius: $bottomleft;
+        border-bottom-left-radius: $bottomleft;
+    }
+    @if $bottomright {
+        -webkit-border-bottom-right-radius: $bottomright;
+        -moz-border-bottom-right-radius: $bottomright;
+        border-bottom-right-radius: $bottomright;
+    }            
+}
+
+
+@mixin button($radius: 3px, $padding: 4px 8px, $start: #fff, $end: #e1e1e1, $border: 1px solid #919191, $neg: false) {
+    display: inline-block;
+    cursor: default;
+    padding: $padding;
+    overflow: visible; /* Removes crazy padding in IE7 */
+    border: $border;
+    @include border-radius($radius);
+    @include gradient($start, $end);
+    @include box-shadow(0 1px 1px #fff);
+    font-weight: bold;
+    @include user-select(none);
+    
+    @if $neg {
+        color: #fff;
+        text-shadow: darken($end, 70%) 0px -1px;        
+    }
+    @else {
+        color: #555;
+        text-shadow: lighten($end, 70%) 0px 1px;        
+    }
+    
+    &:not(.disabled):active {
+        @include gradient(darken($end, 10%), darken($start, 10%));
+        @include box-shadow(inset 0px 2px 8px rgba(0, 0, 0, 0.3));
+    }
+    
+    &.disabled {
+        color: #aaa !important;
+    }
+}
+
+@mixin button2($radius: 3px, $padding: 6px 12px, $start: #fff, $end: #e1e1e1, $neg: false) {
+    display: inline-block;
+    cursor: default;
+    padding: $padding;
+    overflow: visible; /* Removes crazy padding in IE7 */
+    @include border-radius($radius);
+    font-size: 12px;
+    @include user-select(none);
+    @include button2color($start, $end, $neg);
+}
+
+@mixin button2color($start: #fff, $end: #e1e1e1, $neg: false) {
+    border: 1px solid darken($end, 20%);
+    @include gradient($start, $end);
+    
+    @if $neg {
+        color: #fff;
+        text-shadow: darken($end, 70%) 0px -1px;
+    }
+    @else {
+        color: #555;
+        text-shadow: lighten($end, 70%) 0px 1px;        
+    }
+    &:not(.btn-disabled):active {
+        @include gradient(darken($end, 10%), darken($start, 10%));
+        @include box-shadow(inset 0px 2px 6px rgba(0, 0, 0, 0.4));        
+    }
+}
+
+
+
+
+
+@mixin buttonstyle($padvert: 3px, $padhor: 8px, $color: #ececec, $textcolor: #333) {
+    display: inline-block;
+    padding: $padvert $padhor;
+    cursor: default;
+    color: $textcolor;
+    border: 1px solid darken($color, 50%);
+    overflow: visible; /* Removes crazy padding in IE7 */
+    @include border-radius(3px);    
+    @include gradient(lighten($color, 10%), darken($color, 10%));
+
+    /* Hack until the border bug is fixed */
+    @media screen and (-webkit-min-device-pixel-ratio: 0) { 
+        border: none;
+        padding: $padvert+1 $padhor+1; /* compensate for missing border */
+        box-shadow: 0px 0px 0px 1px darken($color, 50%);
+    }
+    
+    &:active {
+        @include gradient(darken($color, 10%), lighten($color, 10%));
+    }
+}
+
+
+@mixin buttonstyle2($padvert: 3px, $padhor: 8px, $start: #e1e1e1, $end:#fdfdfd, $textcolor: #333, $negative: false) {
+    display: inline-block;
+    padding: $padvert $padhor;
+    cursor: default;
+    color: $textcolor;
+    @if $negative {
+        text-shadow: darken($end, 70%) 0px -1px;            
+    }
+
+    border: 1px solid darken($end, 50%);
+    overflow: visible; /* Removes crazy padding in IE7 */
+    @include border-radius(3px);    
+    @include gradient($start, $end);
+
+    /* Hack until the border bug is fixed */
+    @media screen and (-webkit-min-device-pixel-ratio: 0) { 
+        border: none;
+        padding: $padvert+1 $padhor+1; /* compensate for missing border */
+        box-shadow: 0px 0px 0px 1px darken($end, 50%);
+    }
+    
+    &:active {
+        @include gradient($end, $start);
+    }
+}
+
+
+@mixin selected {
+    @include gradient(#648CF5, #2465F3);
+}
+
+
+
+
+@-webkit-keyframes overPulse {
+    from { 
+        @include box-shadow(0 0 3px rgba(14, 158, 211, 0.4));
+    }
+    50% {
+        @include box-shadow(0 0 18px rgba(14, 158, 211, 0.4));
+    }
+    to { 
+        @include box-shadow(0 0 3px rgba(14, 158, 211, 0.4));        
+    }
+}
+.gui-over {
+    background-color: #F2F7FC !important;
+    border-color: rgb(14, 158, 211);
+    -webkit-animation-name: overPulse;
+    -webkit-animation-duration: 2s;
+    -webkit-animation-iteration-count: infinite;
+}
+
+
+
+
+
+@mixin token {
+    position: relative;
+    display: inline-block;
+    padding: 2px 10px;
+    border: 1px solid #94B5D2;
+    margin-right: 3px;
+    background-color: #d5dde5;        
+    @include border-radius(10px);
+    cursor: default;
+    margin-bottom: 4px;
+}
+
+
+
+@mixin ie-dropshadow() {
+    .ds {
+        position: absolute;
+        overflow: hidden;        
+    }
+    /* Left, right */
+    .ds_l,
+    .ds_r {   
+        top: 20px;    
+        bottom: 20px;    
+        width: 20px;     
+        overflow: hidden;
+    }    
+    .ds_l {
+        left: -20px;
+        background: url(../img/ds_vert.png) repeat-y;
+    }
+    .ds_r {
+        right: -20px;
+        background: url(../img/ds_vert.png) repeat-y top right;    
+    }
+    /* Bottom */
+    .ds_bl,
+    .ds_br {
+        width: 40px;
+        height: 50px;
+        bottom: -30px;    
+    }
+    .ds_bl {
+        left: -20px;
+        background: url(../img/ds_corners.png) no-repeat bottom left;    
+    }
+    .ds_br {
+        right: -20px;
+        background: url(../img/ds_corners.png) no-repeat bottom right;    
+    }
+    .ds_b {
+        bottom: -30px;
+        left: 20px;
+        right: 20px;
+        height: 30px;
+        background: url(../img/ds_hor.png) repeat-x left bottom;
+    }
+    /* Top */
+    .ds_tl,
+    .ds_tr {
+        height: 25px;
+        top: -5px;
+        width: 40px;
+    }
+    .ds_tl {
+        left: -20px;
+        background: url(../img/ds_corners.png) no-repeat top left;    
+    }
+    .ds_tr {
+        right: -20px;
+        background: url(../img/ds_corners.png) no-repeat top right;    
+    }
+    .ds_t {
+        left: 20px;
+        right: 20px;
+        top: -5px;
+        height: 5px;
+        background: url(../img/ds_hor.png) repeat-x;
+    }
+}

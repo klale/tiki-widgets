@@ -3,8 +3,6 @@ define([
     'underscore',
     'backbone',
     './base',
-    
-    'jquery-ui',
 ], function($, _, Backbone, gui) {
 
     var win = {};
@@ -45,33 +43,27 @@ define([
         className: 'gui-win',
         _template: _.template(''+
             '<header><div class="title"><%= obj.title %></div></header>'+
-            '<div class="content"></div>'+
-            '<footer>'+
-                '<div class="buttons"></div>'+
-            '</footer>'+
+            '<div class="content"></div>'+          
             '<div class="resize"></div>'
         ),
-        mixins: [
-            gui.ChildView
-        ],
+        mixins: [gui.ChildView],
         events: {
-            'mousedown header': '_onHeaderMouseDown',
             'mousedown': 'bringToTop',
-            'click .buttons .close': 'close',
-            'mousedown .resize': '_onResizeMouseDown',
-            'focusin': '_onFocusIn',            
-        },
-                
+            'focusin': 'onFocusIn',
+            'draginit header': 'onHeaderDragInit',
+            'draginit .resize': 'onResizeDragInit',
+            'dragmove .resize': 'onResizeDragMove',
+            'dragend .resize': 'onResizeDragEnd'            
+        },                
         initialize: function(config) {
-            this.title = config.title || this.title || 'asdee';
+            config = config || {};
+            this.title = config.title || this.title;
             this.template = config.template || this.template;
-            
-            _.bindAll(this, '_onResizeDrag', '_onResizeDragEnd', '_onFocusIn');            
         },    
         render: function() {
             this.$el.html(this._template({title: this.title}));
 
-        
+            // Add a dropshadow in old ie
             if($.browser.ltie9) {
                 var divs = ['ds_l','ds_r','ds_t','ds_b','ds_tl','ds_tr','ds_bl','ds_br'];
                 _.each(divs, function(item) {
@@ -80,72 +72,14 @@ define([
                 this.$el.iefocus();
                 this.$('> header h2, > header, > .resize').attr('unselectable', 'on');
             }
-            this.renderContent();
             return this;
         },
-        renderContent: function() {
-            this.$('>.content').html(this.template());            
-        },
-        alignTo: function(el, align) {
-            // if(align=='right') {
-            // 
-            //     elLeft = el.offset().left,
-            //     rightSpace = $(document).width() - (elLeft + el.width()),
-            //     winWidth = this.$el.outerWidth();
-            // 
-            // if(winWidth < rightSpace) {
-            //     // right
-            //     win.$el.css({left: tdLeft + td.width()});
-            // }
-            // else {
-            //     // left
-            //     win.$el.css({left: tdLeft - winWidth});                    
-            // }
-            // win.$el.css({top: td.offset().top});
-            // 
-        },
 
-
-        _ieRepaintScrollbars: function() {
-            this.$('.tabs > div').css('overflow', 'hidden').css('overflow', 'auto');
-        },
-        _onHeaderMouseDown: function(e) {
-            gui.drag.start({
-                ev: e,
-                el: this.el
-            });
-            e.preventDefault();                
-        },
-        _onResizeMouseDown: function(e) {
-            var curr = this.$el.position();
-            gui.drag.start({
-                ev: e,
-                ondrag: this.onResizeDrag,
-                onend: this.onResizeDragEnd,
-                startX: curr.left,
-                startY: curr.top
-            });
-            e.preventDefault();                        
-        },
-        _onResizeDrag: function(e, conf) {
-            var w = e.pageX - conf.startX,
-                h = e.pageY - conf.startY;
-            this.$el.css({'width': w, 'height': h});
-        },
-        _onResizeDragEnd: function(e) {
-            if($.browser.ltie9)
-                this._ieRepaintScrollbars();
-        },
-        _onFocusIn: function(e) {
-            this.bringToTop();
-        },
-                
-        
-        
         show: function() {
             if(!this.el.parentNode)
                 $(document.body).append(this.render().el);
             this.bringToTop();
+            // this.el.focus();
         },
         bringToTop: function() {
             var currz = parseInt(this.$el.css('z-index') || 0),
@@ -162,8 +96,8 @@ define([
             this.$el.css('z-index', (dialogs.length-1) + 100);
         },
         close: function() {
-            this.trigger('close');
             this.$el.remove();
+            this.trigger('close');            
         },
         center: function(args) {            
             var el = $(this.el),
@@ -172,15 +106,57 @@ define([
                 winWidth = $(window).width(),
                 winHeight = $(window).height();
 
-            var top = ((winHeight - height) / 2) + $(window).scrollTop(),
-                left = ((winWidth - width) / 2) + $(window).scrollLeft();
+            var top = ((winHeight - height) / 2) + $(window.document).scrollTop(),
+                left = ((winWidth - width) / 2) + $(window.document).scrollLeft();
 
-            var top = 10;
+            // var top = 10;
 
             el.css({left: left, top: top});
-        }
+        },
+
+
+        onFocusIn: function(e) {
+            this.bringToTop();
+        },
+        onHeaderDragInit: function(e, drag) {
+            var xtra = this.$('>header').getOffsetPadding();
+            drag.only();
+            drag.representative(this.el, e.offsetX+xtra.x, e.offsetY+xtra.y);
+        },
+        onResizeDragInit: function(e, drag) {
+            drag.winpos = $(this.el).offset();
+            drag.only();
+        },
+        onResizeDragMove: function(e, drag) {
+            var w = e.pageX - drag.winpos.left,
+                h = e.pageY - drag.winpos.top;
+            this.$el.css({'width': w, 'height': h});            
+        },
+        onResizeDragEnd: function(e, drag) {
+            drag.element.attr('style', '');
+        },
+
+
 
     });
+
+
+    win.Dialog = win.Window.extend({
+        className: 'gui-dialog',
+        _template: _.template(''+
+            '<header><div class="title"><%= obj.title %></div></header>'+
+            '<div class="content"></div>'+
+            '<footer>'+
+                '<div class="buttons"></div>'+
+            '</footer>'+
+            '<div class="resize"></div>'
+        ),
+    })
+
+    // win.Info
+    // win.Warning
+    // win.Confirm
+
 
 
     return win;

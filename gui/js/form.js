@@ -5,295 +5,476 @@ define([
     './base',
     './calendar',
     './dropdown',
-    'iframetransport',
-    'jquery-ui'
-], function($, _, Backbone, gui, calendar, dropdown) {
+    'iframetransport'
+], function($, _, Backbone, base, calendar, dropdown) {
 
-var form = {};
-
-/**
-    A collection of gui.Field objects
-*/
-form.Form = function(conf) {
-    conf = conf || {};
-    this.fields = {};
-    
-    if(conf.fields) {
-        if(!_.isArray(conf.fields))
-            throw new TypeError('Expected fields to be a list of gui.Field objects');
-    
-        // Build a name -> <field object> map    
-        for(var i=0,f; f=conf.fields[i]; i++) {
-            if(!f.name) 
-                throw new Error('Field must have a name');
-            this.fields[f.name] = f;
-        }
-    }
+var form = {
+    types: {}
 };
-_.extend(form.Form.prototype, Backbone.Events, {    
-    getValues: function() {
-        var values = {};
-        _.each(this.fields, function(f) {
-            values[f.name] = f.getValue() || '';
-        });
-        return values;        
+
+
+// =========
+// = Utils =
+// =========
+/*
+Utility function for creating a Field instance from
+a DOM element.
+*/
+function createFromElement(klass, el) {
+    var attr = $(el).getAllAttributes();
+    $(el).attr(klass.prototype.attributes || {});
+    $(el).addClass(klass.prototype.className)
+    return new klass({
+        el: el,
+        name: attr.name,
+        value: attr.value,
+        required: attr.required
+    });
+}
+
+function isfield(field) {
+    return field && field.setValue && field.getValue;
+}
+
+
+form.ErrorMessages = {
+    showError: function(field, error) {
+        var el = field.$el.parent().find('.error');
+        if(el.length) 
+            el.show().text(error.message);
+        else {
+            $('<div class="error"></div>').text(error.message).insertAfter(field.el);
+            field.$el.parent().addClass('invalid');
+        }
     },
-    setValues: function(values) {
-        _.each(this.fields, function(f, key) {
-            f.setValue(f.interpret(values[key]));
-            f.render();
-        });        
+    hideError: function(field) {
+        field.$el.parent().find('.error').fadeOut(function() {$(this).remove()});
+        field.$el.parent().removeClass('invalid');        
+    }    
+};
+
+
+
+
+
+// =========
+// = Forms =
+// =========
+form.Form = Backbone.View.extend({
+    
+    initialize: function(config) {
+        this.remoteValidate = config.remoteValidate;
+        // Bind handlers
+        _.bindAll(this, 'onFieldChange', 'onModelChange', 'onInvalid', 'onSync', 'onError');
+        
+        // Set fields and fieldsmap
+        this.fields = [];
+        this.fieldsmap = {};  // Todo: hmm.. now I've got two views of the same data.
+        _.each(config.fields, function(json) {
+            var field;
+            if(isfield(json))
+                field = json;
+            else if(isfield(json.type)) {
+                field = json.type;
+            }
+            else {
+                var klass = form.types[json.type];
+                if(!klass)
+                    throw new Error('Field factory form.types['+json.type+'] does not exist');
+                field = new klass(json);
+            }
+            field.on('change', this.onFieldChange)
+            this.fields.push(field);
+            this.fieldsmap[field.name] = field;
+        }, this);    
+
+        // Set the model
+        var model;
+        if(config.model) {
+            if(config.model instanceof Backbone.Model)
+                model = config.model;
+            else if(_.isObject(config.model))
+                // model = new form.Model(config.model)
+                model = new Backbone.Model(config.model)                
+        }
+        this.model = null; // undo backbone implicit assignment
+        // this.setModel(model || new form.Model());            
+        this.setModel(model || new Backbone.Model());                    
+    },
+    
+    // Implement in subclass
+    render: function() {
+        return this;
+    },
+    
+    // Implement in subclass
+    showError: function(field, error) {
+    },
+    
+    // Implement in subclass    
+    hideError: function(field) {
+    },
+    
+    // Use this to change the model of an existing form.
+    // Useful for a "row editing" form - a single form, and many models.
+    setModel: function(model) {
+        // unbind any exising model before switching
+        if(this.model) {
+            this.model.off('change', this.onModelChange);
+            this.model.off('invalid', this.onInvalid);
+            this.model.off('sync', this.onSync);
+            this.model.off('error', this.onError);      
+        }
+            
+        // Set the new model
+        this.model = model;
+        model.on('change', this.onModelChange);
+        model.on('invalid', this.onInvalid);
+        model.on('sync', this.onSync);
+        model.on('error', this.onError);
+
+        // Update all fields with new values
+        _.each(this.fields, function(field) {
+            var value = model.get(field.name);
+            field.setValue(value, {silent: true});
+        });
+    },
+    
+    remoteValidateOne: function(field) {
+        (attr = {})[field.name] = this.model.get(field.name)
+        this.model.save(null, {
+            attrs: attr, 
+            headers: {'X-Validate': 'single'},
+        });
+    },
+        
+    // Propagate all field changes to the model
+    onFieldChange: function(e) {
+        this.model.set(e.field.name, e.value);
+    },
+    
+    // Propagate any model changes to the field
+    onModelChange: function() {
+        _.each(this.model.changedAttributes(), function(v,k) {
+            var field = this.fieldsmap[k]
+            if(field) {
+                field.setValue(v);
+                field.render();
+                if(this.remoteValidate)
+                    this.remoteValidateOne(field);
+            }
+        }, this);
+    },
+    onInvalid: function(model, errors, resp) {
+        _.each(errors.errors || [], function(error) {
+            var field = this.fieldsmap[error.name];
+            this.showError(field, error);
+        }, this)
+    },
+    onSync: function(model, respdata, c) {
+        if(c.headers && c.headers['X-Validate'] == 'single')
+            this.hideError(this.fieldsmap[_.keys(c.attrs)[0]])
+        else {
+            _.each(this.fields, function(field) {
+                this.hideError(field)
+            }, this);
+            respdata = respdata || {};
+            if(respdata.redirect)
+                window.location.href = respdata.redirect;
+                
+        }
+    },
+    onError: function(model, resp, options) {
+        if(resp.status == 422) {
+            var resp = JSON.parse(resp.responseText)
+            model.trigger('invalid', model, resp, resp)        
+        }
     }
 });
-form.Form.extend = Backbone.View.extend;
 
 
-form.TabChain = {
+
+
+/*
+form.SimpleForm
+===============
+A simple <ul> based form layout.
+
+Example
+-------
+var myform = new form.SimpleForm({
+    model: new Backbone.Model(null, {
+        url: '/foo/bar'
+    }),
+    fields: [
+        new form.Text({name: 'title', label: 'Title'}),
+        new form.TextArea({name: 'description', label: 'Description'})
+    ],
+    metadata: {
+        'title': {label: 'Title'},
+        'description': {label: 'Description'},  // todo: add support for `renderer`?
+    }    
+});
+body.append(myform.render().el);
+myform.model.save()
+
+*/
+form.SimpleForm = form.Form.extend({
+    className: 'gui-simpleform',
+    template: _.template('<ul class="form"></ul>'),
+    rowTemplate: _.template2(''+
+        '<li>'+
+            '<div class="label">${obj.label}[[ if(obj.required) print("*") ]]</div>'+
+            '<div class="field"></div>'+
+        '</li>'),    
+    mixins: [form.ErrorMessages],
+    
+    initialize: function(config) {
+        form.SimpleForm.__super__.initialize.call(this, config);
+        this.metadata = config.metadata;
+    },
     render: function() {
-        var focusable = this.$('*:focusable');
-        var first = focusable.first(),
-            last = focusable.last();
-        focusable.first().on('keydown', function(e) {
-            if(e.which == gui.keys.TAB && e.shiftKey) { 
-                last.focus();
-                e.preventDefault();
-            }               
-        });            
-        focusable.last().on('keydown', function(e) {
-            if(e.which == gui.keys.TAB && !e.shiftKey) {
-                first.focus();
-                e.preventDefault();
-            }
-        });            
+        this.$el.empty().html(this.template());
+        var ul = this.$('>ul');
+
+        _.each(this.fields, function(field) {
+            var meta = this.metadata[field.name],
+                li = $(this.rowTemplate({
+                    label: meta.label, 
+                    required: field.required
+                }));
+            
+            li.children('.field').append(field.render().el);
+            li.addClass(field.typeName);
+            ul.append(li);
+        }, this);
+        return this;        
     }
-}
+});
 
 
 
-function pasteHtmlAtCaret(html) {
-    var sel, range;
-    if (window.getSelection) {
-        // IE9 and non-IE
-        sel = window.getSelection();
-        if (sel.getRangeAt && sel.rangeCount) {
-            range = sel.getRangeAt(0);
-            range.deleteContents();
 
-            // Range.createContextualFragment() would be useful here but is
-            // non-standard and not supported in all browsers (IE9, for one)
-            var el = document.createElement("div");
-            el.innerHTML = html;
-            var frag = document.createDocumentFragment(), node, lastNode;
-            while ( (node = el.firstChild) ) {
-                lastNode = frag.appendChild(node);
-            }
-            range.insertNode(frag);
+/*
 
-            // Preserve the selection
-            if (lastNode) {
-                range = range.cloneRange();
-                range.setStartAfter(lastNode);
-                range.collapse(true);
-                sel.removeAllRanges();
-                sel.addRange(range);
-            }
+Example
+-------
+// 1. Define a model
+var User = Backbone.Model.extend({
+    defaults: {
+        name: 'John Appleseed',
+        address: ''
+    },
+    // Add some client-side validation
+    validate: function(args, options) {
+        var errors = [];
+        if(!args.address) 
+            errors.push({name: 'address', message: 'Enter your address'});
+        return errors.length ? errors : null;
+    },
+    urlRoot: '/user'
+})
+
+// 2. Create the CustomForm
+var user = new User();
+var myform = new form.CustomForm({
+    el: $('div.form'), 
+    model: user,
+});
+myform.render();
+
+// 3. Add a click handler to the button
+$('button.submit').click(function() {
+    user.save();
+})
+
+*/
+form.CustomForm = form.Form.extend({
+    mixins: [form.ErrorMessages],
+    
+    initialize: function(config) {
+        // Collect all fields
+        if(config.fields) {
+            var fields = config.fields;            
+        } 
+        else {
+            var fields = [];
+            this.$('*[name]').each(function() {
+                var div = $(this)
+                var type = div.attr('type');
+                var Type = form.types[div.attr('type')];
+                if(!Type) 
+                    throw new Error('Unknown field type: ' + div.attr('type'));
+                var field = Type.createFromElement(this);
+                fields.push(field);
+            });            
         }
-    } else if (document.selection && document.selection.type != "Control") {
-        // IE < 9
-        document.selection.createRange().pasteHTML(html);
-    }
-}
-
-
-form.Field = {
-    /**
-    A field is an input point for the user. Its value is stored in $(this.el).data('value').
-    The stored value is always in a json-transportable format. eg "test", 123, {a:1, b:2}, 
-    but not a <object Date>.
+        config.fields = fields;
+        form.CustomForm.__super__.initialize.call(this, config);
         
-    Example "form":
-    -------------------------
-    var SignupView = Backbone.View.extend({
-        render: function() {
-            // Create a form
-            this.form = new gui.Form({fields:
-                new gui.TextField({name: 'title', value: 'I am a value'}),
-                new gui.TextArea({name: 'description'})
+        if(config.fields) {
+            // find all fields
+            var fieldsmap = this.fieldsmap;
+            this.$('*[name]').each(function() {
+                var field = fieldsmap[$(this).attr('name')];
+                if(field.attributes)
+                    $(this).attr(field.attributes)
+                field.setElement(this);
+                field.render();
+                field.$el.addClass(field.className)
+                field.delegateEvents();
             });
             
-            // Change the value of the title
-            var fields = this.form.fields;
-            fields.title.setValue('The new value');
-            
-            // ..or set many values from a dict
-            this.form.setValues({
-                title: 'Test title',
-                description: 'Bla bla bla'
+        }
+    },    
+    render: function() {
+        _.each(this.fields, function(field) {
+            // console.log('RENDER: ', field.name)
+            field.render();
+        });
+        return this;
+    }
+});
+
+
+
+
+
+/*
+<div class="form" id="484683">
+    <h1 name="title">Foobar</h1>
+    <div name="content">I am long text with <em>html</em>.</div>
+    <div name="news_date" value="2013-01-01">1 januari 2013</div>   <-- pick value from either el.attr('value') or el.text(). 
+                                                                        <FieldClass>.createFromElement is used for this.
+</div>
+
+
+var model = {...}
+var form = new CustomForm2({
+    el: $('.form'),
+    model: model
+    form: new form.Form({..})          // <-- should be able to pass a formspec
+})
+
+The layout is the actual el.
+However, a formspecification is given, and all you do in the layout
+is referencing field names. 
+Eg <div name="favorite_color" value="blue">Blue!</div>    <-- will become a combo with 20 options, using the form spec
+                                                          <-- I need a custom js renderer here as well, eg "red" -> "Red!"
+
+Also, the origial divs are not touched, until clicked. Then they are wrapped by the appropriate field view.
+
+The PageEditor has some formspecs. It iterates all <div id="123" form="spotform">...</div>
+and creates 1 CustomForm2 for each.
+
+*/
+form.CustomForm2 = form.Form.extend({
+    className: 'gui-form',
+    rendered: false,
+    events: {
+        'click *[name]': 'onClickField'
+    },
+    mixins: [base.ChildView],
+        
+    initialize: function(config) {    
+        form.Form.prototype.initialize.call(this, config);
+        // this.delegateEvents();
+    },    
+    render: function() {
+        // Well, do nothing here
+        return this;
+    },
+    onClickField: function(e) {
+        var target = $(e.currentTarget),
+            field = this.fieldsmap[target.attr('name')];
+        
+        // ..now apply the behavior of field onto the clicked element
+        if(!target.is('.wrapped')) {
+            field.wrapElement(target);
+            target.addClass('wrapped');
+            field.on('fieldblur', function() {
+                field.unwrapElement(target)
+                target.removeClass('wrapped');
             });
-          
-            // Log all current values
-            console.log(this.form.getValues());
-        },
-    });
-    
-    
-    Different versions describing the same value:
-    - A pretty version. 
-    - The value deserialized into javascript land
-    - The value serialized into something that can be 
-      transported (as json in most cases)
-    
-    Rendering the value
-    - format and shove string into a <div..></div>
-    - The value could deserialize into a Collection of Models, which
-      is fed to a view, which in turn renders a list of stuff.
-    
-    setValue/getValue:
-    - Implement as you like, as log as the stored value is json serializable.
-    - setValue and getValue only deal with the json transportable 
-      format. (eg a js Date object is never returned from a .getValue())
-    - setValue does not trigger an implicit re-render.
-    
-    interpret(v):
-    - Accepts a string (or other types?) and returns an interpreted value 
-      in its trasportable format.
+        }        
+    },    
+});
 
 
-    nodeField.getValue()
-    >>> ['1234', '38272']
-    dateField.setFormat('epoch');
-    dateField.getValue()
-    >>> 1338887000000
-    dateField.setFormat('YYYY-MM-DD');
-    dateField.getValue()
-    >>> '2012-06-05'
-    */    
-    // initialize: function(config) {
-    //     config = config || {};
-    //     this.name = config.name || '';
-    //     if(config.value !== undefined) {
-    //         this.setValue(config.value);
-    //     }
-    //     if(config.el) {
-    //         this.el = config.el;
-    //         this.$el = $(config.el);
-    //     }
-    // },
+
+
+
+
+// ==========
+// = Fields =
+// ==========
+/**
+A field is an input point for the user. Its value is stored in this.data.
+The stored value is always in a json-transportable format. eg "test", 123, {a:1, b:2}, 
+but not a <object Date>.
+        
+Different versions of the same value:
+- A pretty version. 
+- The value deserialized into javascript land
+- The value serialized into something that can be 
+  transported (as json in most cases)
+*/    
+form.Field = {
     initialize: function(config) {
         this.name = config.name;
         this.required = config.required;        
-        this.label = config.label;
         this.config = config;
 
-        // Set config.value or config.default
-        if(config.value !== undefined)
-            this.setValue(config.value);
-        else if(config['default'] !== undefined)  // cannot use foo.default in IE
-            this.setValue(config['default']);
+        // Set value
+        if(config.value !== undefined) {
+            // Use given config.value
+            this.value = config.value;
+        }
+        else if(config['default'] !== undefined) { // config.default = error in IE (reserved word)
+            // Use configured default value
+            this.value = config['default'];                
+        }
+        else {
+            // Use the Field's default value, or null
+            this.value = this.constructor.defaultValue || null;
+        }
     },
-    interpret: function(value) {
-        if(value === '') 
-            return undefined;
-        return value;
-    },    
+    
+    // Collect all field classes in a dict `form.types`, keyed on `field.typeName`
+    initcls: function() {
+        var typeName = this.prototype.typeName;
+        if(typeName && !form.types[typeName]) 
+            form.types[typeName] = this;
+    },
+    
+    getValue: function() {      
+        return this.value;
+    },
+    
+    // Implement as you like, as log as `value` is json serializable.
     setValue: function(value, options) {
         options = options || {};
-        // var old = $(this.el).data('value');
+
         var old = this.value;
         if(old !== value) {                
-            // if(value === undefined) {
-            //     $(this.el).removeData('value', value);
-            // }                
-            // else {
-            //     $(this.el).data('value', value);
-            // }
             this.value = value;
             if(!options.silent) {
                 this.trigger('change', {field: this, value: value});
                 this.$el.trigger('fieldchange', {field: this, value: value, name: this.name})
             }
         }
-    },
-    unsetValue: function(options) {
-        options = options || {};
-        // var old = this.$el.data('value');
-        var old = this.value;
-        if(old !== undefined) {
-            // $(this.el).removeData('value');
-            this.value = value;
-            if(!options.silent) {
-                this.trigger('change', {field: this});            
-                this.$el.trigger('fieldchange', {field: this, name: this.name})
-            }
-        }
-    },
-    getValue: function() {      
-        // return $(this.el).data('value');
-        return this.value;
     }
 };
 
 
-/**
-A mixin for intercepting paste (ctrl+v) operations.
-When user hits ctrl+v, the default paste is cancelled, and
-instead an event "paste" is triggered, carrying the browser
-event and the pasted text.
-
-Example
---------------------
-var KalleTextField = gui.TextField.extend({
-    mixins: [gui.Field, gui.InterceptPaste],
-    
-    initialize: function(config) {
-        gui.TextField.prototype.initialize.call(this, config);
-        gui.InterceptPaste.initialize.call(this);
-        this.on('paste', this.onPaste, this);
-    },
-    onPaste: function(e) {
-        var data = e.data.replace(/kalle/g, 'hassan');
-        WysiHat.Commands.insertHTML(data);
-    }
-});
 
 
-*/
-form.InterceptPaste = {
-    initialize: function() {
-        this.$el.bind('paste', $.proxy(this._onPaste, this));
-    },
-    _onPaste: function(e) {
-        var ev = e.originalEvent,
-            el = $('<div></div>')[0],
-            savedcontent = el.innerHTML,
-            data = '';
-        if(ev && ev.clipboardData && ev.clipboardData.getData) { // Webkit
-            if (/text\/html/.test(ev.clipboardData.types)) {
-                var data = ev.clipboardData.getData('text/html');
-            }
-            else if (/text\/plain/.test(ev.clipboardData.types)) {
-                var data = ev.clipboardData.getData('text/plain');
-            }
-            this.trigger('paste', {e: e, data: data});
-            e.stopPropagation();
-            e.preventDefault();
-            return false;
-        } else {
-            function wait() {
-                if(el.childNodes && el.childNodes.length > 0)
-                    this.processPaste(el.innerHTML);
-                else
-                    setTimeout(wait,1000);         
-            }
-            wait();
-            return true;
-        }        
-    }
-};
+
+
 
 
 /** 
-A TextField
+A text field
  
    ..typing something.. 
    --> this.setValue(this.interpret($(this.el).html()))
@@ -301,61 +482,72 @@ A TextField
    ..model changes..
    --> this.render()
 */ 
-form.TextField = Backbone.View.extend({
-    tagName: 'div',
-    className: 'textfield',
+form.Text = Backbone.View.extend({
+    className: 'gui-text',
+    typeName: 'text',
     attributes: {
-        tabindex: '0', 
-        contentEditable: 'true'
+        tabindex: 0, 
+        contentEditable: true
     },
     events: {
-        'keydown': 'onKeyDown',
-        'keyup': 'onKeyUp',
+        'keypress': 'onKeyPress',
         'focus': 'onFocus',
         'blur': 'onBlur'
     },
+    hotkeys: {
+        'keydown return': 'onReturnKeyDown',
+        'keydown esc': 'onEscKeyDown',
+    },    
     mixins: [form.Field],
     
     initialize: function(config) {
         config = config || {};
         form.Field.initialize.call(this, config);
-        this.emptytext = config.emptytext || '';
-
+        this.renderer = config.renderer;
+        this.$el.attr('name', this.name);
+        
         if($.browser.ltie9) 
             this.$el.iefocus();        
-    },  
-    getValue: function() {         
-        return form.Field.getValue.call(this) || '';
-    },
-    format: function(value) {
-        // make the value pretty
+    },      
+        
+    // Accepts a string and returns an interpreted value in a json trasportable format. 
+    // Eg "tomorrow" could be interpreted as now + 1d.
+    interpret: function(value) {
         return value;
     },
-    interpret: function(value) {
-        // make a pretty value real
-        if(value === '') 
-            return undefined;
-        return value.replace(/\n/g, '');
-    },
     render: function() {
-        var v = this.getValue();
-        if(this.emptytext && v === undefined)
-            this.$el.addClass('empty').html(this.emptytext);
-        else
-            this.$el.removeClass('empty').html(this.format(v));
-        this.$el.attr('name', this.name);
-        this.delegateEvents();
+        var v = this.renderer ? this.renderer(this) : this.getValue();
+        this.$el.html(v);
         return this;
+    },
+    
+    // Focus the text field
+    focus: function() {
+        this.el.focus();
+        this.$el.moveCursorToEnd();
+        this.$el.selectAll();
     },
     abort: function() {
         $(this.el).html(this.format(this.getValue()));
     },
+    
+    // Attach this View on the given el
+    wrapElement: function(el) {
+        this._orig_el = this.el;
+        this._orig_attr = $(el).getAllAttributes();
+        this.setElement(el);
+        this.delegateEvents();
+        $(el).attr(this.attributes);
+        this.$el.removeClass('textfield');
+    },
+    // Detach this View from its currently wrapped element
+    unwrapElement: function() {
+        this.$el.removeAttr('tabindex');
+        this.$el.removeAttr('contenteditable');
+    },
     onFocus: function(e) {
-        if($(this.el).is('.empty'))
-            $(this.el).removeClass('empty').html('');            
-
-        var keydown = gui._keyDownEvent;
-        if(keydown && keydown.keyCode == gui.keys.TAB)
+        var keydown = base._keyDownEvent;
+        if(keydown && keydown.keyCode == base.keys.TAB)
             this.$el.moveCursorToEnd();            
     },     
     onBlur: function(e) {
@@ -364,39 +556,54 @@ form.TextField = Backbone.View.extend({
             this.setValue(v);
             this.render();            
         }
+        this.trigger('fieldblur');
     },
-    onKeyDown: function(e) {
-        if(e.keyCode == gui.keys.ENTER) {
-            e.preventDefault();
-            return;
-        } else if(e.keyCode == gui.keys.ESC) {
-            this.abort();
-        }
-        gui._keyDownEvent = e;
-        // e.stopPropagation();
+    onReturnKeyDown: function(e) {        
+        // Set value immediately when pressing Return, as the event
+        // may continue upwards to a form, triggering a submit.
+        var v = this.interpret(this.$el.getPreText());        
+        if(v !== this.getValue()) {
+            this.setValue(v);
+        }        
+        // Don't allow newlines in a text field
+        e.preventDefault();
     },
-    onKeyUp: function(e) {
-        if(e.keyCode == gui.keys.ENTER) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        gui._keyDownEvent = null;        
+    onEscKeyDown: function(e) {
+        this.abort();
+    },
+    onKeyPress: function(e) {
+        // On eg fututre numeric textfield, type is supposed to only 
+        // trigger when hitting an allowed key.
+        this.trigger('type', {e: e, character: String.fromCharCode(e.which)});
     }
+},{
+    createFromElement: function(el) {
+        var field = createFromElement(this, el);
+        return field
+    },
+    defaultValue: ''
 });
 
-form.TextArea = form.TextField.extend({
-    className: 'textarea',
-    
-    initialize: function(config) {
-        form.TextField.prototype.initialize.call(this, config);
-    },
-    onBlur: function(e) {        
-        var value = this.interpret(this.$el.html());
 
-        if(value !== this.getValue()) {
-            this.setValue(value);          
-        }
+
+form.TextArea = form.Text.extend({
+    className: 'gui-textarea',
+    typeName: 'textarea',
+    hotkeys: {
+        'keydown return': 'onReturnKeyDown'
     },
+    attributes: {   // <---- TODO: If not repeated here, className:'gui-textarea' is set on form.Text as well
+        tabindex: 0, 
+        contentEditable: true
+    },    
+    mixins: [base.ChildView, form.Field],
+    
+    initialize: function(config) {    
+        form.Text.prototype.initialize.call(this, config);
+        form.Field.initialize.call(this, config);        
+    },
+
+    
     render: function() {
         var v = this.getValue();
         if(this.emptytext && v === undefined)
@@ -430,6 +637,7 @@ form.TextArea = form.TextField.extend({
         // The raw form.TextArea value is stored as plain text with \n
         // as exepected. Convert this proper html. 
         // Moz uses <br>, webkit uses <div>, and IE uses <p>.
+        value = value || '';
         if($.browser.mozilla) {
             return value.trim().replace('\n', '<br>');
         }
@@ -446,60 +654,54 @@ form.TextArea = form.TextField.extend({
         
         return out.html();
     
-    },        
-    onKeyDown: function(e) {
-        if(e.keyCode == gui.keys.ESC) {
-            this.abort();
-        }
-        e.stopPropagation();
+    },   
+    wrapElement: function(el) {
+        this._orig_el = this.el;
+        this._orig_attr = $(el).getAllAttributes();
+        this.setElement(el);
+        this.delegateEvents();
+        $(el).attr(this.attributes);
+        this.$el.removeClass('textarea');
     },
-    onKeyUp: function() {
-        
-    },
+    unwrapElement: function() {
+        this.$el.removeAttr('tabindex');
+        this.$el.removeAttr('contenteditable');
+    },         
     onFocus: function(e) {
-        if(this.$el.is('.empty')) {
+        if(this.$el.is('.empty'))
             this.$el.removeClass('empty').html('');
+    },
+    onBlur: function(e) {        
+        var value = this.interpret(this.$el.html());
+
+        if(value !== this.getValue()) {
+            this.setValue(value);          
         }
+    },
+    onReturnKeyDown: function(e) {
+        e.stopPropagation();
     }
-})
-
-
-form.AmountField = form.TextField.extend({
-    initialize: function(config) {
-        form.TextField.prototype.initialize.call(config);
-    },
-    format: function(v) {
-        // make value pretty
-        return accounting.formatMoney(v);
-    },
-    interpret: function(v) {
-        // Todo: code dup of form.TextField.interpret
-        var v = value.replace('<br>', ''); // contenteditable
-        if(v === '') 
-            return undefined;
-        
-        // Todo: finish implmentation
+},{
+    createFromElement: function(el) {
+        return createFromElement(this, el);
     }
 });
 
 
-
-
-// form.DateField = form.TextField.extend({
 form.DateField = Backbone.View.extend({
-    tagName: 'div',
-    className: 'datefield',
+    typeName: 'date',
+    className: 'gui-datefield',
     mixins: [form.Field],
-    attributes: {
-        tabIndex: '0'
-    },
+    // attributes: {
+    //     tabIndex: 0
+    // },
     events: {
         'keydown': 'onKeyDown',
         'keyup': 'onKeyUp',
-        'click button.calendar': 'showDatePicker'
+        'click button.calendar': 'showDatePicker',
     },
     template: _.template(''+
-        '<button class="calendar"></button>'+
+        '<button class="calendar" tabindex="-1"></button>'+
         '<div class="textfield" contenteditable="true" tabindex="0"></div>'
     ),
 
@@ -508,7 +710,7 @@ form.DateField = Backbone.View.extend({
     yyyymmdd: /^(\d{4})(\d{2})(\d{2})$/,
     yymmdd: /^(\d{2})(\d{2})(\d{2})$/,
     
-        
+    
     initialize: function(config) {
         config = config || {};
         this._format = config.format || 'YYYY-MM-DD';
@@ -523,11 +725,13 @@ form.DateField = Backbone.View.extend({
         this.$el.html(this.template());
         var text = this.format(val);
         this.$('.textfield').html(text);
-        this.$('.textfield').bind('blur', $.proxy(this.onBlur, this));
+        // this.$('.textfield').bind('blur', $.proxy(this.onBlur, this));
+        
+        var self = this;
+        this.$('.textfield').bind('focusleave', $.proxy(this.onTextFocusLeave, this));        
         this.$('.textfield').bind('focus', $.proxy(this.onFocus, this));
         if($.browser.ltie9)
             this.$('.textfield').iefocus();    
-
 
         this.delegateEvents();                
         return this;
@@ -553,7 +757,7 @@ form.DateField = Backbone.View.extend({
         }
         else if(/^\d+$/.test(s)) {
             // Timestamp, millis, eg 1328137200000
-            return parseInt(s);
+            d = moment(parseInt(s));
         }        
         else if(s) {
             if(this.iscompactdate.test(s)) {
@@ -564,11 +768,12 @@ form.DateField = Backbone.View.extend({
                 var year = parseInt(gr[1]) > 1000 ? gr[1] : parseInt(gr[1])+2000;
                 d = moment((new Date(year, gr[2]-1, gr[3])).getTime()); // month is zero-based
             } else {
-                d = moment(s, this._format);
+                // todo: use a regex here instead of using moment, and just return the string
+                d = moment(s, 'YYYY-MM-DD');  
             }
         }
         if(d)
-            return d.toDate().getTime();
+            return d.format('YYYY-MM-DD');
     },
     format: function(value) {
         // Make the value pretty. value = millis since epoch
@@ -597,7 +802,7 @@ form.DateField = Backbone.View.extend({
             this.datepicker.$el.hide();
             this.datepicker.render();
             this.datepicker.on('change', this.onDatePickerChange, this);
-            this.datepicker.$el.bind('blur', $.proxy(this.onDatePickerBlur, this));
+            // this.datepicker.$el.bind('blur', $.proxy(this.onDatePickerBlur, this));
             this.datepicker.$el.bind('keydown', $.proxy(this.onDatePickerKeyDown, this));
             $(document.body).append(this.datepicker.el);
         }
@@ -617,10 +822,42 @@ form.DateField = Backbone.View.extend({
         var textfield = this.$('.textfield');
         if(!textfield.is(':focus'))
             textfield.focus().selectAll();
-    },    
+    },   
+    wrapElement: function(el) {
+
+
+        // // grab the old content and remove it from the dom
+        // var oldContent = this.$el.children();
+        // if(!oldContent.length) {
+        //     oldContent = this.$el.text();
+        //     this.$el.empty();
+        // }
+        // else
+        //     oldContent.remove();
+        // 
+        // // Add the field                
+        // this.$el.append(this.render().el);
+        // this.$el..delegateEvents();
+        // this.$el..focus();
+        
+        // Store the orignal dumb el
+        this._orig_el = $(el).clone();
+        
+
+        this.setElement(el);
+        this.render();
+        this.delegateEvents();
+        this.$el.attr(this.attributes);
+    },
+    unwrapElement: function() {
+        console.log('orig: ', this._orig_el)
+        this.$el.replaceWith(this._orig_el)
+        // this.$el.removeClass('datefield')
+        // this.$el.removeAttr('tabindex');
+    },     
     onFocus: function(e) {
-        var evt = gui._keyDownEvent;
-        if(evt && evt.keyCode == gui.keys.TAB) {
+        var evt = base._keyDownEvent;
+        if(evt && evt.keyCode == base.keys.TAB) {
             this.$('.textfield').selectAll();
         }
     },
@@ -631,9 +868,16 @@ form.DateField = Backbone.View.extend({
             this.datepicker.$el.fadeOut(150);
         this.focus();
     },
-    onBlur: function(e) {
-        this._setValue();
+    onTextFocusLeave: function(e) {
+        var ae = $(document.activeElement);
+        if(!ae.is('.datepicker') && !ae.is('.datefield')) {
+            this._setValue();
+            this.trigger('fieldblur');
+        }
     },
+    // onBlur: function(e) {
+    //     this._setValue();
+    // },
 
     onChange: function(e) {
         // Update the datepicker
@@ -652,46 +896,42 @@ form.DateField = Backbone.View.extend({
         this.hideDatePicker();
     },
     onKeyDown: function(e) {
-        if(e.keyCode == gui.keys.ESC)
+        if(e.keyCode == base.keys.ESC)
             this.hideDatePicker();
             
-        if(e.keyCode == gui.keys.DOWN) {
+        if(e.keyCode == base.keys.DOWN) {
             this._setValue();
             this.showDatePicker();
             e.preventDefault();
             e.stopPropagation();
-        } else {
-            form.TextField.prototype.onKeyDown.call(this, e);
         }
     },
     onKeyUp: function(e) {
-        if(e.keyCode == gui.keys.ENTER) {
+        if(e.keyCode == base.keys.ENTER) {
             e.preventDefault();
             e.stopPropagation();
         }
     },    
     onDatePickerKeyDown: function(e) {
-        if(e.keyCode == gui.keys.ESC) {
+        if(e.keyCode == base.keys.ESC) {
             this.hideDatePicker();
         }
+    }
+},{
+    createFromElement: function(el) {
+        return createFromElement(this, el);
     }
 });
 
 
-
-
-
-
 form.DatePicker = calendar.MonthCalendar.extend({
-    className: 'calendar datepicker',
-    
-    // TODO: replace this uglyness with the new SubView mixin?
-    events: _.extend(_.clone(calendar.MonthCalendar.prototype.events), {
+    className: 'gui-datepicker',
+    events: {
         'mouseenter tbody td.day': 'onMouseEnterDay',
         'keydown': 'onKeyDown',
         'click .day': 'onClick'
-    }),
-    mixins: [form.Field],
+    },
+    mixins: [form.Field, base.ChildView],
     
     initialize: function(conf) {
         form.Field.initialize.call(this, conf);
@@ -701,10 +941,11 @@ form.DatePicker = calendar.MonthCalendar.extend({
         calendar.MonthCalendar.prototype.render.call(this);
         if($.browser.ltie9)
             this.$el.iefocus();
-        $(this.el).attr('tabIndex', '-1');
+        $(this.el).attr('tabIndex', -1);
         
         if(this.getValue()) {
-            var ymd = moment(this.getValue()).format('YYYY-MM-DD');
+            // I WAS HERE (.local()....)
+            var ymd = moment(this.getValue()).local().format('YYYY-MM-DD');
             this.$('.day[data-ymd="'+ymd+'"]').addClass('selected');
         }
     
@@ -741,7 +982,7 @@ form.DatePicker = calendar.MonthCalendar.extend({
         
         var tr = curr.parents('tr:first'),
             select,
-            keys = gui.keys,
+            keys = base.keys,
             key = e.keyCode,
             arrows = [keys.LEFT, keys.RIGHT, keys.UP, keys.DOWN];
         
@@ -778,11 +1019,10 @@ form.DatePicker = calendar.MonthCalendar.extend({
 
 
 form.ComboBox = Backbone.View.extend({
-    tagName: 'div',
-    className: 'combobox',
+    typeName: 'combo',
+    className: 'gui-combobox',
     template: _.template(''+
-        '<i></i>'+
-        '<span tabindex="0"><%= text %></span>'+
+        '<span tabindex="0"><%= text || "&nbsp;" %></span>'+
         '<div class="button"></div>'
     ),
     events: {
@@ -833,15 +1073,17 @@ form.ComboBox = Backbone.View.extend({
         this.$('>span').focus();
     },
     getDropdown: function() {
+        // Lazy-create the dropdown
         if(!this.dropdown) {
             var dd  = new dropdown.DropdownList({
                 options: this.options,
                 overlay: this.overlay
             });
-            dd.on('select', this.onDropdownSelect, this);
+            dd.selectable.on('choose', this.onDropdownChoose, this);
             dd.$el.bind('keydown', $.proxy(this.onDropdownKeyDown, this));
             dd.on('blur', this.onDropdownBlur, this);
             dd.on('show', this.onDropdownShow, this);
+            dd.on('hide', this.onDropdownHide, this);            
             dd.$el.bind('keypress', $.proxy(this.onDropdownKeyPress, this));
             this.dropdown = dd;
         }
@@ -850,12 +1092,13 @@ form.ComboBox = Backbone.View.extend({
     showDropdown: function() {
         var dd = this.getDropdown();
         if(!dd.$el.is(':visible')) {
-            var pos = this.$el.screen();
-            dd.showAt(pos.left, pos.top+this.$el.outerHeight());
+            // var pos = this.$el.screen();
+            // dd.show(pos.left, pos.top+this.$el.outerHeight());
+            dd.show(this.el);
             dd.$el.css({'min-width': $(this.el).outerWidth()});
-            dd.select(dd.$('li[id="'+this.getValue()+'"]'));
+            dd.selectable.select(dd.$('li[id="'+this.getValue()+'"]'));
+            dd.el.focus();
         }
-        dd.refresh();
     },
     onMouseDown: function(e) {
         var dropdown = this.getDropdown();
@@ -865,18 +1108,24 @@ form.ComboBox = Backbone.View.extend({
         e.preventDefault();
     },
     onDropdownShow: function(dropdown) {
-        dropdown.focus();
+        dropdown.el.focus();
+        this.$el.addClass('active');
     },    
-    onDropdownSelect: function(dropdown, e, selected) {
-        this.setValue(this.interpret($(selected).attr('id')));
+    onDropdownHide: function(dropdown) {
+        dropdown.el.focus();
+        this.$el.removeClass('active');    
+    },    
+    onDropdownChoose: function(e) {
+        var option = this.dropdown.options.at($(e.selected).index());
+        this.setValue(option.id);
         this.render();
         this.focus();
     },
     onDropdownKeyDown: function(e) {
-        if(e.keyCode == gui.keys.TAB) {
+        if(e.keyCode == base.keys.TAB) {
             this.focus();
         }
-        else if(e.keyCode == gui.keys.ESC) {
+        else if(e.keyCode == base.keys.ESC) {
             this.getDropdown().hide();
             this.focus();
             e.stopPropagation();
@@ -893,15 +1142,16 @@ form.ComboBox = Backbone.View.extend({
     },
     onKeyDown: function(e) {
         var dropdown = this.getDropdown();
-        if(e.keyCode == gui.keys.DOWN) {
+        if(e.keyCode == base.keys.DOWN) {
             this.showDropdown();
             e.preventDefault();
             dropdown.el.focus();
         } 
         else if(dropdown.$el.is(':visible')) {
-            if(e.keyCode == gui.keys.ESC) {
+            if(e.keyCode == base.keys.ESC) {
                 this.abort();
-            } else if(e.keyCode == gui.keys.TAB) {
+                e.stopPropagation();
+            } else if(e.keyCode == base.keys.TAB) {
                 dropdown.el.focus();
                 e.preventDefault();
             }
@@ -916,21 +1166,28 @@ form.ComboBox = Backbone.View.extend({
             if(a!==this.$('>span')[0] && a !== this.getDropdown().el) {
                 this.trigger('blur', this);
             }
-        },this), 20); // A short delay for webkit
+        },this), 1); // A short delay for webkit
     },
     onBlur: function() {
         this.abort();
         this.$el.removeClass('focus');
+        this.trigger('fieldblur');
     }
     
+},{
+    createFromElement: function(el) {
+        return createFromElement(this, el);
+    }
 });
 
 form.EditableComboBox = form.ComboBox.extend({
-    /* A cross between a textfield and combobox. */
-    className: 'combobox editable',
+    /* A cross between a text and combobox. */
+    className: 'gui-combobox editable',
+    typeName: 'editablecombo',
     attributes: {
-        tabIndex: '0'
+        tabIndex: 0
     },
+    mixins: [form.Field],
 
     render: function() {
         form.ComboBox.prototype.render.call(this);
@@ -958,6 +1215,7 @@ form.EditableComboBox = form.ComboBox.extend({
         this.setValue(v);
         this.$el.removeClass('focus');
         this.abort();
+        this.trigger('fieldblur');
     },
     onMouseDown: function(e) {
         if($(e.target).is('.button'))
@@ -967,8 +1225,10 @@ form.EditableComboBox = form.ComboBox.extend({
 
 
 form.FilteringComboBox = form.ComboBox.extend({
-    className: 'combobox searchable',
+    className: 'gui-combobox searchable',
+    typeName: 'filteringcombo',
     overlay: false,
+    mixins: [form.Field],
 
     initialize: function() {
         form.ComboBox.prototype.initialize.apply(this, arguments);
@@ -1010,19 +1270,19 @@ form.FilteringComboBox = form.ComboBox.extend({
     showDropdown: function() {
         var dd = this.getDropdown();
         if(!dd.$el.is(':visible')) {
-            var pos = this.$el.screen();
-            dd.showAt(pos.left, pos.top+this.$el.outerHeight());
+
+            dd.show(this.el);
             dd.$el.css({'min-width': $(this.el).outerWidth()});
-            dd.select(dd.$('li[id="'+this.getValue()+'"]'));
+            dd.selectable.select(dd.$('li[id="'+this.getValue()+'"]'));
             dd.filter('');
+            dd.el.focus();
         }
-        dd.refresh();
     },
     
     // dropdown events
     onDropdownShow: function(dropdown) {
         dropdown.filter('');
-        dropdown.focus();
+        dropdown.el.focus();
     },
     onDropdownKeyPress: function(e) {
         this.startTyping(String.fromCharCode(e.which));
@@ -1042,16 +1302,16 @@ form.FilteringComboBox = form.ComboBox.extend({
     },
     onSpanKeyDown: function(e) {
         var dropdown = this.getDropdown();
-        if(e.keyCode == gui.keys.ENTER) {
+        if(e.keyCode == base.keys.ENTER) {
             e.preventDefault();
             e.stopPropagation();
         }
-        if(e.keyCode == gui.keys.ENTER && dropdown.$('li:visible').length == 1) {
+        if(e.keyCode == base.keys.ENTER && dropdown.$('li:visible').length == 1) {
             // Only a single visible option? select it on enter
             dropdown._triggerSelect(e, dropdown.$('li:visible')[0]);
             this.abort();
         }
-        else if(e.keyCode == gui.keys.ESC) {
+        else if(e.keyCode == base.keys.ESC) {
             this.abort();
         }        
     },    
@@ -1065,23 +1325,206 @@ form.FilteringComboBox = form.ComboBox.extend({
             var s = this.$('>span').text().replace(/\n/gi, '');
             var dropdown = this.getDropdown();
             dropdown.filter(s); 
-            if(dropdown.scrollable) 
-                dropdown.scrollable.refresh();
         }
     },
     onBlur: function() {
         // the EditableCombo does a setValue here, SearchableCombo does an abort
         this.abort();
         this.$el.removeClass('focus');
+        this.trigger('fieldblur');        
     }
 });
 
 
+form.PasswordField = form.Text.extend({
+    typeName: 'password',
+    className: 'gui-password',
+    mixins: [form.Field]
+});
+
+
+form.Checkbox = Backbone.View.extend({
+    typeName: 'checkbox',
+    className: 'gui-checkbox',
+    events: {
+        'change': 'onCheckboxChange'
+    },
+    mixins: [form.Field],
+    
+    initialize: function(config)  {
+        form.Field.initialize.call(this, config);
+    },
+    render: function() {
+        this.$el.empty();
+        var checkbox = $('<input type="checkbox"/>').attr({
+            name: this.name
+        });
+        if(this.getValue()) {
+            checkbox.attr('checked', 'checked');
+        }
+
+        if(this.config.text) {
+            var rnd = parseInt(Math.random() * 100000),
+                id = this.name + '_' + rnd,
+                label = $('<label for="'+id+'"> '+this.config.text+'</label>');
+
+            checkbox.attr('id', id);
+            this.$el.append(checkbox).append(label);
+        }
+        else
+            this.$el.append(checkbox);
+        
+        return this;
+    },
+    // onCheckboxChange: function() {
+    //     var cb = $('input[type="checkbox"]');
+    //     var v = cb.is(':checked') ? cb[0].value : null;
+    //     this.setValue(v);
+    // },
+    onCheckboxChange: function() {
+        this.setValue(this.$('input').is(':checked'));
+    }
+    
+},{
+    createFromElement: function(el) {
+        var attr = $(el).getAllAttributes();
+        var checked = attr.checked == 'true';
+
+        return new this({
+            el: el,
+            name: attr.name,
+            value: attr.value,
+            required: attr.required,
+            checked: checked
+        });
+    }
+});
+
+
+
+form.CheckboxGroup = Backbone.View.extend({
+    typeName: 'checkboxgroup',
+    className: 'gui-checkboxgroup',
+    events: {
+        'click label': 'onClickLabel',
+        'change': 'onCheckboxChange'
+    },
+    mixins: [form.Field],
+    
+    
+    initialize: function(config)  {
+        form.Field.initialize.call(this, config);
+    },
+    render: function() {
+        var config = this.config;
+        var rnd = parseInt(Math.random() * 100000);
+        _.each(config.options || [], function(conf, i) {
+            var div = $('<div></div>');
+            
+            // var checked = conf.checked ? ' checked="checked"' : '';
+            var checked = _.indexOf(this.getValue() || [], conf.value) !== -1;
+            
+            var id = this.name + '_' + rnd +'_'+i;
+            var checkbox = $('<input id="'+id+'" type="checkbox" name="'+this.name+'" value="'+conf.value+'"'+checked+'>');
+            var label = $('<label for="'+id+'"> '+conf.text+'</label>');
+            div.append(checkbox).append(label);
+            this.$el.append(div);
+        }, this);
+
+        return this;
+    },
+    onClickLabel: function(e) {
+        var cb = $(e.target).prev();
+        if(!cb.is(':checked')) {
+            cb[0].checked = true; // native change not triggered?
+            cb.trigger('change'); // ..manually trigger a change
+        }
+    },    
+    onCheckboxChange: function() {
+        var value = [];
+        this.$('input[type="checkbox"]:checked').each(function(el) {
+            value.push(this.value);
+        });
+        this.setValue(value);
+    }
+    
+},{
+    createFromElement: function(el) {
+        return createFromElement(this, el);
+    }
+});
+
+
+// ==========
+// = Radios =
+// ==========
+form.RadioGroup = Backbone.View.extend({
+    typeName: 'radiogroup',
+    className: 'gui-radiogroup',
+    events: {
+        'click label': 'onClickLabel',
+        'change': 'onRadioChange'
+    },
+    mixins: [form.Field],    
+        
+    initialize: function(config)  {
+        form.Field.initialize.call(this, config);
+        this.horizontal = true;
+        this._rnd = parseInt(Math.random()*10000);
+    },
+    render: function() {
+        var config = this.config;
+        this.$el.empty();
+        _.each(config.options || [], function(conf, i) {
+            var div = $('<div></div>'),
+                checked = '',
+                value = this.getValue();
+            
+            if(value) {
+                if(value == conf.value)
+                    checked = ' checked="checked"';
+            } 
+            // else if(conf.checked) {
+            //     checked = ' checked="checked"';
+            // }
+            var id = this.name+'_'+this._rnd;
+            var checkbox = $('<input type="radio" id="'+id+'" value="'+conf.value+'"'+checked+'>');
+            var label = $('<label for="'+id+'"> '+conf.text+'</label>');
+            div.append(checkbox).append(label);
+            this.$el.append(div);
+        }, this);
+
+        if(this.horizontal)
+            this.$el.addClass('horizontal');
+
+        return this;
+    },
+    onClickLabel: function(e) {
+        var radio = $(e.target).prev();
+        if(!radio[0].checked) {
+            radio[0].checked = true; // native change not triggered?
+            radio.trigger('change'); // ..manually trigger a change
+        }
+    },
+    onRadioChange: function(e) {
+        this.setValue(e.target.value);
+        this.$el.trigger('fieldchange', {field: this, value: this.getValue(), name: this.name})
+    }
+    
+},{
+    createFromElement: function(el) {
+        return createFromElement(this, el);
+    }
+});
+
+
+
+
 form.Slider = Backbone.View.extend({
-    tagName: 'div',
-    className: 'slider',
+    typeName: 'slider',
+    className: 'gui-slider',
     attributes: {
-        tabindex: '0'
+        tabindex: 0
     },
     template: _.template(''+
         '<div class="range"></div>'+
@@ -1192,7 +1635,7 @@ form.Slider = Backbone.View.extend({
                 offsetX: handleOffsetX
             }
         };
-        gui.drag.start(conf);
+        base.drag.start(conf);
         e.preventDefault();
         e.stopPropagation();
         this.el.focus();
@@ -1213,7 +1656,7 @@ form.Slider = Backbone.View.extend({
     },
     onKeyDown: function(e) {
         var key = e.keyCode, 
-            keys = gui.keys,
+            keys = base.keys,
             step = 1/(this.steps || 100);
             
         if(key == keys.ENTER) {
@@ -1230,134 +1673,19 @@ form.Slider = Backbone.View.extend({
         }
         e.stopPropagation();
     }
-});
-
-
-
-
-
-// Todo: move to separate js file
-form.Dialog = Backbone.View.extend({
-    className: 'dialog',
-    attributes: {tabindex: '-1'},
-    template: _.template(''+
-        '<header><h2><%= obj.title %></h2></header>'+
-        '<div class="content"></div>'+
-        '<div class="buttons"></div>'+
-        '<div class="resize"></div>'
-    ),
-    buttonsTemplate: _.template(''),
-    contentTemplate: _.template(''),
-    events: {
-        'mousedown header': 'onHeaderMouseDown',
-        'mousedown': 'onMouseDown',
-        'click .buttons .close': 'close',
-        'keydown': 'onKeyDown',
-        'mousedown .resize': 'onResizeMouseDown'
-    },
-    onResizeMouseDown: function(e) {
-        var curr = this.$el.position();
-        gui.drag.start({
-            ev: e,
-            ondrag: this.onResizeDrag,
-            onend: this.onResizeDragEnd,
-            startX: curr.left,
-            startY: curr.top
-        });
-        e.preventDefault();                        
-    },
-    onResizeDrag: function(e, conf) {
-        var w = e.pageX - conf.startX,
-            h = e.pageY - conf.startY;
-        this.$el.css({'width': w, 'height': h});
-    },
-    ieRepaintScrollbars: function() {
-        this.$('.tabs > div').css('overflow', 'hidden').css('overflow', 'auto');
-    },
-    onResizeDragEnd: function(e) {
-        if($.browser.ltie9)
-            this.ieRepaintScrollbars();
-    },
-    onHeaderMouseDown: function(e) {
-        gui.drag.start({
-            ev: e,
-            el: this.el
-        });
-        e.preventDefault();                
-    },
-    onMouseDown: function(e) {
-        var dialogs = $(document.body).children('.dialog');
-        this.bringToTop();
-    },
-    initialize: function(conf) {
-        this.config = conf;
-        this.title = conf.title;
-        _.bindAll(this, 'onResizeDrag', 'onResizeDragEnd');            
-    },    
-    render: function() {
-        this.$el.html(this.template({title: this.title}));
-        this.$(' > .buttons').html(this.buttonsTemplate());
-        
-        if($.browser.ltie9) {
-            var divs = ['ds_l','ds_r','ds_t','ds_b','ds_tl','ds_tr','ds_bl','ds_br'];
-            _.each(divs, function(item) {
-                this.$el.append($('<div class="ds '+item+'"><div>'));
-            }, this);
-            this.$el.iefocus();
-            // this.$el.prepend('<div class="dropshadow"></div>');
-            this.$('> header h2, > header, > .resize').attr('unselectable', 'on');
-        }
-        return this;
-    },
-    show: function() {
-        this.center();
-        this.bringToTop();
-    },
-    bringToTop: function() {
-        var currz = parseInt(this.$el.css('z-index') || 0),
-            dialogs = $(document.body).children('.dialog');
-        
-        if(currz-100 === dialogs.length-1)
-            return;
-        
-        dialogs.each(function() {
-            var z = parseInt($(this).css('z-index'));
-            if(z > currz) 
-                $(this).css('z-index', z-1);
-        });
-        this.$el.css('z-index', (dialogs.length-1) + 100);
-    },
-    close: function() {
-        $(this.el).remove();
-    },
-    center: function(args) {            
-        var el = $(this.el),
-            width = el.outerWidth(),
-            height = el.outerHeight(),
-            winWidth = $(window).width(),
-            winHeight = $(window).height();
-
-        var top = ((winHeight - height) / 2) + $(window).scrollTop(),
-            left = ((winWidth - width) / 2) + $(window).scrollLeft();
-
-        var top = 10;
-
-        el.css({left: left, top: top});
-    },
-    onTitleChange: function(model, value) {
-        this.$('header h2').html(value);
-    },
-    onKeyDown: function(e) {
-        if(e.keyCode == gui.keys.ESC) 
-            this.close();
+},{
+    createFromElement: function(el) {
+        return createFromElement(this, el);
     }
 });
 
 
 
+
+
 form.UploadField = Backbone.View.extend({
     className: 'upload',
-    tagName: 'div',
+    typeName: 'upload',
     template: _.template2(''+
         '<div class="browse-container">'+
             '<button class="button browse">${obj.browseButtonText}</button>'+
@@ -1369,15 +1697,15 @@ form.UploadField = Backbone.View.extend({
         '<li>'+
             '<div class="progressbar"></div>'+
             '<span class="name">${obj.name}</span> '+
-            '<span class="size">${gui.format.filesize(obj.size)}</span>'+
+            '<span class="size">${base.format.filesize(obj.size)}</span>'+
             '<button class="remove">${obj.field.removeButtonText}</button>'+
-        '</li>', {gui: gui}),
+        '</li>', {base: base}),
     queueItemTemplateIE: _.template2(''+
         '<li>'+
             '<div class="progressbar"></div>'+
             '<span class="name">${obj.name}</span> '+
             '<button class="remove">${obj.field.removeButtonText}</button>'+
-        '</li>', {gui: gui}),
+        '</li>', {base: base}),
         
     mixins: [form.Field],
     events: {
@@ -1409,20 +1737,11 @@ form.UploadField = Backbone.View.extend({
         this.$('input[type="file"]').attr('name', this.name);
         this.$('input[type="file"]').on("change", this.onChange);
         
-
-
-        // this.$('>ul').empty();
-
-
-
-		// process all File objects
+		// process all File objects, eg
         // var files = [
-        //     {name: 'Adasdasdasd.pdf', type: 'application/pdf', size: 384747},
-        //     {name: 'Lorem ipsum dolor sit amet, consectetur adipisicing elit.pdf', type: 'application/pdf', size: 384747},
         //     {name: 'test.jpg', type: 'image/jpeg', size: 384747},
         //     {name: 'Adasdasdasd.pdf', type: 'application/pdf', size: 384747}
         // ];
-
         var val = this.getValue();       
         if(val && val.length) {
             _.each(val, function(json, i) {
@@ -1440,44 +1759,11 @@ form.UploadField = Backbone.View.extend({
         this.delegateEvents();
         return this;
     },
-        //     uploadFile: function(file, xhr) {
-        //         /* Invoked by the form */
-        // var xhr = new XMLHttpRequest();
-        //         // if (xhr.upload)  <-- useful test for old ie detection?
-        // 
-        // 
-        // // create progress bar
-        // var index = _.indexOf(this.files, file);
-        // var li = this.$('>ul:nth-child('+index+')');
-        // li.addClass('progress');
-        // 
-        // 
-        // // progress bar
-        // xhr.upload.addEventListener('progress', function(e) {
-        //  var pc = parseInt(100 - (e.loaded / e.total * 100));
-        //  li.css('background-position', pc + "% 0");
-        // }, false);
-        // 
-        // // file received/failed
-        // xhr.onreadystatechange = function(e) {
-        //  if (xhr.readyState == 4) {
-        //      progress.className = (xhr.status == 200 ? "success" : "failure");
-        //  }
-        // };
-        // 
-        // // start upload
-        // xhr.open("POST", action, true);
-        // xhr.setRequestHeader("X_FILENAME", file.name);
-        // xhr.send(file);
-        // 
-        // 
-        //     },
+
     addFilesToXHR: function() {
         
     },
-    // onChange: function(e) {
-    //     console.log('onchange', e)
-    // },
+
     onChange: function(e) {
 		// fetch FileList object
 		var val = this.getValue() || [];
@@ -1557,65 +1843,28 @@ form.UploadField = Backbone.View.extend({
 	    }
 	}
 	
+},{
+    createFromElement: function(el) {
+        return createFromElement(this, el);
+    }
 });
 
 
-form.MessageBox = Backbone.View.extend({
-    className: 'messagebox',
-    attributes: {
-        tabindex: '-1'
-    },
-    template: _.template2(
-        '<div class="inner">'+
-            '<div class="title">${title}</div>'+
-            '<div class="message">${message}</div>'+
-            '<div class="buttons">'+
-                '<button class="button ok">OK</button>'+
-            '</div>' +
-        '</div><div class="dropshadow"></div></div>'
-    ),
-    events: {
-        'click .button': 'onCloseClick',
-        'keydown': 'onKeyDown'
-    },
-    
-    initialize: function(config) {
-        this.title = config.title || '';
-        this.message = config.message || '';
+form.Hidden = Backbone.View.extend({
+    tagName: 'div',
+    typeName: 'hidden',
+    className: 'gui-hidden',
+    mixins: [form.Field],
+    initialize: function(config)  {
+        form.Field.initialize.call(this, config);
     },
     render: function() {
-        this.$el.html(this.template({
-            title: this.title,
-            message: this.message
-        }));
-        // Implicitly append message boxes to body
-        if(!this.el.parentNode)
-            $(document.body).append(this.el);
-        
-        if($.browser.ltie9) {
-            // Todo: remove this quickfix
-            try {
-                this.$el.iefocus().addClass('ltie9');
-            } catch(e) {}
-        }
         return this;
-    },
-    show: function() {
-        this.render();
-        this.$el.center();
-        this.$el.fadeIn('fast');
-        this.$el.focus();
-    },
-    close: function() {
-        this.$el.remove();
-    },
-    onKeyDown: function(e) {
-        if(e.which == gui.keys.ESC || e.which == gui.keys.ENTER) {
-            this.close();
-        }
-    },
-    onCloseClick: function() {
-        this.close();
+    }
+
+},{
+    createFromElement: function(el) {
+        return createFromElement(this, el);
     }
 });
 

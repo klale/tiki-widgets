@@ -3,10 +3,11 @@ define([
     'underscore',
     'backbone',
     './base',
-    'moment'
+    'moment',
+    'jquerypp'
 ], function($, _, Backbone, gui, moment) {
 
-var calendar = {};    
+var exp = {};    
 
 
 // =================
@@ -16,9 +17,8 @@ var calendar = {};
 /**
  * A month calendar.
  */
-calendar.MonthCalendar = Backbone.View.extend({
-    tagName: 'div',
-    className: 'calendar',
+exp.MonthCalendar = Backbone.View.extend({
+    className: 'gui-calendar',
     
     template: _.template(''+
         '<table>'+
@@ -123,10 +123,14 @@ calendar.MonthCalendar = Backbone.View.extend({
                 tr.append('<td class="empty"><div>&nbsp;</div></td>');
             } else {
                 // tr.append('<td class="'+cls.join(' ')+'"><div>'+(m.date())+'</div></td>');                        
-                var html = this.templateDay({
+                var html = $(this.templateDay({
                     cls: cls.join(' '),
                     date: m.date(),
                     ymd: m.format('YYYY-MM-DD')
+                }));
+                html.on('draginit', function(event, drag) {
+                    console.log('foo')
+                    drag.vertical();
                 });
                 tr.append(html);
             }
@@ -134,6 +138,8 @@ calendar.MonthCalendar = Backbone.View.extend({
         }
         
         $(this.el).empty().append(table);    
+        
+        
         return this;    
     }
 
@@ -141,5 +147,5 @@ calendar.MonthCalendar = Backbone.View.extend({
 });
 
 
-return calendar;
+return exp;
 });

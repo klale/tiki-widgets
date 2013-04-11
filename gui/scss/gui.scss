@@ -1,0 +1,362 @@
+@import "_mixins.scss";
+@import "_highlight.scss";
+@import "_buttons.scss";
+@import "_editor.scss";
+@import "_form.scss";
+@import "_tools.scss";
+@import "_win.scss";
+
+
+
+
+/* ============ */
+/* = Dropdown = */
+/* ============ */
+.gui-dropdownlist {
+    display: block;
+    min-width: 100px;
+    position: absolute; 
+    color: #444;
+    font-size: 11px;
+    text-align: left;
+    min-width: 150px;    
+    padding: 3px 0px;
+    line-height: 13px;
+    border-radius: 3px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);    
+    z-index: 500;
+    overflow-y: scroll;
+    background-color: #fff;    
+    outline: none;
+    list-style-type: none;
+    margin: 0;
+    
+    @include selectables();
+    
+
+    > li {         
+        @include user-select(none);
+        cursor: default;
+        list-style-type: none;
+        margin: 0;
+        padding: 4px 15px;
+        color: #444;
+        display: block;
+        text-decoration: none;        
+        
+        &.disabled {
+            color: #aaa;
+        }        
+    }
+
+
+}
+
+
+
+
+
+/* ============ */
+/* = Calendar = */
+/* ============ */
+.gui-calendar {
+    outline: none;
+    table {
+        border-collapse:collapse;
+        table-layout: fixed;
+        width: 100%;
+    }
+    thead {
+        @include user-select(none);
+        th {
+            text-align: center;
+        }
+        .header {
+            position: relative;
+            height: 30px;
+        }
+        .monthname {
+            font-size: 14px;
+            text-align: center;
+        }
+    }
+
+    .nextmonth,
+    .prevmonth {
+        width: 13px;
+        height: 13px;
+        overflow: hidden;
+        position: absolute;
+        background-color: #ddd;
+        top: 7px;
+        left: 7px;
+        cursor: pointer;
+    }
+    .nextmonth {
+        left: auto;
+        right: 5px;
+    }
+    td {
+        border: 1px solid #ddd;
+        white-space: nowrap;    
+        padding: 0;    
+
+        &.day > div {
+            padding: 1px;
+            overflow: hidden;
+            .date {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                width: 15px;
+                height: 13px;
+                text-align: right;
+                color: #999;
+                font-size: 11px;
+            }            
+        }
+        
+        &.gray > div {
+            color: #aaa;
+        }
+        &.over {
+            outline: 3px solid #A7BAC6;  // <-- is this used?
+        }
+        &.today {
+            background-color: #FFEFB9 !important;
+        }
+        &.weekend {
+            background-color: #f8f8f8;
+        }
+        &.selected {
+            background-color: #f8f8f8;
+        }
+    }
+}
+
+
+
+
+/* ============== */
+/* = DatePicker = */
+/* ============== */
+.gui-datepicker {
+    @extend .gui-calendar;
+    @include border-radius(3px);
+    @include box-shadow(0 2px 5px rgba(0,0,0,0.3));
+    @include user-select(none);    
+    @include selectables();
+    width: 250px;
+    position: absolute;
+    background-color: #fff;
+    z-index: 1000;
+    cursor: default;
+    
+    td.day > div {
+        min-height: 20px;
+        position: relative;
+    }
+}
+
+
+
+
+
+// ==============
+// = FilterView =
+// ==============
+.gui-filterview {
+    li {
+        @include clearfloat();
+        margin-bottom: 3px;
+    }
+    .title {
+        display: inline-block;
+        width: 70px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: bold;
+        line-height: 25px;
+    }
+    .fields {
+        display: inline-block;
+        >.gui-combobox, >.gui-date, >.gui-text, >.gui-datefield {
+            width: 150px;
+            display: inline-block;
+            margin-left: 20px;
+            box-sizing: border-box;
+        }
+        >*:first-child {
+            margin-left: 0px;
+        }
+    }
+    .gui-form > * {
+//        display: inline-block;
+        margin-right: 20px;
+        height: 26px;
+        overflow: hidden;
+        float: left;
+    }
+    
+
+    margin-bottom: 20px;
+    margin-top: 20px;
+    .buttons {
+        margin-top: 10px;
+    }
+    .tools { 
+        display: inline-block;
+        button {
+            @include button();
+            height: 26px;
+        }
+        button.remove:hover {
+            @include button();
+            padding-left: 25px;
+        }
+        button.remove {
+            border-color: transparent;
+            background: none;
+            padding-left: 25px;
+            position: relative;
+            
+            &:before {
+                z-index: 1;
+                content: '';
+                display: inline-block;
+                overflow: hidden;
+                position: absolute;
+                left: 6px;
+                top: 7px;
+                width: 13px;
+                height: 13px;
+                background: url(../img/icons/remove.png) no-repeat;
+            }
+        }
+    }
+}
+
+
+// ==============
+// = .gui-table =
+// ==============
+.gui-table {
+    outline: none;
+    cursor: default;
+    position: relative;
+
+    &:focus tbody tr.selected td,
+    &:focus tbody tr td.selected {    
+        background-color: #3B77D5;
+        color: #fff;
+        a {
+            color: #fff;
+        }
+        .textfield {
+            color: #000;
+        }
+    }
+
+
+
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        outline: none;
+
+        td {
+            border-top: 1px solid #fff;
+        }
+
+        thead {            
+            th {
+                padding-right: 8px;
+                padding-bottom: 5px;
+                color: #777;
+                position: relative;
+                text-align: left;
+                
+                .resize {
+                    float: right;
+                    cursor: col-resize;
+                    width: 10px;
+                    height: 100%;
+                    height: 14px;
+                }
+                .direction {
+                    margin-left: 5px;
+                    height: 17px;
+                    width: 20px;
+                    @include border-radius(10px);
+                }
+            }
+
+        }
+        tbody {
+            tr.odd td { 
+//                background-color: #f4f4f4;
+            }
+            td > div {
+                padding: 2px 20px 2px 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;                
+            }
+            tr:first-child td {
+                border-top: 1px solid #ccc;
+            }
+//            tr.selected td {
+//                background: #A6A6A6;
+//                color: #fff;
+//            }
+            tr:nth-child(2n) td {
+                background-color: #f5f5f5;
+            }
+
+            tr.selected td,
+            tr td.selected {    
+                background-color: #B6B6B6;
+                color: #fff;
+                a {
+                    color: #fff;
+                }
+                .textfield {
+                    color: #000;
+                }
+            }
+            
+        }
+    }    
+}
+.gui-table-column-ghost {
+    background-color: rgba(255,255,255,0.8);
+    position: absolute;
+    border: 1px solid #ccc;
+    @include box-shadow(0 2px 20px rgba(0,0,0,0.3));
+    @include border-radius(3px);
+    >div {
+        padding: 10px;
+    }
+}
+
+// ==============
+// = tools.Edit =
+// ==============
+.gui-edit {
+    @include user-select(text);
+    cursor: text;
+}
+
+
+// ============
+// = Sortable =
+// ============
+.gui-spaceholder {
+    visibility: hidden;
+}
+
+
+.gui-token {
+    @include token();
+}

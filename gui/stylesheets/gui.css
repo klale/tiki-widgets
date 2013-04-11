@@ -1,0 +1,1443 @@
+/* YUI reset */
+/* line 3, ../scss/_reset.scss */
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, fieldset, input, textarea, p, blockquote, th, td {
+  margin: 0;
+  padding: 0; }
+
+/* line 7, ../scss/_reset.scss */
+table {
+  border-collapse: collapse;
+  border-spacing: 0; }
+
+/* line 11, ../scss/_reset.scss */
+fieldset, img {
+  border: 0; }
+
+/* line 14, ../scss/_reset.scss */
+address, caption, cite, code, dfn, em, strong, th, var {
+  font-style: normal;
+  font-weight: normal; }
+
+/* line 18, ../scss/_reset.scss */
+ol, ul {
+  list-style: none; }
+
+/* line 21, ../scss/_reset.scss */
+caption, th {
+  text-align: left; }
+
+/* line 24, ../scss/_reset.scss */
+h1, h2, h3, h4, h5, h6 {
+  font-size: 100%;
+  font-weight: normal; }
+
+/* line 28, ../scss/_reset.scss */
+q:before, q:after {
+  content: ''; }
+
+/* line 31, ../scss/_reset.scss */
+abbr, acronym {
+  border: 0; }
+
+@-webkit-keyframes overPulse {
+  /* line 373, ../scss/_mixins.scss */
+  from {
+    box-shadow: 0 0 3px rgba(14, 158, 211, 0.4);
+    -moz-box-shadow: 0 0 3px rgba(14, 158, 211, 0.4);
+    -webkit-box-shadow: 0 0 3px rgba(14, 158, 211, 0.4); }
+
+  /* line 376, ../scss/_mixins.scss */
+  50% {
+    box-shadow: 0 0 18px rgba(14, 158, 211, 0.4);
+    -moz-box-shadow: 0 0 18px rgba(14, 158, 211, 0.4);
+    -webkit-box-shadow: 0 0 18px rgba(14, 158, 211, 0.4); }
+
+  /* line 379, ../scss/_mixins.scss */
+  to {
+    box-shadow: 0 0 3px rgba(14, 158, 211, 0.4);
+    -moz-box-shadow: 0 0 3px rgba(14, 158, 211, 0.4);
+    -webkit-box-shadow: 0 0 3px rgba(14, 158, 211, 0.4); } }
+
+/* line 383, ../scss/_mixins.scss */
+.gui-over {
+  background-color: #f2f7fc !important;
+  border-color: #0e9ed3;
+  -webkit-animation-name: overPulse;
+  -webkit-animation-duration: 2s;
+  -webkit-animation-iteration-count: infinite; }
+
+/*
+
+Original style from softwaremaniacs.org (c) Ivan Sagalaev <Maniac@SoftwareManiacs.Org>
+
+*/
+/* line 7, ../scss/_highlight.scss */
+pre code {
+  display: block;
+  padding: 0.5em;
+  background: #F0F0F0; }
+
+/* line 17, ../scss/_highlight.scss */
+pre code,
+pre .subst,
+pre .tag .title,
+pre .lisp .title,
+pre .clojure .built_in,
+pre .nginx .title {
+  color: black; }
+
+/* line 44, ../scss/_highlight.scss */
+pre .string,
+pre .title,
+pre .constant,
+pre .parent,
+pre .tag .value,
+pre .rules .value,
+pre .rules .value .number,
+pre .preprocessor,
+pre .ruby .symbol,
+pre .ruby .symbol .string,
+pre .aggregate,
+pre .template_tag,
+pre .django .variable,
+pre .smalltalk .class,
+pre .addition,
+pre .flow,
+pre .stream,
+pre .bash .variable,
+pre .apache .tag,
+pre .apache .cbracket,
+pre .tex .command,
+pre .tex .special,
+pre .erlang_repl .function_or_atom,
+pre .markdown .header {
+  color: #800; }
+
+/* line 53, ../scss/_highlight.scss */
+pre .comment,
+pre .annotation,
+pre .template_comment,
+pre .diff .header,
+pre .chunk,
+pre .markdown .blockquote {
+  color: #888; }
+
+/* line 66, ../scss/_highlight.scss */
+pre .number,
+pre .date,
+pre .regexp,
+pre .literal,
+pre .smalltalk .symbol,
+pre .smalltalk .char,
+pre .go .constant,
+pre .change,
+pre .markdown .bullet,
+pre .markdown .link_url {
+  color: #080; }
+
+/* line 93, ../scss/_highlight.scss */
+pre .label,
+pre .javadoc,
+pre .ruby .string,
+pre .decorator,
+pre .filter .argument,
+pre .localvars,
+pre .array,
+pre .attr_selector,
+pre .important,
+pre .pseudo,
+pre .pi,
+pre .doctype,
+pre .deletion,
+pre .envvar,
+pre .shebang,
+pre .apache .sqbracket,
+pre .nginx .built_in,
+pre .tex .formula,
+pre .erlang_repl .reserved,
+pre .prompt,
+pre .markdown .link_label,
+pre .vhdl .attribute,
+pre .clojure .attribute,
+pre .coffeescript .property {
+  color: #8888ff; }
+
+/* line 115, ../scss/_highlight.scss */
+pre .keyword,
+pre .id,
+pre .phpdoc,
+pre .title,
+pre .built_in,
+pre .aggregate,
+pre .css .tag,
+pre .javadoctag,
+pre .phpdoc,
+pre .yardoctag,
+pre .smalltalk .class,
+pre .winutils,
+pre .bash .variable,
+pre .apache .tag,
+pre .go .typename,
+pre .tex .command,
+pre .markdown .strong,
+pre .request,
+pre .status {
+  font-weight: bold; }
+
+/* line 119, ../scss/_highlight.scss */
+pre .markdown .emphasis {
+  font-style: italic; }
+
+/* line 123, ../scss/_highlight.scss */
+pre .nginx .built_in {
+  font-weight: normal; }
+
+/* line 133, ../scss/_highlight.scss */
+pre .coffeescript .javascript,
+pre .javascript .xml,
+pre .tex .formula,
+pre .xml .javascript,
+pre .xml .vbscript,
+pre .xml .css,
+pre .xml .cdata {
+  opacity: 0.5; }
+
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* line 147, ../scss/_highlight.scss */
+.tomorrow-comment, pre .comment, pre .title {
+  color: #8e908c;
+  font-style: italic; }
+
+/* line 152, ../scss/_highlight.scss */
+.tomorrow-red, pre .variable, pre .attribute, pre .tag, pre .regexp, pre .ruby .constant, pre .xml .tag .title, pre .xml .pi, pre .xml .doctype, pre .html .doctype, pre .css .id, pre .css .class, pre .css .pseudo {
+  color: #c82829; }
+
+/* line 156, ../scss/_highlight.scss */
+.tomorrow-orange, pre .number, pre .preprocessor, pre .built_in, pre .literal, pre .params, pre .constant {
+  color: #f5871f; }
+
+/* line 160, ../scss/_highlight.scss */
+.tomorrow-yellow, pre .class, pre .ruby .class .title, pre .css .rules .attribute {
+  color: #eab700; }
+
+/* line 164, ../scss/_highlight.scss */
+.tomorrow-green, pre .string, pre .value, pre .inheritance, pre .header, pre .ruby .symbol, pre .xml .cdata {
+  color: #70A500; }
+
+/* line 168, ../scss/_highlight.scss */
+.tomorrow-aqua, pre .css .hexcolor {
+  color: #3e999f; }
+
+/* line 172, ../scss/_highlight.scss */
+.tomorrow-blue, pre .function, pre .python .decorator, pre .python .title, pre .ruby .function .title, pre .ruby .title .keyword, pre .perl .sub, pre .javascript .title, pre .coffeescript .title {
+  color: #4271ae; }
+
+/* line 176, ../scss/_highlight.scss */
+.tomorrow-purple, pre .keyword, pre .javascript .function {
+  color: #8959a8; }
+
+/* line 5, ../scss/_buttons.scss */
+.gui-btn {
+  display: inline-block;
+  cursor: default;
+  padding: 6px 12px;
+  overflow: visible;
+  /* Removes crazy padding in IE7 */
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  font-size: 12px;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  border: 1px solid #aeaeae;
+  background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e1e1e1), color-stop(1, #fdfdfd));
+  background: -ms-linear-gradient(top, #fdfdfd 0%, #e1e1e1 100%);
+  background: -moz-linear-gradient(top, #fdfdfd 0%, #e1e1e1 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#fdfdfd', endColorstr='#e1e1e1') chroma(color=black);
+  background-color: #fdfdfd;
+  color: #555;
+  text-shadow: white 0px 1px; }
+  /* line 305, ../scss/_mixins.scss */
+  .gui-btn:not(.btn-disabled):active {
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e4e4e4), color-stop(1, #c8c8c8));
+    background: -ms-linear-gradient(top, #c8c8c8 0%, #e4e4e4 100%);
+    background: -moz-linear-gradient(top, #c8c8c8 0%, #e4e4e4 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#c8c8c8', endColorstr='#e4e4e4') chroma(color=black);
+    background-color: #c8c8c8;
+    box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
+    -moz-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
+    -webkit-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4); }
+  /* line 9, ../scss/_buttons.scss */
+  .gui-btn.btn-link {
+    background: none;
+    border-color: transparent;
+    cursor: pointer;
+    filter: none;
+    color: #000;
+    box-shadow: none;
+    -moz-box-shadow: none;
+    -webkit-box-shadow: none; }
+  /* line 20, ../scss/_buttons.scss */
+  .gui-btn.btn-primary {
+    border: 1px solid #093aa8;
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #2464f3), color-stop(1, #638cf5));
+    background: -ms-linear-gradient(top, #638cf5 0%, #2464f3 100%);
+    background: -moz-linear-gradient(top, #638cf5 0%, #2464f3 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#638cf5', endColorstr='#2464f3') chroma(color=black);
+    background-color: #638cf5;
+    color: #fff;
+    text-shadow: black 0px -1px; }
+    /* line 305, ../scss/_mixins.scss */
+    .gui-btn.btn-primary:not(.btn-disabled):active {
+      background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #3369f2), color-stop(1, #0c4bd8));
+      background: -ms-linear-gradient(top, #0c4bd8 0%, #3369f2 100%);
+      background: -moz-linear-gradient(top, #0c4bd8 0%, #3369f2 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0c4bd8', endColorstr='#3369f2') chroma(color=black);
+      background-color: #0c4bd8;
+      box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
+      -moz-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
+      -webkit-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4); }
+  /* line 24, ../scss/_buttons.scss */
+  .gui-btn.btn-disabled {
+    border: 1px solid #888888;
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #bbbbbb), color-stop(1, #bbbbbb));
+    background: -ms-linear-gradient(top, #bbbbbb 0%, #bbbbbb 100%);
+    background: -moz-linear-gradient(top, #bbbbbb 0%, #bbbbbb 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#bbbbbb', endColorstr='#bbbbbb') chroma(color=black);
+    background-color: #bbbbbb;
+    color: #555;
+    text-shadow: white 0px 1px;
+    text-shadow: #999999 0px -1px;
+    border: 1px solid #9e9e9e;
+    color: #fff; }
+    /* line 305, ../scss/_mixins.scss */
+    .gui-btn.btn-disabled:not(.btn-disabled):active {
+      background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #a2a2a2), color-stop(1, #a2a2a2));
+      background: -ms-linear-gradient(top, #a2a2a2 0%, #a2a2a2 100%);
+      background: -moz-linear-gradient(top, #a2a2a2 0%, #a2a2a2 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#a2a2a2', endColorstr='#a2a2a2') chroma(color=black);
+      background-color: #a2a2a2;
+      box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
+      -moz-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
+      -webkit-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4); }
+
+/* line 5, ../scss/_editor.scss */
+.gui-editor {
+  position: relative;
+  outline: none; }
+  /* line 9, ../scss/_editor.scss */
+  .gui-editor .toolbar {
+    height: 30px; }
+    /* line 11, ../scss/_editor.scss */
+    .gui-editor .toolbar li {
+      float: left;
+      margin-right: 5px; }
+  /* line 17, ../scss/_editor.scss */
+  .gui-editor .left {
+    float: left;
+    width: 100%; }
+  /* line 21, ../scss/_editor.scss */
+  .gui-editor .right {
+    float: right;
+    width: 0; }
+  /* line 25, ../scss/_editor.scss */
+  .gui-editor .clear {
+    overflow: hidden; }
+  /* line 31, ../scss/_editor.scss */
+  .gui-editor .pane {
+    border: none;
+    padding: 0;
+    font: 12px "Trebuchet MS";
+    outline: none;
+    color: #555;
+    min-height: 40px; }
+    /* line 40, ../scss/_editor.scss */
+    .gui-editor .pane section {
+      margin-bottom: 20px;
+      padding: 10px;
+      padding-left: 13px;
+      border: 1px solid #cccccc;
+      background-color: #fafafa;
+      -webkit-border-radius: 5px;
+      -moz-border-radius: 5px;
+      border-radius: 5px; }
+    /* line 50, ../scss/_editor.scss */
+    .gui-editor .pane pre {
+      font-size: 13px;
+      background-color: #f1f1f1;
+      padding: 10px;
+      margin: 20px 0;
+      display: block; }
+    /* line 57, ../scss/_editor.scss */
+    .gui-editor .pane pre code {
+      background-color: #f1f1f1; }
+    /* line 61, ../scss/_editor.scss */
+    .gui-editor .pane p {
+      margin-bottom: 10px; }
+      /* line 63, ../scss/_editor.scss */
+      .gui-editor .pane p:last-child {
+        margin-bottom: 0px; }
+    /* line 67, ../scss/_editor.scss */
+    .gui-editor .pane h1, .gui-editor .pane h2, .gui-editor .pane h3 {
+      color: #000; }
+    /* line 70, ../scss/_editor.scss */
+    .gui-editor .pane h2 {
+      border: none;
+      font-size: 17px; }
+    /* line 75, ../scss/_editor.scss */
+    .gui-editor .pane h3 {
+      border-bottom: 1px solid #dddddd;
+      margin-bottom: 5px;
+      padding-bottom: 3px;
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: bold;
+      margin-top: 25px; }
+    /* line 84, ../scss/_editor.scss */
+    .gui-editor .pane strong {
+      font-weight: bold;
+      color: #000; }
+    /* line 89, ../scss/_editor.scss */
+    .gui-editor .pane ul {
+      list-style-type: disc;
+      margin: 20px 0 20px 20px; }
+    /* line 93, ../scss/_editor.scss */
+    .gui-editor .pane li {
+      margin-bottom: 5px;
+      padding-left: 5px; }
+    /* line 97, ../scss/_editor.scss */
+    .gui-editor .pane section > div {
+      border: 1px solid red; }
+    /* line 101, ../scss/_editor.scss */
+    .gui-editor .pane section > div.fileview,
+    .gui-editor .pane section > div.codeview {
+      border: none; }
+  /* line 105, ../scss/_editor.scss */
+  .gui-editor pre.html {
+    padding: 10px;
+    padding-left: 25px;
+    white-space: pre-wrap;
+    display: none; }
+
+/* line 123, ../scss/_editor.scss */
+.fileview {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #f1f1f1;
+  outline: none; }
+  /* line 130, ../scss/_editor.scss */
+  .fileview .file {
+    width: 128px;
+    height: 150px;
+    display: inline-block;
+    margin-right: 10px;
+    margin-bottom: 15px;
+    text-align: center; }
+  /* line 138, ../scss/_editor.scss */
+  .fileview .file .icon {
+    width: 128px;
+    height: 128px;
+    margin-bottom: 8px; }
+  /* line 147, ../scss/_editor.scss */
+  .fileview .file .name {
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 112px;
+    height: 16px;
+    font: 11px "Trebuchet MS";
+    padding: 3px 8px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    border-radius: 10px;
+    height: 12px; }
+  /* line 160, ../scss/_editor.scss */
+  .fileview .file .icon {
+    text-align: center;
+    display: -webkit-box;
+    -webkit-box-orient: horizontal;
+    -webkit-box-pack: center;
+    -webkit-box-align: center;
+    display: -moz-box;
+    -moz-box-orient: horizontal;
+    -moz-box-pack: center;
+    -moz-box-align: center;
+    display: box;
+    box-orient: horizontal;
+    box-pack: center;
+    box-align: center; }
+  /* line 166, ../scss/_editor.scss */
+  .fileview .file .icon img {
+    max-width: 128px;
+    max-height: 128px;
+    border: 1px solid white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+  /* line 180, ../scss/_editor.scss */
+  .fileview .file.new.psd .icon {
+    background: url(/img/icons/psd.png) no-repeat; }
+  /* line 183, ../scss/_editor.scss */
+  .fileview .file.new.pdf .icon {
+    background: url(/img/icons/pdf.png) no-repeat; }
+  /* line 189, ../scss/_editor.scss */
+  .fileview .file.selected .icon img {
+    outline: 1px solid #999999; }
+  /* line 192, ../scss/_editor.scss */
+  .fileview .file.selected .name {
+    background-color: #999;
+    color: #fff;
+    display: inline-block; }
+  /* line 200, ../scss/_editor.scss */
+  .fileview:focus .file.selected .icon img {
+    outline: 1px solid #3b77d5; }
+  /* line 203, ../scss/_editor.scss */
+  .fileview:focus .file.selected .name {
+    background-color: #3B77D5; }
+
+/* line 209, ../scss/_editor.scss */
+.fileview-quicklook {
+  left: 0px;
+  right: 0px;
+  top: 0px;
+  bottom: 0px;
+  position: fixed;
+  border: 1px solid red;
+  text-align: center; }
+
+/* ========== */
+/* = Fields = */
+/* ========== */
+/* line 12, ../scss/_form.scss */
+.gui-text, .gui-password, .gui-textarea, .gui-datefield .textfield {
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  cursor: text;
+  border: 1px solid #cccccc;
+  padding: 2px 5px;
+  outline: none;
+  background-color: #fff;
+  line-height: 20px;
+  height: 25px; }
+  /* line 18, ../scss/_mixins.scss */
+  .gui-text:focus, .gui-password:focus, .gui-textarea:focus, .gui-datefield .textfield:focus {
+    box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+    -moz-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+    -webkit-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+    border-color: #0e9ed3 !important;
+    outline: none; }
+  /* line 23, ../scss/_form.scss */
+  .gui-text.empty, .empty.gui-password, .empty.gui-textarea, .gui-datefield .empty.textfield {
+    font-style: italic;
+    color: #999; }
+
+/* line 29, ../scss/_form.scss */
+.gui-password {
+  -webkit-text-security: disc; }
+
+/* line 34, ../scss/_form.scss */
+.gui-textarea {
+  height: auto;
+  min-height: 40px;
+  line-height: 16px; }
+  /* line 39, ../scss/_form.scss */
+  .gui-textarea div, .gui-textarea p {
+    margin: 0 !important;
+    /* ie required important, todo: who's overriding? */ }
+
+/* line 45, ../scss/_form.scss */
+.gui-upload input[type="file"] {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  height: 20px;
+  opacity: 0;
+  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=0);
+  width: 1px;
+  min-width: 80px;
+  height: 20px; }
+/* line 56, ../scss/_form.scss */
+.gui-upload .browse-container {
+  height: 20px;
+  position: relative; }
+/* line 61, ../scss/_form.scss */
+.gui-upload .queue li {
+  white-space: nowrap;
+  padding-right: 120px;
+  position: relative;
+  margin-top: 3px;
+  padding-top: 3px;
+  border-top: 1px dashed #cccccc;
+  height: 18px;
+  line-height: 18px; }
+  /* line 70, ../scss/_form.scss */
+  .gui-upload .queue li:first-child {
+    border-top: none; }
+  /* line 73, ../scss/_form.scss */
+  .gui-upload .queue li.uploading {
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #a1a1a1), color-stop(1, #828282));
+    background: -ms-linear-gradient(top, #828282 0%, #a1a1a1 100%);
+    background: -moz-linear-gradient(top, #828282 0%, #a1a1a1 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#828282', endColorstr='#a1a1a1') chroma(color=black);
+    background-color: #828282; }
+  /* line 76, ../scss/_form.scss */
+  .gui-upload .queue li.uploading .progressbar {
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #215ff6), color-stop(1, #6289f8));
+    background: -ms-linear-gradient(top, #6289f8 0%, #215ff6 100%);
+    background: -moz-linear-gradient(top, #6289f8 0%, #215ff6 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#6289f8', endColorstr='#215ff6') chroma(color=black);
+    background-color: #6289f8;
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px; }
+  /* line 85, ../scss/_form.scss */
+  .gui-upload .queue li .name {
+    position: absolute;
+    left: 0px;
+    right: 120px;
+    top: 0px;
+    bottom: 0px;
+    line-height: 24px;
+    overflow: hidden;
+    text-overflow: ellipsis; }
+  /* line 95, ../scss/_form.scss */
+  .gui-upload .queue li.uploading .name {
+    color: #fff;
+    padding-left: 5px; }
+  /* line 101, ../scss/_form.scss */
+  .gui-upload .queue li .size {
+    position: absolute;
+    right: 75px;
+    top: 0px;
+    width: 35px;
+    font-size: 10px;
+    color: #999;
+    height: 19px;
+    line-height: 24px;
+    text-align: right; }
+  /* line 112, ../scss/_form.scss */
+  .gui-upload .queue li.uploading .size {
+    color: #fff; }
+  /* line 116, ../scss/_form.scss */
+  .gui-upload .queue li button.remove {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    display: inline-block;
+    padding: #fdfdfd #e1e1e1;
+    cursor: default;
+    color: #333333;
+    border: 1px solid #6d6d6d;
+    overflow: visible;
+    /* Removes crazy padding in IE7 */
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, lightgrey), color-stop(1, white));
+    background: -ms-linear-gradient(top, white 0%, lightgrey 100%);
+    background: -moz-linear-gradient(top, white 0%, lightgrey 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='lightgrey') chroma(color=black);
+    background-color: white;
+    /* Hack until the border bug is fixed */ }
+    @media screen and (-webkit-min-device-pixel-ratio: 0) {
+      /* line 116, ../scss/_form.scss */
+      .gui-upload .queue li button.remove {
+        border: none;
+        padding: #fefefe #e2e2e2;
+        /* compensate for missing border */
+        box-shadow: 0px 0px 0px 1px #6d6d6d; } }
+    /* line 332, ../scss/_mixins.scss */
+    .gui-upload .queue li button.remove:active {
+      background: -webkit-gradient(linear, left bottom, left top, color-stop(0, white), color-stop(1, lightgrey));
+      background: -ms-linear-gradient(top, lightgrey 0%, white 100%);
+      background: -moz-linear-gradient(top, lightgrey 0%, white 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='lightgrey', endColorstr='white') chroma(color=black);
+      background-color: lightgrey; }
+
+/* ========= */
+/* = Combo = */
+/* ========= */
+/* line 129, ../scss/_form.scss */
+.gui-combobox {
+  background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e0e0e0), color-stop(1, white));
+  background: -ms-linear-gradient(top, white 0%, #e0e0e0 100%);
+  background: -moz-linear-gradient(top, white 0%, #e0e0e0 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='#e0e0e0') chroma(color=black);
+  background-color: white;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  position: relative;
+  height: 24px;
+  border: 1px solid #bcbcbc;
+  /* Add a magnifying glass icon when typing in a searchable dropdown */ }
+  /* line 142, ../scss/_form.scss */
+  .gui-combobox > i {
+    display: none; }
+  /* line 145, ../scss/_form.scss */
+  .gui-combobox.focus {
+    box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+    -moz-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+    -webkit-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+    border-color: #0e9ed3 !important;
+    outline: none; }
+  /* line 151, ../scss/_form.scss */
+  .gui-combobox span {
+    color: #444;
+    text-shadow: white 0px 1px;
+    line-height: 20px;
+    cursor: default;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    display: block;
+    padding-right: 25px;
+    padding-left: 5px;
+    position: relative;
+    outline: none;
+    text-shadow: none; }
+  /* line 167, ../scss/_form.scss */
+  .gui-combobox .button {
+    background: url(../img/combo.png) no-repeat center right;
+    position: absolute;
+    right: 0px;
+    width: 21px;
+    top: 0px;
+    bottom: 0px; }
+  /* line 176, ../scss/_form.scss */
+  .gui-combobox.editable {
+    -webkit-touch-callout: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    -o-user-select: text;
+    user-select: text; }
+  /* line 181, ../scss/_form.scss */
+  .gui-combobox.editable span {
+    background-color: #fff;
+    border-top: 1px solid #dddddd;
+    border-left: 1px solid #dddddd;
+    border-bottom: 1px solid #dddddd;
+    height: 20px;
+    margin: 0px;
+    line-height: 20px;
+    padding-right: 0px;
+    cursor: text;
+    position: relative;
+    left: -1px;
+    top: -1px;
+    -webkit-border-radius: 2px;
+    -moz-border-radius: 2px; }
+  /* line 200, ../scss/_form.scss */
+  .gui-combobox.searchable.editable > i {
+    display: block;
+    width: 16px;
+    height: 16px;
+    background: url(../img/icons.png) no-repeat 0 0;
+    position: absolute;
+    top: 2px;
+    left: 3px;
+    z-index: 1; }
+  /* line 210, ../scss/_form.scss */
+  .gui-combobox.searchable.editable span {
+    margin-left: 22px;
+    border-color: #aaa;
+    -webkit-border-radius: 0;
+    -moz-border-radius: 0;
+    border-radius: 0; }
+
+/* line 218, ../scss/_form.scss */
+.gui-hidden {
+  display: none; }
+
+/* ========== */
+/* = Slider = */
+/* ========== */
+/* line 226, ../scss/_form.scss */
+.gui-slider {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  position: relative;
+  outline: none;
+  height: 20px; }
+  /* line 18, ../scss/_mixins.scss */
+  .gui-slider:focus {
+    box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+    -moz-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+    -webkit-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+    border-color: #0e9ed3 !important;
+    outline: none; }
+  /* line 237, ../scss/_form.scss */
+  .gui-slider .container {
+    margin-right: 16px;
+    height: 20px;
+    position: relative; }
+  /* line 243, ../scss/_form.scss */
+  .gui-slider .range,
+  .gui-slider .range-min {
+    position: absolute;
+    left: 0px;
+    top: 7px;
+    height: 6px;
+    border: 1px solid #bcbcbc;
+    -webkit-border-radius: 3;
+    -moz-border-radius: 3;
+    border-radius: 3; }
+  /* line 251, ../scss/_form.scss */
+  .gui-slider .range {
+    right: 0px;
+    background-color: #fff; }
+  /* line 255, ../scss/_form.scss */
+  .gui-slider .range-min {
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #cccccc), color-stop(1, #adadad));
+    background: -ms-linear-gradient(top, #adadad 0%, #cccccc 100%);
+    background: -moz-linear-gradient(top, #adadad 0%, #cccccc 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#adadad', endColorstr='#cccccc') chroma(color=black);
+    background-color: #adadad; }
+  /* line 262, ../scss/_form.scss */
+  .gui-slider .handle {
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e0e0e0), color-stop(1, white));
+    background: -ms-linear-gradient(top, white 0%, #e0e0e0 100%);
+    background: -moz-linear-gradient(top, white 0%, #e0e0e0 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='#e0e0e0') chroma(color=black);
+    background-color: white;
+    -webkit-border-radius: 3;
+    -moz-border-radius: 3;
+    border-radius: 3;
+    top: 0px;
+    width: 16px;
+    height: 20px;
+    background-color: #999;
+    position: absolute;
+    height: 20px;
+    border: 1px solid #bcbcbc; }
+    /* line 272, ../scss/_form.scss */
+    .gui-slider .handle div {
+      height: 20px;
+      background: url(../img/slider.png) no-repeat center center; }
+
+/* ============= */
+/* = DateField = */
+/* ============= */
+/* line 284, ../scss/_form.scss */
+.gui-datefield {
+  position: relative;
+  display: inline-block; }
+  /* line 288, ../scss/_form.scss */
+  .gui-datefield > button {
+    position: absolute;
+    left: 4px;
+    top: 2px;
+    width: 20px;
+    filter: none; }
+    /* line 18, ../scss/_mixins.scss */
+    .gui-datefield > button:focus {
+      box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+      -moz-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+      -webkit-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+      border-color: #0e9ed3 !important;
+      outline: none; }
+  /* line 296, ../scss/_form.scss */
+  .gui-datefield .textfield {
+    border: 1px solid #cccccc;
+    text-indent: 22px; }
+
+/* ========= */
+/* = Focus = */
+/* ========= */
+/* ========== */
+/* = Dialog = */
+/* ========== */
+/* line 4, ../scss/_win.scss */
+.gui-win, .gui-dialog {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  -moz-box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  -webkit-box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  position: absolute;
+  background-color: #f4f4f4;
+  outline: none;
+  z-index: 100;
+  min-width: 200px;
+  min-height: 200px; }
+  /* line 13, ../scss/_win.scss */
+  .gui-win > header, .gui-dialog > header {
+    font-size: 12px;
+    background-color: #999;
+    padding: 7px 10px;
+    cursor: default;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none; }
+    /* line 19, ../scss/_win.scss */
+    .gui-win > header .title, .gui-dialog > header .title {
+      font: 13px "Trebuchet MS";
+      min-height: 15px;
+      line-height: 15px;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap; }
+  /* line 29, ../scss/_win.scss */
+  .gui-win > .content, .gui-dialog > .content {
+    position: absolute;
+    top: 30px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    overflow: auto; }
+  /* line 37, ../scss/_win.scss */
+  .gui-win > .resize, .gui-dialog > .resize {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    width: 16px;
+    height: 16px;
+    cursor: se-resize;
+    z-index: 1; }
+  /* line 48, ../scss/_win.scss */
+  .ie8 .gui-win, .ie8 .gui-dialog {
+    /* Left, right */
+    /* Bottom */
+    /* Top */ }
+    /* line 410, ../scss/_mixins.scss */
+    .ie8 .gui-win .ds, .ie8 .gui-dialog .ds {
+      position: absolute;
+      overflow: hidden; }
+    /* line 416, ../scss/_mixins.scss */
+    .ie8 .gui-win .ds_l, .ie8 .gui-dialog .ds_l,
+    .ie8 .gui-win .ds_r,
+    .ie8 .gui-dialog .ds_r {
+      top: 20px;
+      bottom: 20px;
+      width: 20px;
+      overflow: hidden; }
+    /* line 422, ../scss/_mixins.scss */
+    .ie8 .gui-win .ds_l, .ie8 .gui-dialog .ds_l {
+      left: -20px;
+      background: url(../img/ds_vert.png) repeat-y; }
+    /* line 426, ../scss/_mixins.scss */
+    .ie8 .gui-win .ds_r, .ie8 .gui-dialog .ds_r {
+      right: -20px;
+      background: url(../img/ds_vert.png) repeat-y top right; }
+    /* line 432, ../scss/_mixins.scss */
+    .ie8 .gui-win .ds_bl, .ie8 .gui-dialog .ds_bl,
+    .ie8 .gui-win .ds_br,
+    .ie8 .gui-dialog .ds_br {
+      width: 40px;
+      height: 50px;
+      bottom: -30px; }
+    /* line 437, ../scss/_mixins.scss */
+    .ie8 .gui-win .ds_bl, .ie8 .gui-dialog .ds_bl {
+      left: -20px;
+      background: url(../img/ds_corners.png) no-repeat bottom left; }
+    /* line 441, ../scss/_mixins.scss */
+    .ie8 .gui-win .ds_br, .ie8 .gui-dialog .ds_br {
+      right: -20px;
+      background: url(../img/ds_corners.png) no-repeat bottom right; }
+    /* line 445, ../scss/_mixins.scss */
+    .ie8 .gui-win .ds_b, .ie8 .gui-dialog .ds_b {
+      bottom: -30px;
+      left: 20px;
+      right: 20px;
+      height: 30px;
+      background: url(../img/ds_hor.png) repeat-x left bottom; }
+    /* line 454, ../scss/_mixins.scss */
+    .ie8 .gui-win .ds_tl, .ie8 .gui-dialog .ds_tl,
+    .ie8 .gui-win .ds_tr,
+    .ie8 .gui-dialog .ds_tr {
+      height: 25px;
+      top: -5px;
+      width: 40px; }
+    /* line 459, ../scss/_mixins.scss */
+    .ie8 .gui-win .ds_tl, .ie8 .gui-dialog .ds_tl {
+      left: -20px;
+      background: url(../img/ds_corners.png) no-repeat top left; }
+    /* line 463, ../scss/_mixins.scss */
+    .ie8 .gui-win .ds_tr, .ie8 .gui-dialog .ds_tr {
+      right: -20px;
+      background: url(../img/ds_corners.png) no-repeat top right; }
+    /* line 467, ../scss/_mixins.scss */
+    .ie8 .gui-win .ds_t, .ie8 .gui-dialog .ds_t {
+      left: 20px;
+      right: 20px;
+      top: -5px;
+      height: 5px;
+      background: url(../img/ds_hor.png) repeat-x; }
+
+/* line 59, ../scss/_win.scss */
+.gui-dialog > .content {
+  bottom: 30px; }
+/* line 62, ../scss/_win.scss */
+.gui-dialog > footer {
+  border-top: 1px dashed #dddddd;
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  height: 40px;
+  text-align: right; }
+  /* line 70, ../scss/_win.scss */
+  .gui-dialog > footer .buttons {
+    padding: 10px; }
+
+/* ============ */
+/* = Dropdown = */
+/* ============ */
+/* line 16, ../scss/gui.scss */
+.gui-dropdownlist {
+  display: block;
+  min-width: 100px;
+  position: absolute;
+  color: #444;
+  font-size: 11px;
+  text-align: left;
+  min-width: 150px;
+  padding: 3px 0px;
+  line-height: 13px;
+  border-radius: 3px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 500;
+  overflow-y: scroll;
+  background-color: #fff;
+  outline: none;
+  list-style-type: none;
+  margin: 0; }
+  /* line 87, ../scss/_mixins.scss */
+  .gui-dropdownlist .selected {
+    background-color: #7c7c7c;
+    color: #fff;
+    border-color: #494949; }
+  /* line 93, ../scss/_mixins.scss */
+  .gui-dropdownlist:focus .selected {
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #2464f3), color-stop(1, #638cf5));
+    background: -ms-linear-gradient(top, #638cf5 0%, #2464f3 100%);
+    background: -moz-linear-gradient(top, #638cf5 0%, #2464f3 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#638cf5', endColorstr='#2464f3') chroma(color=black);
+    background-color: #638cf5;
+    border-color: #1e498c; }
+  /* line 38, ../scss/gui.scss */
+  .gui-dropdownlist > li {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+    cursor: default;
+    list-style-type: none;
+    margin: 0;
+    padding: 4px 15px;
+    color: #444;
+    display: block;
+    text-decoration: none; }
+    /* line 48, ../scss/gui.scss */
+    .gui-dropdownlist > li.disabled {
+      color: #aaa; }
+
+/* ============ */
+/* = Calendar = */
+/* ============ */
+/* line 63, ../scss/gui.scss */
+.gui-calendar, .gui-datepicker {
+  outline: none; }
+  /* line 65, ../scss/gui.scss */
+  .gui-calendar table, .gui-datepicker table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%; }
+  /* line 70, ../scss/gui.scss */
+  .gui-calendar thead, .gui-datepicker thead {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none; }
+    /* line 72, ../scss/gui.scss */
+    .gui-calendar thead th, .gui-datepicker thead th {
+      text-align: center; }
+    /* line 75, ../scss/gui.scss */
+    .gui-calendar thead .header, .gui-datepicker thead .header {
+      position: relative;
+      height: 30px; }
+    /* line 79, ../scss/gui.scss */
+    .gui-calendar thead .monthname, .gui-datepicker thead .monthname {
+      font-size: 14px;
+      text-align: center; }
+  /* line 86, ../scss/gui.scss */
+  .gui-calendar .nextmonth, .gui-datepicker .nextmonth,
+  .gui-calendar .prevmonth,
+  .gui-datepicker .prevmonth {
+    width: 13px;
+    height: 13px;
+    overflow: hidden;
+    position: absolute;
+    background-color: #ddd;
+    top: 7px;
+    left: 7px;
+    cursor: pointer; }
+  /* line 96, ../scss/gui.scss */
+  .gui-calendar .nextmonth, .gui-datepicker .nextmonth {
+    left: auto;
+    right: 5px; }
+  /* line 100, ../scss/gui.scss */
+  .gui-calendar td, .gui-datepicker td {
+    border: 1px solid #dddddd;
+    white-space: nowrap;
+    padding: 0; }
+    /* line 105, ../scss/gui.scss */
+    .gui-calendar td.day > div, .gui-datepicker td.day > div {
+      padding: 1px;
+      overflow: hidden; }
+      /* line 108, ../scss/gui.scss */
+      .gui-calendar td.day > div .date, .gui-datepicker td.day > div .date {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 15px;
+        height: 13px;
+        text-align: right;
+        color: #999;
+        font-size: 11px; }
+    /* line 120, ../scss/gui.scss */
+    .gui-calendar td.gray > div, .gui-datepicker td.gray > div {
+      color: #aaa; }
+    /* line 123, ../scss/gui.scss */
+    .gui-calendar td.over, .gui-datepicker td.over {
+      outline: 3px solid #a7bac6; }
+    /* line 126, ../scss/gui.scss */
+    .gui-calendar td.today, .gui-datepicker td.today {
+      background-color: #ffefb9 !important; }
+    /* line 129, ../scss/gui.scss */
+    .gui-calendar td.weekend, .gui-datepicker td.weekend {
+      background-color: #f8f8f8; }
+    /* line 132, ../scss/gui.scss */
+    .gui-calendar td.selected, .gui-datepicker td.selected {
+      background-color: #f8f8f8; }
+
+/* ============== */
+/* = DatePicker = */
+/* ============== */
+/* line 144, ../scss/gui.scss */
+.gui-datepicker {
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  width: 250px;
+  position: absolute;
+  background-color: #fff;
+  z-index: 1000;
+  cursor: default; }
+  /* line 87, ../scss/_mixins.scss */
+  .gui-datepicker .selected {
+    background-color: #7c7c7c;
+    color: #fff;
+    border-color: #494949; }
+  /* line 93, ../scss/_mixins.scss */
+  .gui-datepicker:focus .selected {
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #2464f3), color-stop(1, #638cf5));
+    background: -ms-linear-gradient(top, #638cf5 0%, #2464f3 100%);
+    background: -moz-linear-gradient(top, #638cf5 0%, #2464f3 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#638cf5', endColorstr='#2464f3') chroma(color=black);
+    background-color: #638cf5;
+    border-color: #1e498c; }
+  /* line 156, ../scss/gui.scss */
+  .gui-datepicker td.day > div {
+    min-height: 20px;
+    position: relative; }
+
+/* line 169, ../scss/gui.scss */
+.gui-filterview {
+  margin-bottom: 20px;
+  margin-top: 20px; }
+  /* line 170, ../scss/gui.scss */
+  .gui-filterview li {
+    zoom: 1;
+    /* For IE 6/7 (trigger hasLayout) */
+    margin-bottom: 3px; }
+    /* line 137, ../scss/_mixins.scss */
+    .gui-filterview li:before, .gui-filterview li:after {
+      content: "";
+      display: table; }
+    /* line 141, ../scss/_mixins.scss */
+    .gui-filterview li:after {
+      clear: both; }
+  /* line 174, ../scss/gui.scss */
+  .gui-filterview .title {
+    display: inline-block;
+    width: 70px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: bold;
+    line-height: 25px; }
+  /* line 182, ../scss/gui.scss */
+  .gui-filterview .fields {
+    display: inline-block; }
+    /* line 184, ../scss/gui.scss */
+    .gui-filterview .fields > .gui-combobox, .gui-filterview .fields > .gui-date, .gui-filterview .fields > .gui-text, .gui-filterview .fields > .gui-password, .gui-filterview .fields > .gui-textarea, .gui-filterview .gui-datefield .fields > .textfield, .gui-datefield .gui-filterview .fields > .textfield, .gui-filterview .fields > .gui-datefield {
+      width: 150px;
+      display: inline-block;
+      margin-left: 20px;
+      box-sizing: border-box; }
+    /* line 190, ../scss/gui.scss */
+    .gui-filterview .fields > *:first-child {
+      margin-left: 0px; }
+  /* line 194, ../scss/gui.scss */
+  .gui-filterview .gui-form > * {
+    margin-right: 20px;
+    height: 26px;
+    overflow: hidden;
+    float: left; }
+  /* line 205, ../scss/gui.scss */
+  .gui-filterview .buttons {
+    margin-top: 10px; }
+  /* line 208, ../scss/gui.scss */
+  .gui-filterview .tools {
+    display: inline-block; }
+    /* line 210, ../scss/gui.scss */
+    .gui-filterview .tools button {
+      display: inline-block;
+      cursor: default;
+      padding: 4px 8px;
+      overflow: visible;
+      /* Removes crazy padding in IE7 */
+      border: 1px solid #919191;
+      -webkit-border-radius: 3px;
+      -moz-border-radius: 3px;
+      border-radius: 3px;
+      background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e1e1e1), color-stop(1, white));
+      background: -ms-linear-gradient(top, white 0%, #e1e1e1 100%);
+      background: -moz-linear-gradient(top, white 0%, #e1e1e1 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='#e1e1e1') chroma(color=black);
+      background-color: white;
+      box-shadow: 0 1px 1px white;
+      -moz-box-shadow: 0 1px 1px white;
+      -webkit-box-shadow: 0 1px 1px white;
+      font-weight: bold;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      -o-user-select: none;
+      user-select: none;
+      color: #555;
+      text-shadow: white 0px 1px;
+      height: 26px; }
+      /* line 272, ../scss/_mixins.scss */
+      .gui-filterview .tools button:not(.disabled):active {
+        background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e6e6e6), color-stop(1, #c8c8c8));
+        background: -ms-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
+        background: -moz-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#c8c8c8', endColorstr='#e6e6e6') chroma(color=black);
+        background-color: #c8c8c8;
+        box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3);
+        -moz-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3);
+        -webkit-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3); }
+      /* line 277, ../scss/_mixins.scss */
+      .gui-filterview .tools button.disabled {
+        color: #aaaaaa !important; }
+    /* line 214, ../scss/gui.scss */
+    .gui-filterview .tools button.remove:hover {
+      display: inline-block;
+      cursor: default;
+      padding: 4px 8px;
+      overflow: visible;
+      /* Removes crazy padding in IE7 */
+      border: 1px solid #919191;
+      -webkit-border-radius: 3px;
+      -moz-border-radius: 3px;
+      border-radius: 3px;
+      background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e1e1e1), color-stop(1, white));
+      background: -ms-linear-gradient(top, white 0%, #e1e1e1 100%);
+      background: -moz-linear-gradient(top, white 0%, #e1e1e1 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='#e1e1e1') chroma(color=black);
+      background-color: white;
+      box-shadow: 0 1px 1px white;
+      -moz-box-shadow: 0 1px 1px white;
+      -webkit-box-shadow: 0 1px 1px white;
+      font-weight: bold;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      -o-user-select: none;
+      user-select: none;
+      color: #555;
+      text-shadow: white 0px 1px;
+      padding-left: 25px; }
+      /* line 272, ../scss/_mixins.scss */
+      .gui-filterview .tools button.remove:hover:not(.disabled):active {
+        background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e6e6e6), color-stop(1, #c8c8c8));
+        background: -ms-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
+        background: -moz-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#c8c8c8', endColorstr='#e6e6e6') chroma(color=black);
+        background-color: #c8c8c8;
+        box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3);
+        -moz-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3);
+        -webkit-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3); }
+      /* line 277, ../scss/_mixins.scss */
+      .gui-filterview .tools button.remove:hover.disabled {
+        color: #aaaaaa !important; }
+    /* line 218, ../scss/gui.scss */
+    .gui-filterview .tools button.remove {
+      border-color: transparent;
+      background: none;
+      padding-left: 25px;
+      position: relative; }
+      /* line 224, ../scss/gui.scss */
+      .gui-filterview .tools button.remove:before {
+        z-index: 1;
+        content: '';
+        display: inline-block;
+        overflow: hidden;
+        position: absolute;
+        left: 6px;
+        top: 7px;
+        width: 13px;
+        height: 13px;
+        background: url(../img/icons/remove.png) no-repeat; }
+
+/* line 244, ../scss/gui.scss */
+.gui-table {
+  outline: none;
+  cursor: default;
+  position: relative; }
+  /* line 250, ../scss/gui.scss */
+  .gui-table:focus tbody tr.selected td, .gui-table:focus tbody tr td.selected {
+    background-color: #3B77D5;
+    color: #fff; }
+    /* line 253, ../scss/gui.scss */
+    .gui-table:focus tbody tr.selected td a, .gui-table:focus tbody tr td.selected a {
+      color: #fff; }
+    /* line 256, ../scss/gui.scss */
+    .gui-table:focus tbody tr.selected td .textfield, .gui-table:focus tbody tr td.selected .textfield {
+      color: #000; }
+  /* line 264, ../scss/gui.scss */
+  .gui-table table {
+    width: 100%;
+    border-collapse: collapse;
+    outline: none; }
+    /* line 269, ../scss/gui.scss */
+    .gui-table table td {
+      border-top: 1px solid white; }
+    /* line 274, ../scss/gui.scss */
+    .gui-table table thead th {
+      padding-right: 8px;
+      padding-bottom: 5px;
+      color: #777;
+      position: relative;
+      text-align: left; }
+      /* line 281, ../scss/gui.scss */
+      .gui-table table thead th .resize {
+        float: right;
+        cursor: col-resize;
+        width: 10px;
+        height: 100%;
+        height: 14px; }
+      /* line 288, ../scss/gui.scss */
+      .gui-table table thead th .direction {
+        margin-left: 5px;
+        height: 17px;
+        width: 20px;
+        -webkit-border-radius: 10px;
+        -moz-border-radius: 10px;
+        border-radius: 10px; }
+    /* line 301, ../scss/gui.scss */
+    .gui-table table tbody td > div {
+      padding: 2px 20px 2px 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap; }
+    /* line 307, ../scss/gui.scss */
+    .gui-table table tbody tr:first-child td {
+      border-top: 1px solid #cccccc; }
+    /* line 314, ../scss/gui.scss */
+    .gui-table table tbody tr:nth-child(2n) td {
+      background-color: #f5f5f5; }
+    /* line 319, ../scss/gui.scss */
+    .gui-table table tbody tr.selected td,
+    .gui-table table tbody tr td.selected {
+      background-color: #B6B6B6;
+      color: #fff; }
+      /* line 322, ../scss/gui.scss */
+      .gui-table table tbody tr.selected td a,
+      .gui-table table tbody tr td.selected a {
+        color: #fff; }
+      /* line 325, ../scss/gui.scss */
+      .gui-table table tbody tr.selected td .textfield,
+      .gui-table table tbody tr td.selected .textfield {
+        color: #000; }
+
+/* line 333, ../scss/gui.scss */
+.gui-table-column-ghost {
+  background-color: rgba(255, 255, 255, 0.8);
+  position: absolute;
+  border: 1px solid #cccccc;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+  -moz-box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+  -webkit-box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px; }
+  /* line 339, ../scss/gui.scss */
+  .gui-table-column-ghost > div {
+    padding: 10px; }
+
+/* line 350, ../scss/gui.scss */
+.gui-edit {
+  -webkit-touch-callout: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  -o-user-select: text;
+  user-select: text;
+  cursor: text; }
+
+/* line 365, ../scss/gui.scss */
+.gui-spaceholder {
+  border: 1px solid green;
+  visibility: hidden; }
+
+/* line 371, ../scss/gui.scss */
+.gui-token {
+  position: relative;
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid #94b5d2;
+  margin-right: 3px;
+  background-color: #d5dde5;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  cursor: default;
+  margin-bottom: 4px; }
