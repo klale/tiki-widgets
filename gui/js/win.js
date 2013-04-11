@@ -3,8 +3,6 @@ define([
     'underscore',
     'backbone',
     './base',
-    
-    'jquery-ui',
 ], function($, _, Backbone, gui) {
 
     var win = {};

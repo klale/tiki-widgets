@@ -2,7 +2,8 @@ define([
     'jquery',
     'underscore',
     'backbone',
-    'jquery-hotkeys'
+    'jquery-hotkeys',
+    'jquerypp'
 ], function($, _, Backbone) {
     
 
@@ -29,13 +30,13 @@ gui.keys = {
 };
 
 
-
-
-
-// ==================
-// = IE "polyfills" =
-// ==================
+// ================
+// = IE polyfills =
+// ================
 String.trim = String.trim || _.trim;
+
+
+
     
 $(function() {
     
@@ -360,7 +361,7 @@ $('#el1').position2('#el2', {
 });
 
 */
-$.fn.position2 = function(target, options) {
+$.fn.alignTo = function(target, options) {
     var anchorOffsets = {t: 0, l: 0, c: 0.5, b: 1, r: 1};
     var defaults = {
         anchor: ['tl', 'tl'],
@@ -394,74 +395,6 @@ $.fn.position2 = function(target, options) {
     });
 
 }
-
-
-
-$.fn.position3 = function(left, top) {
-    
-    // Get left and top
-    if(_.isObject(left)) {
-        var pos = $(left).screen(),
-        left = pos.left,
-        top = pos.top;
-    }
-    var el = $(this);
-    
-
-    // Render and insert (so we can measure the height of all options)
-    el.css({display: 'block', visibility: 'hidden', top: 'auto', bottom: 'auto', height: 'auto'});
-    
-    // Positioning
-    var height = el.outerHeight(),
-        winHeight = $(window).height();
-    
-    // height + top. Larger than window?
-    if(height+top < winHeight) {
-        // It fits, just show it
-        el.css({left: left, top: top});
-    }
-    else {
-        // Allow the dropdown top be positioned over left and top?
-        if(this.overlay) {
-
-            
-            // How much larger?                
-            if(top-height < winHeight) {
-                // less than top? just move it up a bit
-                var diff = (top+height)-winHeight;
-                el.css({left: left, top: top-diff, bottom: 'auto'});
-            }
-            else {
-                // It wont fit, glue it to top and bottom and make it scrollable
-                el.css({left: left, top: 0, bottom: 0});
-            }
-        } 
-        // put it above or below left+top, whichever is the largest, and make it scrollable
-        else {                
-            if(top < winHeight / 2) {
-                // trigger is somewhere on the upper half of the screen, go downwards
-                el.css({left: left, top: top, 'max-height': (winHeight-top)-10});                    
-            } else {
-                // go upwards
-                el.css({left: left, top: 0, height: top-30});
-            }
-        }
-    }
-    // Done, now show it
-    el.css('visibility', 'visible');
-},
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 $.fn.reverse = [].reverse;
@@ -681,30 +614,10 @@ which is run once when a Function is created */
             this.$el.on(eventName, selector || null, hotkey, method);
         }      
     }
-
-    
-
 })(Backbone);
 
 
 
-
-// https://github.com/amccloud/backbone-safesync
-(function(_, Backbone) {
-    var sync = Backbone.sync;
-
-    Backbone.sync = function(method, model, options) {
-        var lastXHR = model._lastXHR && model._lastXHR[method];
-
-        if ((lastXHR && lastXHR.readyState != 4) && (options && options.safe !== false))
-            lastXHR.abort('stale');
-
-        if (!model._lastXHR)
-            model._lastXHR = {};
-
-        return model._lastXHR[method] = sync.apply(this, arguments);
-    };
-})(_, Backbone);
 
 
 _.instanceof = function(obj, klass) {
@@ -908,46 +821,6 @@ gui.Drag = gui.Observable.extend({
             conf.ondrag(e, conf);
         }
         
-        // if(startDrag || this.dragging) {
-        //     if(startDrag) {
-        //         this.scrollLeft = $(window).scrollLeft()
-        //         this.scrollTop = $(window).scrollTop()
-        //         // `conf.ev` is the mousedown event
-        //         var e = this.conf.ev;
-        //     }
-        //     // Add some extra drag-related attributes to the `mousemove` event
-        //     e.pageX = e.clientX + this.scrollLeft;
-        //     e.pageY = e.clientY + this.scrollTop;
-        // 
-        //     console.log('aa:', e.clientX + this.scrollLeft, e.pageX)
-        //     e.conf = this.conf;
-        //     if(startDrag) {
-        //         var conf = this.conf;
-        //         if(conf.onstart)
-        //             conf.onstart(e, this.conf);
-        //         this.dragging = true;
-        //         
-        //         if(this.conf.el) {
-        //             // move the proxy el
-        //             console.log('MOVE!', e.clientX, this._init.offsetX)
-        //             this.conf.el.css({
-        //                 left: e.pageX - this._init.offsetX, 
-        //                 top: e.pageY - this._init.offsetY
-        //             });
-        //             this.conf.el.show();                
-        //         }  
-        //     } else if(this.dragging) {
-        //         if(this.conf.el) {
-        //             // move the proxy el
-        //             this.conf.el.css({
-        //                 left: e.pageX - this._init.offsetX, 
-        //                 top: e.pageY - this._init.offsetY
-        //             });
-        //         }
-        //         if(this.conf.ondrag)
-        //             this.conf.ondrag(e, this.conf);
-        //     }            
-        // }
     },
     onBodyMouseOver: function(e) {
         if(this.dragging && this.prefix) {
@@ -989,94 +862,6 @@ gui.drag = new gui.Drag();
 
 
 
-
-
-// ==============
-// = Scrollable =
-// ==============
-gui.Scrollable = gui.Observable.extend({
-    initialize: function(conf) {
-        this.container = $(conf.container);
-        this.content = $(conf.content);        
-        this.scrollbar = $('<div class="miniscrollbar"></div>').appendTo(this.container);
-        this.vhandle = $('<div class="vhandle"></div>').appendTo(this.scrollbar);
-        
-        this.content.mousewheel($.proxy(this.onMouseWheel, this));
-        this.refresh();
-    },
-    isOverflowing: function() {
-        return this._containerHeight < this._contentHeight;
-    },
-    getStripOfWhite: function() {
-        var scrolltop = this.getScrollTop();
-        var white = ((scrolltop*-1) + this._containerHeight) - this._contentHeight;
-        return Math.max(0, white);
-    },
-    refresh: function() {
-        if(!this.content || !this.content.outerHeight()) {
-            return
-        }
-        // ie7 must cache container height here (neg. margin impacts when 
-        // scrolling to bottom)
-        this._containerHeight = this.container.height(); 
-        this._contentHeight = this.content.outerHeight()
-        
-        if(this.isOverflowing()) {
-            this.scrollbar.show();
-            var h = this._containerHeight / this._contentHeight;
-            this.vhandle.css('height', h*100 + '%');
-            this.vhandle_height = h            
-
-            // if a strip of white is showing in the bottom,
-            // do a scrollToBottom.            
-            if(this.getStripOfWhite())
-                this.scrollToBottom();
-        }
-        else {
-            this.scrollbar.hide();
-        }
-    },
-    scrollToBottom:function() {
-        var diff = this._contentHeight - this._containerHeight;
-        this.scrollTo(diff*-1);
-    },    
-    getScrollTop: function() {
-        return parseInt(this.content.css('margin-top')) || 0;
-    },
-    scrollTo: function(top) {
-        // top is less than or equal to 0
-        if(this.getScrollTop() == top) {
-            return
-        }        
-        // Respect boundaries                
-        if(this.content) {
-            top = Math.min(top, 0);
-            if(this._contentHeight) {
-                top = Math.max(top, (this._containerHeight - this._contentHeight))
-            }
-            this.content.css('margin-top', top + 'px');        
-            this.vhandle.css('top', (top*-1)*this.vhandle_height + 'px');
-            // Fire scroll event
-            this.container.trigger('scroll', top);
-        }
-    },
-    onMouseWheel: function(e, delta) {
-        if(this.isOverflowing()) {
-            this.scrollTo(this.getScrollTop() + delta*8)            
-        }   
-        e.preventDefault();
-    }
-});
-$.fn.scrollable = function() {
-    $(this).each(function() {
-        var a = new gui.Scrollable({
-            container: $(this),
-            content: $(this).children()[0]
-        });
-    })
-};
-
-
 $.fn.getPreText = function (trim) {
     var ce = this.clone();
     if($.browser.webkit || $.browser.chrome)
@@ -1099,182 +884,38 @@ $.fn.getPreText = function (trim) {
     
 };
 
-(function($) {
-    function getNumericStyleProperty(style, prop){
-        return parseInt(style.getPropertyValue(prop),10) ;
-    }
 
-    $.fn.getOffsetPadding = function() {
-        var el = this[0]
+function getNumericStyleProperty(style, prop){
+    return parseInt(style.getPropertyValue(prop),10) ;
+}
+$.fn.getOffsetPadding = function() {
+    var el = this[0]
 
-        var x = 0, y = 0;
-        var inner = true ;
-        do {
-            var style = getComputedStyle(el, null);
-            var borderTop = getNumericStyleProperty(style,"border-top-width");
-            var borderLeft = getNumericStyleProperty(style,"border-left-width");
-            y += borderTop;
-            x += borderLeft;
-            if (inner) {
-                var paddingTop = getNumericStyleProperty(style,"padding-top");
-                var paddingLeft = getNumericStyleProperty(style,"padding-left");
-                y += paddingTop;
-                x += paddingLeft;
-            }
-            inner = false;
-        } while (el = el.offsetParent);
-        return {x: x, y: y};
+    var x = 0, y = 0;
+    var inner = true ;
+    do {
+        var style = getComputedStyle(el, null);
+        var borderTop = getNumericStyleProperty(style,"border-top-width");
+        var borderLeft = getNumericStyleProperty(style,"border-left-width");
+        y += borderTop;
+        x += borderLeft;
+        if (inner) {
+            var paddingTop = getNumericStyleProperty(style,"padding-top");
+            var paddingLeft = getNumericStyleProperty(style,"padding-left");
+            y += paddingTop;
+            x += paddingLeft;
+        }
+        inner = false;
+    } 
+    while (el = el.offsetParent);
+    return {x: x, y: y};
 
-    }
-
-
-})($);
+};
 
 
 $.fn.reverse = [].reverse;
 
 
-// ==========
-// = Colors =
-// ==========
-
-gui.color = new function() {
-
-    function rgbToHsl(r, g, b){
-        r /= 255, g /= 255, b /= 255;
-        var max = Math.max(r, g, b), min = Math.min(r, g, b);
-        var h, s, l = (max + min) / 2;
-
-        if(max == min) {
-            h = s = 0; // achromatic
-        } else {
-            var d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch(max){
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                case b: h = (r - g) / d + 4; break;
-            }
-            h /= 6;
-        }
-        return [h, s, l];
-    }
-
-    function hslToRgb(h, s, l) {
-        var r, g, b;
-        if(s == 0) {
-            r = g = b = l; // achromatic
-        } else {
-            function hue2rgb(p, q, t) {
-                if(t < 0) t += 1;
-                if(t > 1) t -= 1;
-                if(t < 1/6) return p + (q - p) * 6 * t;
-                if(t < 1/2) return q;
-                if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-                return p;
-            }
-            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            var p = 2 * l - q;
-            r = hue2rgb(p, q, h + 1/3);
-            g = hue2rgb(p, q, h);
-            b = hue2rgb(p, q, h - 1/3);
-        }
-        return [r * 255, g * 255, b * 255];
-    }
-
-    function lpad(str, padString, length) {
-        while (str.length < length)
-            str = padString + str;
-        return str;
-    }
-    
-    function hex(num) {
-        return lpad(parseInt(num).toString(16), '0', 2);
-    }
-    
-    this.brightness = function(color, amount) {
-        var r = parseInt(color.substr(1, 2), 16);
-        var g = parseInt(color.substr(3, 2), 16);
-        var b = parseInt(color.substr(5, 2), 16);
-        hsl = rgbToHsl(r, g, b);
-        // ensure lightness+amount is between 0 and 1 
-        l = Math.max(Math.min(hsl[2] + amount, 1), 0)
-
-        rgb = hslToRgb(hsl[0], hsl[1], l);
-        
-        return '#' + hex(rgb[0]) + hex(rgb[1]) + hex(rgb[2]);
-    };
-    
-    
-};
-
-
-gui.stylesheet = new function() {
-    
-    this.addClass = function(selector, style) {
-        if(!document.styleSheets)
-            return;
-        if(document.getElementsByTagName("head").length == 0) 
-            return;
- 
-        var stylesheet;
-        var mediaType;
-        if(document.styleSheets.length > 0) {
-            for(i = 0; i < document.styleSheets.length; i++) {
-                if(document.styleSheets[i].disabled) {
-                    continue;
-                }
-                var media = document.styleSheets[i].media;
-                mediaType = typeof media;
- 
-                if(mediaType == "string") {
-                    if (media == "" || (media.indexOf("screen") != -1))
-                        styleSheet = document.styleSheets[i];
-                } else if (mediaType == "object") {
-                    if (media.mediaText == "" || (media.mediaText.indexOf("screen") != -1)) 
-                        styleSheet = document.styleSheets[i];
-                }
- 
-                if(typeof styleSheet != "undefined")
-                    break;
-            }
-        }
-        if(typeof styleSheet == "undefined") {
-            var styleSheetElement = document.createElement("style");
-            styleSheetElement.type = "text/css";
- 
-            document.getElementsByTagName("head")[0].appendChild(styleSheetElement);
- 
-            for (i = 0; i < document.styleSheets.length; i++) {
-                if (document.styleSheets[i].disabled)
-                    continue;
-                styleSheet = document.styleSheets[i];
-            }
-            var media = styleSheet.media;
-            mediaType = typeof media;
-        }
- 
-        if (mediaType == "string") {
-            for (i = 0; i < styleSheet.rules.length; i++) {
-                if (styleSheet.rules[i].selectorText.toLowerCase() == selector.toLowerCase()) {
-                    styleSheet.rules[i].style.cssText = style;
-                    return;
-                }
-            }
- 
-            styleSheet.addRule(selector, style);
-        } else if (mediaType == "object") {
-            for (i = 0; i < styleSheet.cssRules.length; i++) {
-                if (styleSheet.cssRules[i].selectorText.toLowerCase() == selector.toLowerCase()) {
-                    styleSheet.cssRules[i].style.cssText = style;
-                    return;
-                }
-            }
- 
-            styleSheet.insertRule(selector + "{" + style + "}", 0);
-        }
-    };    
-};
 
 gui.format = new function() {
     this.filesize = function(bytes) {
@@ -1313,29 +954,26 @@ gui.randhex = function(len) {
     for(var i=0; i<len; i++)
         out.push(chars.charAt(Math.floor(Math.random() * chars.length)));
     return out.join('');
-}
+};
 
 gui.pasteHtmlAtCaret = function(html) {
     var sel, range;
-    if (window.getSelection) {
-        // IE9 and non-IE
+    if(window.getSelection) {
         sel = window.getSelection();
-        if (sel.getRangeAt && sel.rangeCount) {
+        if(sel.getRangeAt && sel.rangeCount) {
             range = sel.getRangeAt(0);
             range.deleteContents();
 
-            // Range.createContextualFragment() would be useful here but is
-            // non-standard and not supported in all browsers (IE9, for one)
             var el = document.createElement("div");
             el.innerHTML = html;
             var frag = document.createDocumentFragment(), node, lastNode;
-            while ( (node = el.firstChild) ) {
+            while((node = el.firstChild)) {
                 lastNode = frag.appendChild(node);
             }
             range.insertNode(frag);
 
             // Preserve the selection
-            if (lastNode) {
+            if(lastNode) {
                 range = range.cloneRange();
                 range.setStartAfter(lastNode);
                 range.collapse(true);
@@ -1343,11 +981,12 @@ gui.pasteHtmlAtCaret = function(html) {
                 sel.addRange(range);
             }
         }
-    } else if (document.selection && document.selection.type != "Control") {
-        // IE < 9
+    } 
+    else if(document.selection && document.selection.type != "Control") {
+        // ie<9
         document.selection.createRange().pasteHTML(html);
     }
-}
+};
 
 
 gui.addcss = function(stylesheets, win) {
@@ -1363,7 +1002,7 @@ gui.addcss = function(stylesheets, win) {
                 $('<link rel="stylesheet" type="text/css"></link>').attr('href', url).appendTo(head);
         }
     });
-}
+};
 
 
 return gui;

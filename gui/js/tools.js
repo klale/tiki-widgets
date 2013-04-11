@@ -725,30 +725,6 @@ function reverseSortBy(sortByFunction) {
                 tbody.append(this.renderOne(row));
             }, this);
 
-            
-            // Make the columns resizable
-            var o = {table: this};
-            this.$('.resize').draggable({
-                containment: 'parent', 
-                axis: 'x',
-                helper: false,
-                cursor: 'col-resize',
-                start: function(e, draginfo) {
-                    $(this).css({'left': ''});
-                    o.tableoffset = o.table.$el.offset().left;
-                    o.tablewidth = o.table.$el.width();
-                },
-                drag: function(e, draginfo) {
-                    var colwidth = e.pageX - o.tableoffset;
-                    colwidth = (colwidth / o.tablewidth) * 100
-                    var rest = 100-colwidth;
-                    o.table.$('colgroup col:nth-child(1)').css({width: colwidth+'%'});
-                    o.table.$('colgroup col:nth-child(2)').css({width: rest+'%'});                
-                },
-                stop: function() {
-                    $(this).css({'left': ''});
-                }
-            });
 
             this.$('table.body').iefocus();
             this.$('>.head').ieunselectable();        

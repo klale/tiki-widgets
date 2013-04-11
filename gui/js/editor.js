@@ -2,15 +2,13 @@ define([
     'jquery', 
     'underscore',
     'backbone',
+    'vkbeautify',
+    'highlight',
     './base',
     './tools',
     './win',    
-    'prettify',
-    'vkbeautify',
-    'gui/form',
-    'highlight',
-    'jquerypp',
-], function($, _, Backbone, gui, tools, win, prettify, vkbeautify, form, highlight) {
+    './form'
+], function($, _, Backbone, vkbeautify, highlight, base, tools, win, form) {
 
 
 var api = {};
@@ -110,7 +108,7 @@ function pasteHtmlAtCaret(html) {
 //         return false;
 //     },
 //     // createSpaceholder: function(file) {
-//     //     var id = gui.randhex(32),
+//     //     var id = base.randhex(32),
 //     //         name = file.name,
 //     //         extension = name.substr(name.lastIndexOf('.')+1),
 //     //         isImage = file.type.substr(0,6) == 'image/';
@@ -191,7 +189,7 @@ api.Quicklook = win.Window.extend({
         'keydown': '_onKeyDown',
         'click .buttons .close': 'close',         
     },
-    mixins: [gui.ChildView],
+    mixins: [base.ChildView],
     
     initialize: function(config) {
         win.Window.prototype.initialize.call(this, config);
@@ -218,13 +216,13 @@ api.Quicklook = win.Window.extend({
 
 
     _onKeyDown: function(e) {
-        if(e.which == gui.keys.ESC || e.which == gui.keys.SPACE) {
+        if(e.which == base.keys.ESC || e.which == base.keys.SPACE) {
             this.close();       
             // Stop the ESC here
             e.stopPropagation();
             e.preventDefault();  // <-- important! prevent hammering of keydown events!
         }
-        else if(gui.isArrowKey(e)) {
+        else if(base.isArrowKey(e)) {
             this.fileview.$el.trigger(e);
             // e.stopPropagation();
         }
@@ -260,7 +258,7 @@ api.FileView = Backbone.View.extend({
         sel.removeAllRanges();
     },
     onKeyDown: function(e) {
-        if(e.which == gui.keys.SPACE) {
+        if(e.which == base.keys.SPACE) {
             var el = this.selectable.getSelected().filter(':last');
             var file = this.files.get(el.attr('id'));
             this.quicklook(file);
@@ -404,7 +402,7 @@ api.CodeView = Backbone.View.extend({
     },
     onKeyDown: function(e) {
         this.saveRange();
-        if(e.which == gui.keys.ENTER && e.shiftKey) {
+        if(e.which == base.keys.ENTER && e.shiftKey) {
             var p = $('<p>&nbps;</p>').insertAfter(this.$el);
             // Move cursor to the new div
             
@@ -682,7 +680,7 @@ api.Editor = Backbone.View.extend({
         // Create models
         var models = _.map(e.files, function(file) {
             var m = new Backbone.Model({
-                id: gui.randhex(32),
+                id: base.randhex(32),
                 name: file.name,
                 type: file.type,
                 extension: file.name.substr(file.name.lastIndexOf('.')+1)
@@ -827,21 +825,21 @@ api.Editor = Backbone.View.extend({
         
     },
     onKeyDown: function(e) {
-        if(e.which == gui.keys.TAB) {
+        if(e.which == base.keys.TAB) {
             var parent = this.getParent(),
                 next = $(parent).next();
             this.moveCaretTo(next[0]);
             e.preventDefault();
         }
-        else if(e.which == gui.keys.ENTER && (e.ctrlKey || e.metaKey)) {
+        else if(e.which == base.keys.ENTER && (e.ctrlKey || e.metaKey)) {
             this.addNewSection(e.shiftKey)
         }
-        else if(e.which == gui.keys.ENTER && e.shiftKey) {
+        else if(e.which == base.keys.ENTER && e.shiftKey) {
             this.insertHTML('<br/>');
             e.preventDefault();            
         }
         
-        if(e.which == gui.keys.ENTER) {
+        if(e.which == base.keys.ENTER) {
             e.stopPropagation();
         }
     },

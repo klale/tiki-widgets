@@ -5,9 +5,8 @@ define([
     './base',
     './calendar',
     './dropdown',
-    'iframetransport',
-    'jquery-ui'
-], function($, _, Backbone, gui, calendar, dropdown) {
+    'iframetransport'
+], function($, _, Backbone, base, calendar, dropdown) {
 
 var form = {
     types: {}
@@ -375,7 +374,7 @@ form.CustomForm2 = form.Form.extend({
     events: {
         'click *[name]': 'onClickField'
     },
-    mixins: [gui.ChildView],
+    mixins: [base.ChildView],
         
     initialize: function(config) {    
         form.Form.prototype.initialize.call(this, config);
@@ -547,8 +546,8 @@ form.Text = Backbone.View.extend({
         this.$el.removeAttr('contenteditable');
     },
     onFocus: function(e) {
-        var keydown = gui._keyDownEvent;
-        if(keydown && keydown.keyCode == gui.keys.TAB)
+        var keydown = base._keyDownEvent;
+        if(keydown && keydown.keyCode == base.keys.TAB)
             this.$el.moveCursorToEnd();            
     },     
     onBlur: function(e) {
@@ -597,7 +596,7 @@ form.TextArea = form.Text.extend({
         tabindex: 0, 
         contentEditable: true
     },    
-    mixins: [gui.ChildView, form.Field],
+    mixins: [base.ChildView, form.Field],
     
     initialize: function(config) {    
         form.Text.prototype.initialize.call(this, config);
@@ -857,8 +856,8 @@ form.DateField = Backbone.View.extend({
         // this.$el.removeAttr('tabindex');
     },     
     onFocus: function(e) {
-        var evt = gui._keyDownEvent;
-        if(evt && evt.keyCode == gui.keys.TAB) {
+        var evt = base._keyDownEvent;
+        if(evt && evt.keyCode == base.keys.TAB) {
             this.$('.textfield').selectAll();
         }
     },
@@ -897,10 +896,10 @@ form.DateField = Backbone.View.extend({
         this.hideDatePicker();
     },
     onKeyDown: function(e) {
-        if(e.keyCode == gui.keys.ESC)
+        if(e.keyCode == base.keys.ESC)
             this.hideDatePicker();
             
-        if(e.keyCode == gui.keys.DOWN) {
+        if(e.keyCode == base.keys.DOWN) {
             this._setValue();
             this.showDatePicker();
             e.preventDefault();
@@ -908,13 +907,13 @@ form.DateField = Backbone.View.extend({
         }
     },
     onKeyUp: function(e) {
-        if(e.keyCode == gui.keys.ENTER) {
+        if(e.keyCode == base.keys.ENTER) {
             e.preventDefault();
             e.stopPropagation();
         }
     },    
     onDatePickerKeyDown: function(e) {
-        if(e.keyCode == gui.keys.ESC) {
+        if(e.keyCode == base.keys.ESC) {
             this.hideDatePicker();
         }
     }
@@ -932,7 +931,7 @@ form.DatePicker = calendar.MonthCalendar.extend({
         'keydown': 'onKeyDown',
         'click .day': 'onClick'
     },
-    mixins: [form.Field, gui.ChildView],
+    mixins: [form.Field, base.ChildView],
     
     initialize: function(conf) {
         form.Field.initialize.call(this, conf);
@@ -983,7 +982,7 @@ form.DatePicker = calendar.MonthCalendar.extend({
         
         var tr = curr.parents('tr:first'),
             select,
-            keys = gui.keys,
+            keys = base.keys,
             key = e.keyCode,
             arrows = [keys.LEFT, keys.RIGHT, keys.UP, keys.DOWN];
         
@@ -1123,10 +1122,10 @@ form.ComboBox = Backbone.View.extend({
         this.focus();
     },
     onDropdownKeyDown: function(e) {
-        if(e.keyCode == gui.keys.TAB) {
+        if(e.keyCode == base.keys.TAB) {
             this.focus();
         }
-        else if(e.keyCode == gui.keys.ESC) {
+        else if(e.keyCode == base.keys.ESC) {
             this.getDropdown().hide();
             this.focus();
             e.stopPropagation();
@@ -1143,16 +1142,16 @@ form.ComboBox = Backbone.View.extend({
     },
     onKeyDown: function(e) {
         var dropdown = this.getDropdown();
-        if(e.keyCode == gui.keys.DOWN) {
+        if(e.keyCode == base.keys.DOWN) {
             this.showDropdown();
             e.preventDefault();
             dropdown.el.focus();
         } 
         else if(dropdown.$el.is(':visible')) {
-            if(e.keyCode == gui.keys.ESC) {
+            if(e.keyCode == base.keys.ESC) {
                 this.abort();
                 e.stopPropagation();
-            } else if(e.keyCode == gui.keys.TAB) {
+            } else if(e.keyCode == base.keys.TAB) {
                 dropdown.el.focus();
                 e.preventDefault();
             }
@@ -1303,16 +1302,16 @@ form.FilteringComboBox = form.ComboBox.extend({
     },
     onSpanKeyDown: function(e) {
         var dropdown = this.getDropdown();
-        if(e.keyCode == gui.keys.ENTER) {
+        if(e.keyCode == base.keys.ENTER) {
             e.preventDefault();
             e.stopPropagation();
         }
-        if(e.keyCode == gui.keys.ENTER && dropdown.$('li:visible').length == 1) {
+        if(e.keyCode == base.keys.ENTER && dropdown.$('li:visible').length == 1) {
             // Only a single visible option? select it on enter
             dropdown._triggerSelect(e, dropdown.$('li:visible')[0]);
             this.abort();
         }
-        else if(e.keyCode == gui.keys.ESC) {
+        else if(e.keyCode == base.keys.ESC) {
             this.abort();
         }        
     },    
@@ -1636,7 +1635,7 @@ form.Slider = Backbone.View.extend({
                 offsetX: handleOffsetX
             }
         };
-        gui.drag.start(conf);
+        base.drag.start(conf);
         e.preventDefault();
         e.stopPropagation();
         this.el.focus();
@@ -1657,7 +1656,7 @@ form.Slider = Backbone.View.extend({
     },
     onKeyDown: function(e) {
         var key = e.keyCode, 
-            keys = gui.keys,
+            keys = base.keys,
             step = 1/(this.steps || 100);
             
         if(key == keys.ENTER) {
@@ -1698,15 +1697,15 @@ form.UploadField = Backbone.View.extend({
         '<li>'+
             '<div class="progressbar"></div>'+
             '<span class="name">${obj.name}</span> '+
-            '<span class="size">${gui.format.filesize(obj.size)}</span>'+
+            '<span class="size">${base.format.filesize(obj.size)}</span>'+
             '<button class="remove">${obj.field.removeButtonText}</button>'+
-        '</li>', {gui: gui}),
+        '</li>', {base: base}),
     queueItemTemplateIE: _.template2(''+
         '<li>'+
             '<div class="progressbar"></div>'+
             '<span class="name">${obj.name}</span> '+
             '<button class="remove">${obj.field.removeButtonText}</button>'+
-        '</li>', {gui: gui}),
+        '</li>', {base: base}),
         
     mixins: [form.Field],
     events: {

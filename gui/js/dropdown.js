@@ -3,8 +3,7 @@ define([
     'underscore',
     'backbone',
     './base',
-    './tools',    
-    'mousewheel'
+    './tools'
 ], function($, _, Backbone, gui, tools) {
 
 
@@ -135,7 +134,7 @@ var DropdownList = Backbone.View.extend({
                 top = offset.top,
                 left = offset.left,
                 height = $(el).outerHeight();
-            this.$el.position3(left, top+height);
+            this.positionAt(left, top+height);
         }
 
         // $(document.body).append(this.render().el);
@@ -152,6 +151,57 @@ var DropdownList = Backbone.View.extend({
 
         DropdownList.activeDropdown = null;
         this.trigger('hide', this);
+    },
+    positionAt: function(left, top) {
+
+        // Get left and top
+        if(_.isObject(left)) {
+            var pos = $(left).screen(),
+            left = pos.left,
+            top = pos.top;
+        }
+        var el = this.$el;
+
+
+        // Render and insert (so we can measure the height of all options)
+        el.css({display: 'block', visibility: 'hidden', top: 'auto', bottom: 'auto', height: 'auto'});
+
+        // Positioning
+        var height = el.outerHeight(),
+            winHeight = $(window).height();
+
+        // height + top. Larger than window?
+        if(height+top < winHeight) {
+            // It fits, just show it
+            el.css({left: left, top: top});
+        }
+        else {
+            // Allow the dropdown top be positioned over left and top?
+            if(this.overlay) {
+                // How much larger?                
+                if(top-height < winHeight) {
+                    // less than top? just move it up a bit
+                    var diff = (top+height)-winHeight;
+                    el.css({left: left, top: top-diff, bottom: 'auto'});
+                }
+                else {
+                    // It wont fit, glue it to top and bottom and make it scrollable
+                    el.css({left: left, top: 0, bottom: 0});
+                }
+            } 
+            // put it above or below left+top, whichever is the largest, and make it scrollable
+            else {                
+                if(top < winHeight / 2) {
+                    // trigger is somewhere on the upper half of the screen, go downwards
+                    el.css({left: left, top: top, 'max-height': (winHeight-top)-10});                    
+                } else {
+                    // go upwards
+                    el.css({left: left, top: 0, height: top-30});
+                }
+            }
+        }
+        // Done, now show it
+        el.css('visibility', 'visible');
     },
     filter: function(q) {
         q = q.toLowerCase().replace(/\s/g, '');
