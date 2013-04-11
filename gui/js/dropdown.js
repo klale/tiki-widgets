@@ -116,9 +116,6 @@ var DropdownList = Backbone.View.extend({
     },
 
     show: function(el) {
-        // if(this.$el.is(':visible'))
-        //     return;
-
         if(DropdownList.activeDropdown)
             DropdownList.activeDropdown.hide();
         DropdownList.activeDropdown = this;
@@ -126,18 +123,12 @@ var DropdownList = Backbone.View.extend({
         $(document.body).append(this.render().el);
 
         if(el) {
-            // this.$el.position2($(el), {
-            //     anchor: ['tl', 'br'],
-            //     // offset: [-5, 5]
-            // });
             var offset = $(el).offset(),
                 top = offset.top,
                 left = offset.left,
                 height = $(el).outerHeight();
             this.positionAt(left, top+height);
         }
-
-        // $(document.body).append(this.render().el);
         this.trigger('show', this);
     },
     hide: function() {  
