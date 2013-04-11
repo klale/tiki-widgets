@@ -38,89 +38,39 @@ String.trim = String.trim || _.trim;
 
 
     
-$(function() {
-    
+$(function() {    
     $(document.body).bind('keydown', function(e) {
         gui._keyDownEvent = e;
     });
     $(document.body).bind('keyup', function(e) {
         gui._keyDownEvent = null;
-    })    
-    /*
-    $("li:has(ul.popUpMenu)").focusin(function(e) {
-        $(this).children().fadeIn('slow');
     });
-    
-    $('body').focusin(function(e) {
-        if (!$(e.target).parent().is('ul.popUpMenu li')) {
-          $('ul.popUpMenu').fadeOut('slow');
-        }
-      });
-    */
+
+
     var newFocused,
         prevFocused, 
         justLostFocus;
     $(document.body).bind('focusout', function(e) {
-        // something that had focus, lost it, but we don't now to what yet
-
-
+        // Something that had focus, lost it, but we don't now to what yet
         justLostFocus = e.target;
-        
-        // // andSelf() reverses parents for some reason, restore order 
-        // // with another reverse()
-        // $(justLostFocus).parents().andSelf().reverse().each(function(i, parent) {
-        //     if(newFocused && ($(parent).contains(newFocused) || parent === newFocused)) {
-        //         // we have traversed up to a common ancestor
-        //         return false; // break
-        //     }
-        //     else {
-        //         // fire a non-bubbling focusleave
-        //         // $(parent).triggerHandler('focusleave');
-        //         $(parent).trigger('focusleave', {newFocused: newFocused});                
-        //     }
-        // });        
-        
     });
     $(document.body).bind('focusin', function(e) {
-        // console.log('FOCUS IN: ', e.target)
+        // Now a new element has received the focus, and we can compare the two
         newFocused = e.target;
-
-        // Now the new thing has received the focus, and we can compare the two
-        
-        // a focusleave should be triggered starting at justLostFocus, 
-        // continuing up to the common ancestor shared with newFocus. 
-        // (or one level above the common ancestor to be correct)
-        // Maybe add: any element with tabindex=0 along the way will have
-        // a focusin class toggled accoringly
 
         if(!justLostFocus)
             return // first ever focus, thus no focusleave
 
-        // var commonAncestor; 
-        // andSelf() reverses parents for some reason, restore order 
-        // with another reverse()
-        // console.log('focusleave: ', justLostFocus);        
-        // $(justLostFocus).triggerHandler('focusleave');
         $(justLostFocus).parents().andSelf().reverse().each(function(i, parent) {
-            // if($(newFocused).attr('name') == 'start_at') {
-            //     debugger;
-            // }
             if($(parent).contains(newFocused) || parent === newFocused) {
-                // we have traversed up to a common ancestor
-                // commonAncestor = parent;
-                // console.log('COMMON ancestor', parent)
-                // justLostFocus = newFocused;
-                // console.log('im here2')                
                 return false; // break
             }
             else {
                 // fire a non-bubbling focusleave
-                // console.log('focusleave: ', parent, 'newFocused: ', newFocused)
                 // $(parent).triggerHandler('focusleave');
                 $(parent).trigger('focusleave', {newFocused: newFocused, justLostFocus: justLostFocus});                
             }
         });
-
     });
     $(document.body).attr('tabindex', '-1');
 });
@@ -342,7 +292,7 @@ $.fn.focusWithoutScrolling = function(){
     window.scrollTo(x, y);
 };
 
-$.fn.getBox = function() {
+$.fn.box = function() {
     return {
         left: $(this).offset().left,
         top: $(this).offset().top,
@@ -355,45 +305,42 @@ $.fn.getBox = function() {
 /*
 Example
 -------
-$('#el1').position2('#el2', {
-    anchor: ['br', 'tr'],
+$('.foo').align({
+    my: 'lt',
+    at: 'rt',
+    of: $('.bar'),
     offset: [-5, 5]
 });
 
+Todo: Add "within" param
+
 */
-$.fn.alignTo = function(target, options) {
-    var anchorOffsets = {t: 0, l: 0, c: 0.5, b: 1, r: 1};
-    var defaults = {
-        anchor: ['tl', 'tl'],
-        animate: false,
+$.fn.align = function(options) {
+    // defaults
+    options = $.extend({
         offset: [0, 0]
-    };
-    options = $.extend(defaults, options);
+    }, options);
 
-    var targetBox = $(target).getBox();
-    var sourceBox = $(this).getBox();
-
-    //origin is at the top-left of the target element
+    var offsets = {t: 0, l: 0, b: 1, r: 1},
+        my = options.my,
+        at = options.at,
+        of = options.of;
+    
+    var source = $(this).box();
+    var target = $(options.of).box();
     var left = targetBox.left;
     var top = targetBox.top;
 
-    //alignment with respect to source
-    top -= anchorOffsets[options.anchor[0].charAt(0)] * sourceBox.height;
-    left -= anchorOffsets[options.anchor[0].charAt(1)] * sourceBox.width;
-
-    //alignment with respect to target
-    top += anchorOffsets[options.anchor[1].charAt(0)] * targetBox.height;
-    left += anchorOffsets[options.anchor[1].charAt(1)] * targetBox.width;
-
-    //add offset to final coordinates
+    top -= offsets[my.charAt(0)] * source.height;
+    left -= offsets[my.charAt(1)] * source.width;
+    top += offsets[at.charAt(0)] * target.height;
+    left += offsets[at.charAt(1)] * target.width;
     left += options.offset[0];
     top += options.offset[1];
-
     $(this).css({
         left: left + 'px',
         top: top + 'px'
     });
-
 }
 
 
