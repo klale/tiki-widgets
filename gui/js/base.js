@@ -35,7 +35,21 @@ define([
     // ================
     String.trim = String.trim || _.trim;
 
-
+    if(!window.getComputedStyle)
+        window.getComputedStyle = function(el, pseudo) {
+            this.el = el;
+            this.getPropertyValue = function(prop) {
+                var re = /(\-([a-z]){1})/g;
+                if (prop == 'float') prop = 'styleFloat';
+                if (re.test(prop)) {
+                    prop = prop.replace(re, function () {
+                        return arguments[2].toUpperCase();
+                    });
+                }
+                return el.currentStyle[prop] ? el.currentStyle[prop] : null;
+            }
+            return this;
+        }
 
     
     $(function() {    
@@ -59,7 +73,7 @@ define([
             newFocused = e.target;
 
             if(!justLostFocus)
-                return // first ever focus, thus no focusleave
+                return; // first ever focus, thus no focusleave
 
             $(justLostFocus).parents().andSelf().reverse().each(function(i, parent) {
                 if($(parent).contains(newFocused) || parent === newFocused) {
@@ -299,7 +313,18 @@ define([
             width: $(this).outerWidth(),
             height: $(this).outerHeight()
         };
-    }
+    };
+
+    $.fn.fadeOutFast = function() {        
+        this.each(function(i, el) {
+            if($.browser.ltie9) 
+                $(el).remove();
+            else
+                $(el).fadeOut('fast', function() {
+                    $(el).remove().css({opacity: 1, display: 'block'});
+                });
+        });
+    };
 
 
     /*
@@ -477,6 +502,38 @@ define([
             }, this);
             return backboneset.call(this, attrs, options);
         };
+        
+        Backbone.Model.prototype.parse = function(json, xhr) {
+            // convert json to Models and Collections
+            var attr, model, models, collection, options;
+            for (var prop in json) {
+                if (this.defaults && this.defaults[prop]) {
+                    attr = this.defaults[prop];
+                    if (attr instanceof Backbone.Model) {
+                        model = attr.clone();
+                        model.set(json[prop]);
+                        json[prop] = model;
+                    } else if (attr instanceof Backbone.Collection) {
+                        models = attr.map(function (model) { return model.clone(); });
+                        options = _.clone(attr.options);
+                        collection = new attr.constructor(models, options);
+                        collection.add(json[prop]);
+                        json[prop] = collection;
+                    }
+                }
+            }
+            return json;
+        };
+        
+        Backbone.Model.prototype.toJSON = function() {
+            if(!this.defaults)
+                return _.clone(this.attributes)
+
+            return _.object(_.map(this.attributes, function(v,k) {
+                return [k, v && v.toJSON ? v.toJSON() : v];
+            }));
+        };
+        
     
         _.each(["Model", "Collection", "View", "Router"], function(klass) {
             var extend = Backbone[klass].extend;
@@ -566,8 +623,7 @@ define([
 
 
 
-
-    _.instanceof = function(obj, klass) {
+    _.isinstance = function(obj, klass) {
         try {
             return _.indexOf(obj.mixins || [], klass) !== -1 || obj instanceof klass;
         } catch(e) {
@@ -581,6 +637,11 @@ define([
         return _.object(_.map(list, function(f) {
             return [f[key], f];
         }));
+    };
+    _.pop = function(obj, key) {
+        var v = obj[key];
+        delete obj[key];
+        return v;
     };
 
 
@@ -831,33 +892,19 @@ define([
     
     };
 
-
-    function getNumericStyleProperty(style, prop){
-        return parseInt(style.getPropertyValue(prop),10) ;
-    }
     $.fn.getOffsetPadding = function() {
-        var el = this[0]
-
-        var x = 0, y = 0;
-        var inner = true ;
+        var el = this[0],
+            x = 0,
+            y = 0;
         do {
-            var style = getComputedStyle(el, null);
-            var borderTop = getNumericStyleProperty(style,"border-top-width");
-            var borderLeft = getNumericStyleProperty(style,"border-left-width");
-            y += borderTop;
-            x += borderLeft;
-            if (inner) {
-                var paddingTop = getNumericStyleProperty(style,"padding-top");
-                var paddingLeft = getNumericStyleProperty(style,"padding-left");
-                y += paddingTop;
-                x += paddingLeft;
-            }
-            inner = false;
+            el = $(el);
+            x += el.outerWidth(true) - el.width();
+            y += el.outerHeight(true) - el.height();
         } 
-        while (el = el.offsetParent);
+        while(el = el[0].offsetParent);
         return {x: x, y: y};
-
     };
+
 
 
     $.fn.reverse = [].reverse;
