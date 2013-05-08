@@ -133,8 +133,9 @@ define([
     Example
     -------
     this.selectable = new tools.Selectable({
-        el: this.el,              // common ancestor for the selectables
-        selectables: 'li',        // a selector expression
+        el: this.el,                        // common ancestor for the selectables
+        selectables: 'li',                  // a selector expression
+        hotspots: 'li > span',              // optional, must click this to select
         chooseOnClick: true,
         chooseOnDblClick: false,
 
@@ -152,14 +153,15 @@ define([
         initialize: function(config) {
             _.bindAll(this, 'onSelectableMouseDown', 'onSelectableDblClick', 'onSelectableKeyDown')
             this.selectables = config.selectables;
+            this.hotspots = config.hotspots || config.selectables;
             this.$el.on('keydown', this.onSelectableKeyDown);            
-            this.$el.on('mousedown', config.selectables, this.onSelectableMouseDown);
+            this.$el.on('mousedown', config.hotspots, this.onSelectableMouseDown);
             
             // Todo: Replace these silly arguments with the out-commented code below?
             if(config.chooseOnDblClick)
-                this.$el.on('dblclick', config.selectables, this.onSelectableDblClick);
+                this.$el.on('dblclick', config.hotspots, this.onSelectableDblClick);
             if(config.chooseOnClick)
-                this.$el.on('click', config.selectables, this.onSelectableDblClick);            
+                this.$el.on('click', config.hotspots, this.onSelectableDblClick);            
             
             // this.triggerChooseOn = config.triggerChooseOn || ['keydown enter', 'dblclick li'];
             // _.each(this.triggerChooseOn, function(evtstr) {
@@ -178,20 +180,23 @@ define([
         },
 
         off: function() {
-            this.$el.off('mousedown', this.selectables, this.onSelectableMouseDown);
-            this.$el.off('dblclick', this.selectables, this.onSelectableDblClick);            
+            this.$el.off('mousedown', this.hotspots, this.onSelectableMouseDown);
+            this.$el.off('dblclick', this.hotspots, this.onSelectableDblClick);            
             this.$el.off('keydown', this.onSelectableKeyDown);            
         },
         onMouseDown: function(e) {
-            if(!$(e.target).parentsUntil(this.el, this.selectables).length || e.target == this.el)
-                this.deselectAll();
+            // if(!$(e.target).parentsUntil(this.el, this.selectables).length || e.target == this.el)
+            //     this.deselectAll();
         },
         onMetaAKeyDown: function(e) {
             this.selectAll();
             e.preventDefault();
         },
         onSelectableMouseDown: function(e) {
-            var el = $(e.currentTarget);
+            var el = $(e.target).closest(this.selectables, this.el);
+            
+            if(!el[0]) return;
+            
         
             if(e.metaKey) {
                 this.toggle(el);
@@ -724,7 +729,7 @@ define([
             }, this);
 
 
-            this.$('table.body').iefocus();
+            this.$('table').iefocus();
             this.$('>.head').ieunselectable();        
             return this;
         },
@@ -738,7 +743,7 @@ define([
         onRowAdd: function(model, collection, options) {
             options = options || {};
             var tr = this.renderOne(model);
-            this.$('table.body tbody').insertAt(options.index || -1, tr);
+            this.$('table tbody').insertAt(options.index || -1, tr);
         },
         onRowsReset: function() {
             this.render();

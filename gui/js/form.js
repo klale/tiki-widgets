@@ -31,6 +31,7 @@ define([
             required: attr.required
         });
     }
+    form.createFromElement = createFromElement;
 
     function isfield(field) {
         return field && field.setValue && field.getValue;
@@ -961,13 +962,19 @@ define([
             //     left: offset.left,
             //     top: offset.top + $(el).outerHeight()
             // });
-            this.$el.position({
-                my: 'left top',
-                at: 'right top',
+            // this.$el.position({
+            //     my: 'left top',
+            //     at: 'right top',
+            //     of: el,
+            //     collision: 'flip fit',
+            //     within: window
+            // });
+            this.$el.align({
+                my: 'lt',
+                at: 'rt',
                 of: el,
-                collision: 'flip fit',
-                within: window
-            });
+                offset: [0,0]
+            });            
         },
         onMouseEnterDay: function(e) {
             var td = $(e.target).parents('*').andSelf().filter('td:first');
@@ -1037,7 +1044,7 @@ define([
             this.editable = conf.editable;
             form.Field.initialize.call(this, conf);
             this.options = conf.options || [];
-            _.bindAll(this, 'onSpanFocus', 'onSpanBlur', 'onBlur');
+            _.bindAll(this, 'onSpanFocus', 'onSpanBlur', 'onBlur', 'onBodyMouseDown');
             this.on('blur', this.onBlur);
         },
         render: function() {
@@ -1090,7 +1097,10 @@ define([
             return this.dropdown;
         },
         showDropdown: function() {
-            var dd = this.getDropdown();
+            var dd = this.getDropdown(),
+                body = $(this.el.ownerDocument.body);
+
+            body.on('mousedown', this.onBodyMouseDown)
             if(!dd.$el.is(':visible')) {
                 // var pos = this.$el.screen();
                 // dd.show(pos.left, pos.top+this.$el.outerHeight());
@@ -1100,11 +1110,15 @@ define([
                 dd.el.focus();
             }
         },
+        onBodyMouseDown: function(e) {
+            this.getDropdown().hide();
+        },
         onMouseDown: function(e) {
             var dropdown = this.getDropdown();
             if(!dropdown.$el.is(':visible')) {
                 this.showDropdown();
             }
+            e.stopPropagation();
             e.preventDefault();
         },
         onDropdownShow: function(dropdown) {

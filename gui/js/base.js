@@ -328,8 +328,8 @@ define([
     
         var source = $(this).box();
         var target = $(options.of).box();
-        var left = targetBox.left;
-        var top = targetBox.top;
+        var left = target.left;
+        var top = target.top;
 
         top -= offsets[my.charAt(0)] * source.height;
         left -= offsets[my.charAt(1)] * source.width;
