@@ -1,17 +1,19 @@
 @import "_mixins.scss";
+@import "_icons.scss";
 @import "_highlight.scss";
 @import "_buttons.scss";
 @import "_editor.scss";
 @import "_form.scss";
 @import "_tools.scss";
 @import "_win.scss";
-@import "_icons.scss";
+
+
 
 
 /* ============ */
 /* = Dropdown = */
 /* ============ */
-.gui-dropdownlist {
+.gui-menu {
     display: block;
     min-width: 100px;
     position: absolute; 
@@ -24,7 +26,7 @@
     border-radius: 3px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);    
     z-index: 500;
-    overflow-y: scroll;
+    overflow: visible;
     background-color: #fff;    
     outline: none;
     list-style-type: none;
@@ -33,7 +35,8 @@
     @include selectables();
     
 
-    > li {         
+
+    > li {
         @include user-select(none);
         cursor: default;
         list-style-type: none;
@@ -42,13 +45,32 @@
         color: #444;
         display: block;
         text-decoration: none;        
+        position: relative;
         
         &.disabled {
             color: #aaa;
         }        
+        &.submenu > i {
+            display: block;
+            position: absolute;
+            right: 0px;
+            top: 0px;
+            bottom: 0px;
+            line-height: 22px;
+            width: 20px;
+        }
     }
-
-
+    > li.spacer {
+        margin: 5px 0;
+        background-color: #ddd;
+        height: 1px;
+        overflow: hidden;
+        padding: 0px;
+    }
+    i {
+        @include icon();
+        display: none;
+    }
 }
 
 
@@ -328,7 +350,6 @@
                     color: #000;
                 }
             }
-            
         }
     }    
 }

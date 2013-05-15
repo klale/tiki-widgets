@@ -17,6 +17,11 @@
         font-style: italic;
         color: #999;
     }
+    &.invalid {
+        border: 1px solid red;
+        background-color: #ffece7;
+        @include glowoutlineinvalid();
+    }
 }
 
 .gui-password {
@@ -116,36 +121,77 @@
 }
 
 
+// ============
+// = Checkbox =
+// ============
+.gui-checkbox {
+
+    // active and focus
+    &:active:before {
+        @include gradient(darken(#e0e0e0, 10%), darken(#fff, 10%));
+        @include box-shadow(inset 0px 2px 4px rgba(0, 0, 0, 0.3));
+    }
+    &:focus:before {
+        @include focusstyle();
+    }
+    cursor: default;
+    outline: none;
+    @include user-select(none);
+
+    // icon
+    &:before {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        content: '';
+        
+        // draw a checkbox
+        @include border-radius(3px);
+        @include gradient(#fff, #e0e0e0);
+        @include icon-before("\00a0"); // blank space
+        @include inline-block();
+        border: 1px solid #999;
+        text-align: center;
+        font-size: 11px;
+        line-height: 16px;
+        vertical-align: middle;
+        margin-right: 5px;
+    }
+
+    &.gui-checked:before {
+        content: "\e0fe";
+    }
+
+    .ie7 & { 
+        i { display: none; }
+        &.gui-checked i {
+            display: inline; 
+            color: #111;
+        }
+    }
+}
+
 /* ========= */
 /* = Combo = */
 /* ========= */
-.gui-combobox {
+.gui-combo {
     @include gradient(#fff, #e0e0e0);
     @include border-radius(3px);
     @include user-select(none);
+    @include glowoutline();
     position: relative;
     height: 24px;    
     border: 1px solid #bcbcbc;
 
     
-//    &.active {
-//        @include gradient(#B8B8B8, #E0E0E0);
-//        @include box-shadow(inset 0px 2px 6px rgba(0, 0, 0, 0.4));
-//    }
     > i {
         display: none;
     }
-    &.focus {
-        @include box-shadow(0 0 5px rgba(14, 158, 211, 0.4));
-        border-color: rgb(14, 158, 211) !important;
-        outline: none;
-    }
     
     span {
-//        @include glowoutline();
         color: #444;
         text-shadow: #fff 0px 1px;    
-        line-height: 20px;
+        line-height: 26px;
         cursor: default;
         white-space: nowrap;
         text-overflow: ellipsis;
@@ -154,16 +200,16 @@
         padding-right: 25px;
         padding-left: 5px;
         position: relative;
-        outline: none;
         text-shadow: none;        
     }
-    .button {
+    button {
         background: url(../img/combo.png) no-repeat center right;
         position: absolute;
         right: 0px;
         width: 21px;
         top: 0px;
         bottom: 0px;
+        border: none;        
     }
 
     &.editable {
@@ -270,6 +316,14 @@
 }
 
 
+// =================
+// = CheckboxGroup =
+// =================
+.gui-checkboxgroup {
+    li {
+        margin-bottom: 3px;
+    }
+}
 
 /* ============= */
 /* = DateField = */
@@ -285,10 +339,6 @@
         top: 2px;
         width: 20px;
         filter: none;
-        @include icon-before("\e04e"); // arrow-up
-        background: none;
-        border: none;
-        font-size: 14px;
     }
     .textfield {
         @extend .gui-text;
@@ -303,9 +353,175 @@
 
 
 
+// ==============
+// = SimpleForm =
+// ==============
+.gui-simpleform {
+    li {
+        margin-bottom: 5px;
+    }
+    .label {
+        padding: 3px;
+        color: #777;
+        text-shadow: #fff 0px 2px;
+    }
+    
+}
 
 
-/* ========= */
-/* = Focus = */
-/* ========= */
+
+
+
+
+
+// =====================
+// = Temp: ColumnField =
+// =====================
+.token-direction {
+
+    @include token();
+    height: 20px;
+    padding: 0px 10px;
+    line-height: 20px;
+    position: relative;
+    padding-right: 0px;
+//    border: 1px solid red !important;
+
+    span {
+        @include inline-block();
+
+        border-right: 1px solid #94B5D2;
+        padding-right: 8px;
+        height: 20px;
+//        border: 1px solid red;
+
+    }
+
+    i {
+        width: 25px;
+        height: 20px;
+        @include inline-block();
+        color: #4A5864;
+        line-height: 22px;
+        font-size: 12px;
+        text-align: center;
+        cursor: pointer;   
+//        border: 1px solid red;
+    }
+    
+    &.asc .direction {
+        @include icon-before("\e120"); // arrow-up
+    }
+    &.desc .direction {
+        @include icon-before("\e124"); // arrow-down
+    }
+
+        
+    &.selected i {
+        font-style: normal;
+        color: #fff;            
+        text-shadow: rgba(0,0,0,0.5) 0px -1px;            
+    }
+    
+}
+
+.gui-token.gui-ghost,
+.token-direction.gui-ghost {
+    @include box-shadow(0 8px 17px rgba(0,0,0,0.3));
+}
+
+.columnfield {
+    position: relative;
+    border: 1px solid #ccc;
+    min-height: 24px;
+    background-color: #fff;
+    padding: 3px 5px;
+    padding-bottom: 0px;
+    @include user-select(none);
+    @include selectables();
+    ul {
+        @include clearfloat();
+    }
+    
+    .buttons {
+        border-left: 1px solid #ccc;
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        bottom: 0px;
+        padding: 2px 4px;
+        background-color: #fff;
+        button {
+            @include icon();
+            @include button2();
+            height: 23px;
+            width: 23px;
+            padding: 0;
+            line-height: 25px;
+            font-size: 9px;
+            text-align: center;
+            &.add:before {
+            	content: "\e102"; // .icon-plus
+            }
+            &.remove:before {
+            	content: "\e101"; // .icon-minus                
+            }
+        }
+    }
+
+    &:focus, &.focus {
+        @include focusstyle();
+    }
+        
+    &.over {
+        background-color: #F2F7FC;
+        border-color: rgb(14, 158, 211);
+        -webkit-animation-name: greenPulse;
+        -webkit-animation-duration: 2s;
+        -webkit-animation-iteration-count: infinite;
+    }
+    
+    li {
+//        @include token();
+        @extend .token-direction;
+        
+        .gui-checkbox {
+            margin-top: -1px;
+            width: 13px;
+            height: 13px;
+            line-height: 14px;
+            font-size: 10px;
+        }
+    }
+}
+
+//.columnfield.columns {
+//    background-color: transparent;
+//    border-color: transparent;
+//    padding-left: 0px;
+//    
+//    li {
+//        .icon {
+//            font-size: 15px;
+//        }
+//    }
+//    li.visible {
+//        background-color: $selected;
+//        border-color: darken($selected, 15%);
+//        color: #fff;
+//        .icon {
+//            color: #fff;
+//        }
+//    }
+//    
+//    &:focus li.visible,
+//    &.focus li.visible {        
+//        background-color: $selected_focused;
+//        border-color: darken($selected_focused, 15%);        
+//    };    
+//}
+
+
+
+
 

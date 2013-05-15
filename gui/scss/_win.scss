@@ -45,7 +45,7 @@
     }
 
     // Add a manual dropshadow in ie8
-    .ie8 & {
+    .ie7 &, .ie8 & {
         @include ie-dropshadow();
     }
 }

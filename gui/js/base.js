@@ -81,8 +81,7 @@ define([
                 }
                 else {
                     // fire a non-bubbling focusleave
-                    // $(parent).triggerHandler('focusleave');
-                    $(parent).trigger('focusleave', {newFocused: newFocused, justLostFocus: justLostFocus});                
+                    $(parent).triggerHandler('focusleave', {newFocused: newFocused, justLostFocus: justLostFocus});                                    
                 }
             });
         });
@@ -315,13 +314,14 @@ define([
         };
     };
 
-    $.fn.fadeOutFast = function() {        
+    $.fn.fadeOutFast = function(options) {        
+        options = options || {};
         this.each(function(i, el) {
             if($.browser.ltie9) 
                 $(el).remove();
             else
                 $(el).fadeOut('fast', function() {
-                    $(el).remove().css({opacity: 1, display: 'block'});
+                    $(el)[options.detach ? 'detach':'remove']().css({opacity: 1, display: 'block'});
                 });
         });
     };
@@ -495,10 +495,13 @@ define([
                 attrs = {};
                 attrs[key] = value;
             }            
-            _.each(attrs, function(value, key) {
+            _.each(_.clone(attrs), function(value, key) {
                  var setter = 'set_' + key;                 
-                 typeof this[setter] === 'function' &&
-                     (attrs[key] = this[setter](value, this.attributes[key], options));
+                 if(typeof this[setter] === 'function') {
+                     this[setter](value, attrs, options, key); // var v = 
+                     // if(v !== undefined)
+                     //     attrs[key] = v;
+                 }
             }, this);
             return backboneset.call(this, attrs, options);
         };
@@ -755,6 +758,15 @@ define([
             this.prototype.hotkeys = _.extend({}, parentHotkeys, this.prototype.hotkeys);        
         }
     };
+    
+    /* merge the "defaults" dict of the super class */
+    gui.ChildModel = {
+        initcls: function() {
+            var parentDefaults = this.__super__.defaults || {};
+            this.prototype.defaults = _.extend({}, parentDefaults, this.prototype.defaults);
+        }
+    };
+    
 
 
 

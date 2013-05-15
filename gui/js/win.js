@@ -2,7 +2,7 @@ define([
     'jquery', 
     'underscore',
     'backbone',
-    './base',
+    './base'
 ], function($, _, Backbone, gui) {
 
     var win = {};
@@ -20,7 +20,7 @@ define([
             '<div class="content"></div>'
         ),
         
-        initialize: function(config) {
+        initialize: function(config) {
             this.resizable = config.resizable;
         },
         render: function() {
@@ -62,7 +62,7 @@ define([
         },    
         render: function() {
             this.$el.html(this._template({title: this.title}));
-
+            
             // Add a dropshadow in old ie
             if($.browser.ltie9) {
                 var divs = ['ds_l','ds_r','ds_t','ds_b','ds_tl','ds_tr','ds_bl','ds_br'];
@@ -108,20 +108,14 @@ define([
 
             var top = ((winHeight - height) / 2) + $(window.document).scrollTop(),
                 left = ((winWidth - width) / 2) + $(window.document).scrollLeft();
-
-            // var top = 10;
-
             el.css({left: left, top: top});
         },
-
-
         onFocusIn: function(e) {
             this.bringToTop();
         },
         onHeaderDragInit: function(e, drag) {
-            var xtra = this.$('>header').getOffsetPadding();
             drag.only();
-            drag.representative(this.el, e.offsetX+xtra.x, e.offsetY+xtra.y);
+            drag.representative(this.el, e.offsetX, e.offsetY);            
         },
         onResizeDragInit: function(e, drag) {
             drag.winpos = $(this.el).offset();
@@ -134,10 +128,7 @@ define([
         },
         onResizeDragEnd: function(e, drag) {
             drag.element.attr('style', '');
-        },
-
-
-
+        }
     });
 
 
@@ -150,8 +141,8 @@ define([
                 '<div class="buttons"></div>'+
             '</footer>'+
             '<div class="resize"></div>'
-        ),
-    })
+        )
+    });
 
     // win.Info
     // win.Warning
