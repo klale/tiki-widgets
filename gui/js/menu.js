@@ -212,6 +212,8 @@ define([
             this._submenu = null;
         },        
         _hideAll: function() {
+            if(this._submenu) 
+                this._submenu.hide();
             for(var menu=this; menu; menu=menu._parentmenu) 
                 menu.hide();
         },
