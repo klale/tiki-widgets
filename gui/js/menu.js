@@ -20,7 +20,7 @@ define([
     // ==========================
     // = Models and collections =
     // ==========================
-    var Option = Backbone.Model.extend({
+    var OptionModel = Backbone.Model.extend({
         defaults: {
             enabled: true,
             submenu: null,  // new MenuModel()
@@ -29,29 +29,29 @@ define([
         parse: function(json, xhr) {
             if(json.submenu) 
                 json.submenu = new MenuModel(json.submenu, {parse: true});
-            return json
+            return json;
         }
     });
     
     var Options = Backbone.Collection.extend({
-        model: Option
+        model: OptionModel
     });
     
     var MenuModel = Backbone.Model.extend({
         defaults: {
-            options: new Options(),
+            options: new Options()
         },
         parse: function(json, xhr) {
             // parse config shorthands
             json.options = new Options(_.map(json.options, function(o) {
                 if(o == '-')
-                    return {view: Spacer}
-                return o
+                    return {view: Spacer};
+                return o;
             }), {parse: true});
             // json = MenuModel.__super__.parse.call(this, json);
                     
-            return json
-        },
+            return json;
+        }
     });
     
 
@@ -73,7 +73,7 @@ define([
                 this.$('>a').attr('unselectable', 'on');
             }
             return this;
-        },
+        }
         
     });
     var Spacer = Backbone.View.extend({
@@ -141,8 +141,8 @@ define([
             'click li.selectable': 'onSelectableClick' 
         },
         hotkeys: {
-            'keydown right': 'showSubmenu',
-            'keydown left': 'hideSubmenu'
+            'keydown right': 'onRightKeyDown',
+            'keydown left': 'onLeftKeyDown'
         },
         _isroot: true,
         initialize: function(config) {
@@ -158,7 +158,7 @@ define([
             var options = this.model.get('options');
             options.on('add', this.addOne, this);
             options.on('remove', this.removeOne, this);
-            options.on('change:expanded', this.onExpandedChange, this)
+            options.on('change:expanded', this.onExpandedChange, this);
             
             // Create a Selectable
             this.selectable = new tools.Selectable({
@@ -168,12 +168,9 @@ define([
                 chooseOnClick: true,
                 chooseOnDblClick: false
             });
-            this.selectable.on('choose', this.onSelectableChoose, this);            
-            this.selectable.on('select', this.onSelectableSelect, this);            
-        },
-        onExpandedChange: function() {
-            // console.log('onExpandedChange', arguments)
-            this.showSubmenu()
+            this.selectable.on('choose', this.onSelectableChoose, this);
+            this.selectable.on('select', this.onSelectableSelect, this);
+            this.selectable.on('unselect', this.onSelectableUnselect, this);
         },
         render: function() {
             this.$el.empty();
@@ -195,20 +192,68 @@ define([
             
             // render a submenu as well?
             if(option.get('submenu') && option.get('expanded'))
-                this.showSubmenu(option);
+                this._showSubmenu(option);
         },
         removeOne: function(option) {
             this._views[option.cid].remove();
         },
-                
+        
+        _showSubmenu: function(model) {
+            var menu = makeview(model.get('view') || Menu, model.get('submenu'));
+            menu.show({hideOther:false, focus:false}).alignTo(this._views[model.cid].el, {at: 'right top'});
+
+            // set silly properties, factor away these
+            menu._isroot = false;
+            menu._parentmenu = this;
+            this._submenu = menu;            
+        },
+        _hideSubmenu: function(model) {
+            this._submenu.hide();
+            this._submenu = null;
+        },        
+        _hideAll: function() {
+            for(var menu=this; menu; menu=menu._parentmenu) 
+                menu.hide();
+        },
+        
+                        
         show: function(options) {
-            options = options || {};
-            if(options.hideOther && Menu.active) 
+            var opt = _.defs(options, {
+                hideOther: true,
+                focus: true,
+                alignTo: false,
+                left: false,
+                top: false});
+                        
+            if(opt.hideOther && Menu.active) 
                 Menu.active.hide();
             Menu.active = this;
+            
+            // implicit dom insert
             if(!this.el.parentNode)
                 $(document.body).append(this.render().el);            
+
+            if(opt.alignTo) {
+                this.alignTo(opt.alignTo.of, opt.alignTo);
+                if(opt.focus)
+                    this.$el.focus();                
+            } 
+            else if(opt.left !== false && opt.top !== false) {
+                this.$el.css({left: opt.left, top: opt.top});
+                if(opt.focus)
+                    this.$el.focus();                
+            }
+            this.trigger('show', this);
             return this;
+        },
+        hide: function() {  
+            if(!this.$el.is(':visible'))
+                return;
+        
+            this.$el.fadeOutFast({detach:true});
+            this.trigger('hide', this);
+            if(this._isroot)
+                Menu.active = null;
         },
         alignTo: function(el, options) {            
             this.$el.position(_.defaults(options || {}, {
@@ -217,67 +262,38 @@ define([
                 of: el,
                 collision: 'flip fit'
             }));
-            this.$el.focus();
-            this.trigger('show', this);
-        },
-        hide: function() {  
-            if(!this.$el.is(':visible'))
-                return;
-
-            this.$el.fadeOutFast({detach:true});
-            this.trigger('hide', this);
-            if(this._isroot)
-                Menu.active = null;
-        },
-        hideAll: function() {
-            for(var menu=this; menu; menu=menu._parentmenu) 
-                menu.hide();
-        },
-        showSubmenu: function(option) {
-            option = option || this.selectable.getSelectedModel();
-            if(option.get('submenu')) {
-                var menu = makeview(option.get('view') || Menu, option.get('submenu'));
-                menu.show({hideOther:false}).alignTo(this._views[option.cid].el);
-
-                // set silly properties, factor away these
-                menu._isroot = false;
-                menu._parentmenu = this;
-                this._submenu = menu;
-                return menu;
-            }
-        },
-        hideSubmenu: function(option) {
-            
         },
         trigger: function() {
             // overload Backbone.Event.trigger to pass events upward the menu chain
             Menu.__super__.trigger.apply(this, arguments);
             if(this._parentmenu)
-                this._parentmenu.trigger.apply(this._parentmenu, arguments)
+                this._parentmenu.trigger.apply(this._parentmenu, arguments);
         },
-        getRootMenu: function() {
-            var menu=this; while(menu) menu = menu._parentmenu;
-            return menu;
-        },
+        onExpandedChange: function(model) {
+            if(!model.get('submenu')) 
+                return;
+            if(model.get('expanded'))
+                this._showSubmenu(model);
+            else
+                this._hideSubmenu(model);
+        },        
         onSelectableChoose: function(e) {
             this._blinking = true;
             e.selected.blink(_.bind(function() {
-                this.hideAll();
+                this._hideAll();
                 this._blinking = false;
                 this.trigger('select', e);                
             }, this));            
         },
         onSelectableSelect: function(e) {
-            var option = this.selectable.getSelectedModels(this.model.get('options'))[0],
-                li = $(this.selectable.getSelected()[0]);
-            if(this._submenu) 
-                this._submenu.hide();
-            
-            if(option.get('submenu'))
-                option.set({expanded: true});
-
-            else this.el.focus();
+            if(e.model.get('submenu')) 
+                e.model.set('expanded', true);
+            this.el.focus();
         },
+        onSelectableUnselect: function(e) {
+            if(e.model.get('submenu'))
+                e.model.set('expanded', false);
+        },        
         onMouseOver: function(e) {
             // todo: detach mouseover listener instead of _blinking property
             if(this._blinking || this.$el.is(':animated'))
@@ -294,14 +310,30 @@ define([
             window.setTimeout(_.bind(function(e) {
                 var focused = this.el.ownerDocument.activeElement;
                 if(!$(focused).is('.gui-menu')) 
-                    this.hideAll();
+                    this._hideAll();
             }, this), 1);
         },
         onSelectableClick: function(e) {
             // clicking a submenu li should not propagate to parent menu's li
             // (causing more than one 'choose' event)
             e.stopPropagation();
-        },        
+        },
+        onRightKeyDown: function(e) {
+            var model = this.selectable.getSelectedModel();
+            if(!model)  
+                return;
+            model.set('expanded', true);
+            model.get('submenu').get('options').at(0);
+            this._submenu.el.focus();                
+            this._submenu.selectable.selectOne();
+        },
+        onLeftKeyDown: function(e) {
+            if(!this._parentmenu)
+                return;
+            var model = this._parentmenu.selectable.getSelectedModel();
+            model.set('expanded', false);
+            this._parentmenu.el.focus();
+        }
     });
 
     return {

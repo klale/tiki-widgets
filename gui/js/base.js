@@ -646,6 +646,22 @@ define([
         delete obj[key];
         return v;
     };
+    // 
+    /*
+    Fill in a given object with default properties.
+    _.defs(options, {
+        defaultvalue1: 'a',
+        defaultvalue2: 'b'
+    });
+    */
+    _.defs = function(obj, defaults) {
+        if(!obj) 
+            return _.clone(defaults);
+        for(var key in defaults)
+            if(defaults.hasOwnProperty(key) && obj[key] === undefined) 
+                obj[key] = defaults[key];
+        return obj;
+    };
 
 
     /* 

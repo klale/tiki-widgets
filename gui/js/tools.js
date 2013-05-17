@@ -187,7 +187,7 @@ define([
         },
         onMouseDown: function(e) {
             if(!$(e.target).closest(this.el, this.selectables).length || e.target == this.el) {
-                this.deselectAll();
+                this.unselectAll();
             }
         },
         onMetaAKeyDown: function(e) {
@@ -206,7 +206,7 @@ define([
                     b = el.index(),
                     start = Math.min(a,b),
                     end = Math.max(a,b);
-                this.deselectAll();
+                this.unselectAll();
                 this.$(this.selectables).slice(start, end+1).addClass('selected');
                 el.make('head');
             
@@ -245,16 +245,23 @@ define([
         },
         toggle: function(el) {
             if($(el).is('.selected')) 
-                this.deselect(el);
+                this.unselect(el);
             else
                 this.select(el);
         },
         select: function(el) {
-            if(_.isNumber(el)) {
-                el = this.$(this.selectables+':nth-child('+el+')')
-            }
+            if(_.isNumber(el))
+                el = this.$(this.selectables+':nth-child('+el+')');
+
+            var ev = {
+                el: el[0],
+                selected: this.getSelected()
+            };
+            if(this.collection)
+                ev.model = this.collection.at(el.index());
+                
             $(el).addClass('selected');
-            this.trigger('select', {selected: this.getSelected()});
+            this.trigger('select', ev);
             this.trigger('change');
         },
         selectOne: function(el) {
@@ -267,26 +274,38 @@ define([
 
 
             if(!el.hasClass('selected')) {
-                this.deselectAll();                
+                this.unselectAll();                
                 this.select(el);
             }
 
             el.make('head').make('tail');
         },
         selectAll: function() {
-            this.deselectAll();
+            this.unselectAll();
             this.$(this.selectables).addClass('selected');
             this.$(this.selectables).first().addClass('tail');
             this.$(this.selectables).last().addClass('head');
             this.trigger('select');
             this.trigger('change');
         },
-        deselect: function(el) {
+        unselect: function(el) {
+            var ev = {el: el[0]};
+            if(this.collection)
+                ev.model = this.collection.at(el.index());
+            
             $(el).removeClass('selected');
-            this.trigger('deselect');
+            this.trigger('unselect', ev);
+            this.trigger('deselect'); // legacy
             this.trigger('change');
+            
+            if(this.collection)
+                ev.model = this.collection.at(el.index())            
         },
-        deselectAll: function() {
+
+        unselectAll: function() {
+            this.$('.selected').each(_.bind(function(i, el) {
+                this.unselect($(el));
+            }, this))
             this.$('.selected').removeClass('selected');
             this.$('.head').removeClass('.head');
             this.$('.tail').removeClass('.tail');
@@ -361,14 +380,14 @@ define([
                             this.select(next);
                             next.make('head');
                         } else {
-                            this.deselect(head);
+                            this.unselect(head);
                             next.make('head');
                         }
                     }
                     else if(e.which == gui.keys.UP && prev[0]) {
                         var below = head.index() > tail.index()
                         if(below) {
-                            this.deselect(head);
+                            this.unselect(head);
                             prev.make('head');
                         } else {
                             this.select(prev);
@@ -378,6 +397,11 @@ define([
                 }
             }
         }
+    });
+    // legacy        
+    _.extend(tools.Selectable.prototype, {
+        deselect: tools.Selectable.prototype.unselect, 
+        deselectAll: tools.Selectable.prototype.unselectAll
     });
 
 
