@@ -38,8 +38,10 @@ define([
     });
     
     var MenuModel = Backbone.Model.extend({
-        defaults: {
-            options: new Options()
+        defaults: function() {
+            return {
+                options: new Options()
+            }
         },
         parse: function(json, xhr) {
             // parse config shorthands
@@ -48,7 +50,6 @@ define([
                     return {view: Spacer};
                 return o;
             }), {parse: true});
-            // json = MenuModel.__super__.parse.call(this, json);
                     
             return json;
         }
@@ -339,7 +340,8 @@ define([
     });
 
     return {
-        Menu: Menu
+        Menu: Menu,
+        Spacer: Spacer
     };
 
 });

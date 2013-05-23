@@ -20,22 +20,17 @@ $selected_grad_focused: #638CF5 #2464F3;
     color: rgb(14, 158, 211);
     text-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
 }
-
 @mixin glowoutline() {
     // Cyan glow
-    &:focus {
-        @include box-shadow(0 0 5px rgba(14, 158, 211, 0.4));
-        border-color: rgb(14, 158, 211) !important;
-        outline: none;
-    }
+    @include box-shadow(0 0 5px rgba(14, 158, 211, 0.4));
+    border-color: rgb(14, 158, 211) !important;
+    outline: none;
 }
 @mixin glowoutlineinvalid() {
     // Red glow
-    &:focus {
-        @include box-shadow(0 0 5px rgba(255, 0, 0, 0.4));
-        border-color: rgb(255, 0, 0) !important;
-        outline: none;
-    }
+    @include box-shadow(0 0 5px rgba(255, 0, 0, 0.4));
+    border-color: rgb(255, 0, 0) !important;
+    outline: none;
 }
 
 

@@ -26,8 +26,15 @@ define([
         ESC: 27,
         SPACE: 32,
         TAB: 9,
-        BACKSPACE: 8
+        BACKSPACE: 8,
+        SHIFT: 15,
+        CTRL: 17,
+        ALT: 18
     };
+    gui.modifierKeys = {
+        16: 'shift',
+        17: 'ctrl',
+        18: 'alt'};
 
 
     // ================
@@ -54,10 +61,13 @@ define([
     
     $(function() {    
         $(document.body).bind('keydown', function(e) {
-            gui._keyDownEvent = e;
+            var editable = $(e.target).attr('contenteditable');
+            if(!(e.which in gui.modifierKeys) && !editable) {
+                gui._keyDownEvent = e;
+            }
         });
         $(document.body).bind('keyup', function(e) {
-            gui._keyDownEvent = null;
+            // gui._keyDownEvent = null;
         });
 
 
@@ -375,13 +385,20 @@ define([
     $.browser.ltie9 = $.browser.msie && parseInt($.browser.version) < 9;
     $.browser.ltie10 = $.browser.msie && parseInt($.browser.version) < 10;
 
+
+
     // ==============================
     // = jQuery selector extensions =
     // ==============================
+	// Mark a function for use in filtering
+	var markFunction = function(fn) {
+		fn.sizzleFilter = true;
+		return fn;
+	};    
     $.extend($.expr[':'], {
         selectable: function(el) {
             // visible and not disabled
-            return $(el).is(':visible') && !$(el).is('.disabled');
+            return $(el).is(':visible') && !$(el).is('.gui-disabled');
         }, 
         floating: function(el) {
             // absolute or fixed positioned
@@ -389,12 +406,14 @@ define([
             var pos2 = $(el).css('position');
             return  pos2 == 'absolute' || pos2 == 'fixed';            
         },
-        containsre: function(el, index, meta, stack) {
-            var re = meta[3].replace(/^\/+|\/+$/, '').split('/'); // strip slashes, then split
-            return new RegExp(re[0], re[1]).test($(el).text());
-        },
-        focusable: function(el) {
-            return el.tabIndex !== -1;
+        containsre: markFunction(function(text, context, xml) {
+            return function(el) {
+                var re = text.replace(/^\/+|\/+$/, '').split('/'); // strip slashes, then split
+                return new RegExp(re[0], re[1]).test($(el).text());
+            }
+        }),
+        tabable: function(el) {
+            return el.tabIndex !== -1 && $(el).closest('.gui-disabled').length == 0;
         },
         inviewport: function(el) {
             var scrollTop = $(window).scrollTop(),
@@ -402,8 +421,19 @@ define([
                 height = $(window).height();
         
             return (elTop > scrollTop) && (elTop < scrollTop+height);
-        }    
+        },
+        inside: markFunction(function(selector, context, xml) {
+            return function(el) {
+                return $(el).closest(selector).length;
+            };
+        }),
+        
     });
+    
+    window.$ = $;
+
+
+
 
 
     // ==========================

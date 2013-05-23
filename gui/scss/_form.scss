@@ -4,7 +4,7 @@
 /* ========== */
 .gui-text {
     @include box-sizing(border-box);
-    @include glowoutline();
+    
 
     cursor: text;
     border: 1px solid #ccc;
@@ -17,11 +17,31 @@
         font-style: italic;
         color: #999;
     }
+    &:focus {
+        @include glowoutline();
+    };
     &.invalid {
         border: 1px solid red;
         background-color: #ffece7;
-        @include glowoutlineinvalid();
-    }
+        &:focus {
+            @include glowoutlineinvalid();
+        }
+    }    
+    
+    // disabled-style
+    .gui-disabled &,
+    &.gui-disabled {
+        @include user-select(none);
+        cursor: default;
+        color: #aaa;
+        background-color: #f4f4f4;
+        border: 1px solid #ccc !important;
+
+        &:focus {
+            border: 1px solid #ccc !important;
+            box-shadow: none;
+        }
+    }    
 }
 
 .gui-password {
@@ -127,7 +147,8 @@
 .gui-checkbox {
 
     // active and focus
-    &:active:before {
+    &:active:before,
+    &.active:before {
         @include gradient(darken(#e0e0e0, 10%), darken(#fff, 10%));
         @include box-shadow(inset 0px 2px 4px rgba(0, 0, 0, 0.3));
     }
@@ -141,16 +162,14 @@
 
     // icon
     &:before {
-        display: inline-block;
-        width: 15px;
-        height: 15px;
-        content: '\00a0';
-        
         // draw a checkbox
         @include border-radius(3px);
         @include gradient(#fff, #e0e0e0);
         @include icon-before("\00a0"); // blank space
         @include inline-block();
+        width: 15px;
+        height: 15px;
+        content: '\00a0';        
         border: 1px solid #999;
         text-align: center;
         font-size: 11px;
@@ -163,6 +182,19 @@
         content: "\e0fe";
     }
 
+    .gui-disabled &,
+    &.gui-disabled {
+        color: #aaa;
+        &:before {
+            @include gradient(#f4f4f4, #f4f4f4);
+            border: 1px solid #ccc !important;
+        }
+        &:focus:before {
+            border: 1px solid #ccc !important;
+            box-shadow: none;
+        }
+    }
+
     .ie7 & { 
         i { display: none; }
         &.gui-checked i {
@@ -172,6 +204,36 @@
     }
 }
 
+
+.gui-radio {
+    @extend .gui-checkbox;
+    padding-left: 25px;
+    position: relative;
+    line-height: 20px;
+    
+
+    &:before {
+        // draw a radio
+        @include border-radius(13px);
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        
+    }
+    &.gui-checked:before {
+//        content: '\263B'; // black smiley
+//        content: '\00B7'; // middot
+        content: '\2022'; // back dot
+        font-weight: bold;
+        font-size: 30px;
+        line-height: 11px;
+    }    
+}
+
+
+
+
+
 /* ========= */
 /* = Combo = */
 /* ========= */
@@ -179,11 +241,13 @@
     @include gradient(#fff, #e0e0e0);
     @include border-radius(3px);
     @include user-select(none);
-    @include glowoutline();
     position: relative;
     height: 24px;    
     border: 1px solid #bcbcbc;
 
+    &:focus {
+        @include glowoutline();        
+    }
     
     > i {
         display: none;
@@ -251,6 +315,22 @@
         margin-left: 22px;
         border-color: #aaa;
         @include border-radius(0);
+    }    
+    
+    // disabled-style
+    .gui-disabled &,
+    &.gui-disabled {
+        color: #aaa;
+        span {
+            color: #999;            
+        }
+        @include gradient(#f4f4f4, #f4f4f4);        
+        border: 1px solid #ccc !important;
+
+        &:focus {
+            border: 1px solid #ccc !important;
+            box-shadow: none;
+        }
     }    
 }
 
@@ -326,22 +406,33 @@
     }
 }
 
+// =================
+// = CheckboxGroup =
+// =================
+.gui-radiogroup {
+    li {
+        margin-bottom: 3px;
+    }
+}
+
+
 /* ============= */
 /* = DateField = */
 /* ============= */
-.gui-datefield {
+.gui-date {
     position: relative;
     display: inline-block;
+    width: 150px;
     
     > button {
-        @include glowoutline();
         position: absolute;
         left: 4px;
         top: 2px;
         width: 20px;
         filter: none;
+        border: none;
     }
-    .textfield {
+    .gui-text {
         @extend .gui-text;
 //        @include glowoutline();
         border: 1px solid #ccc;
@@ -358,15 +449,14 @@
 // = SimpleForm =
 // ==============
 .gui-simpleform {
-    li {
+    > ul > li {
         margin-bottom: 5px;
+        .label {
+            padding: 3px;
+            color: #777;
+            text-shadow: #fff 0px 2px;            
+        }
     }
-    .label {
-        padding: 3px;
-        color: #777;
-        text-shadow: #fff 0px 2px;
-    }
-    
 }
 
 

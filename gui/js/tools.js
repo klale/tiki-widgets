@@ -3,11 +3,12 @@ define([
     'underscore',
     'backbone',
     'moment',    
+    'globalize/sv_se',
     './base',
     './tools'    
-], function($, _, Backbone, moment, gui, tools) {
+], function($, _, Backbone, moment, Globalize, gui, tools) {
 
-
+    // Todo: Make Globalize an optional dep
     var tools = {};
 
     function reverseSortBy(sortByFunction) {
@@ -1037,29 +1038,73 @@ define([
             }        
         }
     };
-
+    
     tools.TabChain = {
-        render: function() {
-            var focusable = this.$('*:focusable');
-            var first = focusable.first(),
-                last = focusable.last();
-            focusable.first().on('keydown', function(e) {
-                if(e.which == gui.keys.TAB && e.shiftKey) { 
-                    last.focus();
-                    e.preventDefault();
-                }               
-            });            
-            focusable.last().on('keydown', function(e) {
-                if(e.which == gui.keys.TAB && !e.shiftKey) {
-                    first.focus();
-                    e.preventDefault();
-                }
-            });            
+        initialize: function() {
+            this.$el.on('keydown', _.bind(this._onKeyDown, this));
+        },
+        _onKeyDown: function(e) {
+            if(e.which == gui.keys.TAB) {
+                var set = this.$('*:tabable'),
+                    index = set.index(e.target),
+                    next = set[index + (e.shiftKey ? -1 : 1)];
+                (next || set[e.shiftKey ? set.length-1 : 0]).focus();
+                e.preventDefault();
+            }
         }
     };
 
 
-return tools;
+    // =========
+    // = Utils =
+    // =========
+    var tests = {
+        dateManip: /^([\+\-])?(\d{0,3})(\w)?$/,
+        iscompactdate: /^(\d{2,4})(\d{2})(\d{2})$/,
+        yyyymmdd: /^(\d{4})(\d{2})(\d{2})$/,
+        yymmdd: /^(\d{2})(\d{2})(\d{2})$/
+    };    
+    tools.interpretdate = function(value, basedate) {
+        if(value instanceof Date) 
+            return moment(value);
+        
+        var s = $('<div>'+value+'</div>').getPreText();
+        if(s == 'now') {
+            // var now = new Date();
+            // return moment(new Date(now.getFullYear(), now.getMonth(), now.getDate())); // trim time
+            return moment();
+        }
+        else if(basedate && s && tests.dateManip.test(s)) {
+            // Date manipulation
+            // >>> dateManip.exec('+1d')
+            // ["+1d", "+", "1", "d"]
+            s = tests.dateManip.exec(s);
+            var method = s[1] == '-' ? 'subtract' : 'add';
+            var unit = s[3] || 'd';
+            var num = parseInt(s[2]);    
+            return moment(basedate || new Date())[method](unit, num);
+        }
+        else if(/^\d+$/.test(s)) { // Timestamp, millis
+            return moment(parseInt(s));
+        }        
+        else if(s) {
+            if(tests.iscompactdate.test(s)) {
+                // moment(s, "YYYYMMDD") doesn't work for some reason
+                var matcher = tests.yyyymmdd.test(s) ? tests.yyyymmdd : tests.yymmdd;
+                var gr = matcher.exec(s);
+                var year = parseInt(gr[1]) > 1000 ? gr[1] : parseInt(gr[1])+2000;
+                return moment((new Date(year, gr[2]-1, gr[3])).getTime()); // month is zero-based
+            } 
+            var date = Globalize.parseDate(value);
+            // let moment have a go as well if Globalze can't parse
+            return moment(date || value);  
+        }
+    };
+
+
+
+
+    return tools;
 
 });
 

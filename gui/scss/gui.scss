@@ -125,6 +125,7 @@
         &.day > div {
             padding: 1px;
             overflow: hidden;
+            position: relative;
             .date {
                 position: absolute;
                 top: 2px;
@@ -149,9 +150,9 @@
         &.weekend {
             background-color: #f8f8f8;
         }
-        &.selected {
-            background-color: #f8f8f8;
-        }
+//        &.selected {
+//            background-color: #f8f8f8;
+//        }
     }
     &:focus .day.selected .date {
         color: #fff;
@@ -166,10 +167,11 @@
 /* = DatePicker = */
 /* ============== */
 .gui-datepicker {
-    @extend .gui-calendar;
+//    @extend .gui-calendar;
     @include border-radius(3px);
     @include box-shadow(0 2px 5px rgba(0,0,0,0.3));
     @include user-select(none);    
+    
     @include selectables();
     width: 250px;
     position: absolute;
@@ -177,9 +179,19 @@
     z-index: 1000;
     cursor: default;
     
+    &:focus {
+        outline: none;
+    }
+    
     td.day > div {
         min-height: 20px;
         position: relative;
+    }
+    .gui-calendar {
+        @include selectables(); // Todo: shouldn't have to repeat this
+        .day.selected .date {
+            color: #fff;
+        }
     }
 }
 
