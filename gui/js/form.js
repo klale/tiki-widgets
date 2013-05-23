@@ -48,7 +48,7 @@ define([
     function createFromElement(klass, el) {
         var attr = $(el).getAllAttributes();
         $(el).attr(klass.prototype.attributes || {});
-        $(el).addClass(klass.prototype.className)
+        $(el).addClass(klass.prototype.className);
         return new klass({
             el: el,
             name: attr.name,
@@ -76,7 +76,7 @@ define([
         },
         getFormattedValue: function() {
             return this.format(this.get('value'));
-        },
+        }
     },{
         createFromElement: function(el) {
             /* Construct a model from attributes and possibly child <br/>
@@ -128,7 +128,7 @@ define([
             // if(!(attrs.value instanceof Date) || _.isNaN(attrs.value.valueOf())) {
             // Todo: try to interpret the value only once
             if(!tools.interpretdate(attrs.value)) {
-                return "Not a date: ", attrs.value;
+                return "Not a date";
             }
         },        
         format: function(value) {
@@ -167,7 +167,7 @@ define([
         },              
         set_value: function(v, attrs) {
             if(v instanceof this.valuemodel)
-                attrs['value'] = v
+                attrs['value'] = v;
             else if(_.isObject(v))
                 attrs['value'] = new this.valuemodel(v);
             else
@@ -274,12 +274,12 @@ define([
             var attr = $(el).getAllAttributes();
             var options = $(el).find('>*[value]').map(function(i, el) {
                 return {id: $(el).attr('value'), text: $(el).html()};
-            })
+            });
             return new klass({
                 type: attr.type,
                 name: attr.name,
                 value: attr.value,
-                enabled: attr.enabled == 'false' ? false : true,
+                enabled: attr.enabled == 'false' ? false : true
             });
         }
     });
@@ -379,15 +379,14 @@ define([
         },
         onModelInvalid: function(model, error, resp) {
             _.each(error.errors || [], function(error) {
-                var model = this.fields.findWhere({name: error.name})
+                var model = this.fields.findWhere({name: error.name});
                 this.showError(model, error);
-            }, this)
+            }, this);
         },
         onModelSync: function(model, respdata, c) {
             // Hide all error messages if any
-
             if(c.headers && c.headers['X-Validate'] == 'single') {
-                var model = this.fields.findWhere({name: _.keys(c.attrs)[0]})
+                model = this.fields.findWhere({name: _.keys(c.attrs)[0]});
                 this.hideError(model);
             }
             else {            
@@ -406,8 +405,8 @@ define([
         },
         onModelError: function(model, resp, options) {
             if(resp.status == 422) {
-                var resp = JSON.parse(resp.responseText)
-                model.trigger('invalid', model, resp, resp)        
+                resp = JSON.parse(resp.responseText);
+                model.trigger('invalid', model, resp, resp);        
             }
         },
 
@@ -558,7 +557,6 @@ define([
         initialize: function(config) {
             this.model = config.model;
             this.metadata = config.metadata;
-            // console.log('metadata: ', config.metadata)
         },
         render: function() {
             if(this._fieldview) this._fieldview.remove();
@@ -652,7 +650,7 @@ define([
                 view.$el.attr(view.attributes || {});
                 view.$el.addClass(view.className);
                 view.render().delegateEvents();
-            }, this)
+            }, this);
         },    
         render: function() {
             return this;
@@ -700,7 +698,7 @@ define([
 
             this.$el.attr('name', name).html(html);            
             this.$el.toggleClass('invalid', !!this.model.validationError);
-            this.$el.toggleClass('gui-disabled', !this.model.get('enabled'))
+            this.$el.toggleClass('gui-disabled', !this.model.get('enabled'));
             return this;
         },
 
@@ -760,11 +758,6 @@ define([
             // trigger when hitting an allowed key.
             this.trigger('type', {e: e, character: String.fromCharCode(e.which)});
         }
-    },{
-        createFromElement: function(el) {
-            var field = createFromElement(this, el);
-            return field;
-        }
     });
 
 
@@ -790,13 +783,7 @@ define([
         },
         unwrapElement: function() {
         }
-    },{
-        createFromElement: function(el) {
-            var field = createFromElement(this, el);
-            return field;
-        }
     });
-
 
 
     var Password = Text.extend({
@@ -850,10 +837,6 @@ define([
         onReturnKeyDown: function(e) {
             e.stopPropagation();
         }
-    },{
-        createFromElement: function(el) {
-            return createFromElement(this, el);
-        }
     });
 
 
@@ -902,7 +885,7 @@ define([
                     // return {id: o.id, text: o.get('text')};
                     if(_.isObject(o))
                         return _.clone(o.attributes);
-                    return o
+                    return o;
                 })
             });
             this.menu.selectable.on('choose', this.onMenuChoose);
@@ -1001,9 +984,6 @@ define([
             this.$el.addClass('active');
             e.preventDefault();
         }
-    },{
-        createFromElement: function(el) {
-        }
     });
 
 
@@ -1050,9 +1030,6 @@ define([
             var checked = model.get('value');
             this.model.get('value')[checked ? 'add':'remove'](model);
         }
-    },{
-        createFromElement: function(el) {
-        }
     });
 
 
@@ -1071,9 +1048,6 @@ define([
                 return;
             this.model.set('value', true);
             this.$el.removeClass('active');
-        },        
-    },{
-        createFromElement: function(el) {
         }
     });
 
@@ -1126,9 +1100,6 @@ define([
                 this.model.get('value').set(model);
             }
         }
-    },{
-        createFromElement: function(el) {
-        }
     });
 
 
@@ -1179,7 +1150,7 @@ define([
                 body = this.el.ownerDocument.body;
             
             datepicker.render().$el.appendTo(body).css('opacity', 1).show().focus();
-            datepicker.alignTo(this.$('button.calendar'), {my: 'left top', at: 'left bottom'})   
+            datepicker.alignTo(this.$('button.calendar'), {my: 'left top', at: 'left bottom'});   
         },
         hideDatePicker: function() {
             if(this.datepicker) {
@@ -1200,7 +1171,7 @@ define([
             this.$el.attr(this.attributes);
         },
         unwrapElement: function() {
-            this.$el.replaceWith(this._orig_el)
+            this.$el.replaceWith(this._orig_el);
         },     
         onEscKeyDown: function(e) {
             this.hideDatePicker();
@@ -1254,7 +1225,6 @@ define([
                 collision: 'flip fit',
                 within: window
             });
-            console.log('OPTS: ', options)
             this.$el.position(options);
             return this.$el;
         },
@@ -1287,7 +1257,7 @@ define([
             } else if(key == keys.DOWN && tr.next()[0]) {
                 select = tr.next().find('td:nth-child('+(curr.index()+1)+')');
             } else if(key == keys.ENTER) {
-                this.model.set('value', curr.attr('data-ymd'))
+                this.model.set('value', curr.attr('data-ymd'));
                 e.preventDefault();
             }
             if(_.indexOf(arrows, key) !== -1) 
@@ -1299,12 +1269,8 @@ define([
             }
         },
         onClickDay: function(e) {
-            console.log('yeyey')
             var el = $(e.currentTarget);
             if(el[0]) {
-
-
-                console.log('yep')                
                 this.model.set('value', el.attr('data-ymd'));
             }
         }
@@ -1366,7 +1332,7 @@ define([
         
         // maps
         viewtypes: viewtypes,
-        modeltypes: modeltypes,
+        modeltypes: modeltypes
     };
 
     return exp;
