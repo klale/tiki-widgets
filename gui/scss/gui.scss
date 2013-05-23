@@ -150,9 +150,6 @@
         &.weekend {
             background-color: #f8f8f8;
         }
-//        &.selected {
-//            background-color: #f8f8f8;
-//        }
     }
     &:focus .day.selected .date {
         color: #fff;
@@ -167,7 +164,6 @@
 /* = DatePicker = */
 /* ============== */
 .gui-datepicker {
-//    @extend .gui-calendar;
     @include border-radius(3px);
     @include box-shadow(0 2px 5px rgba(0,0,0,0.3));
     @include user-select(none);    

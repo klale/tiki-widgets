@@ -233,8 +233,8 @@ define([
             Menu.active = this;
             
             // implicit dom insert
-            if(!this.el.parentNode)
-                $(document.body).append(this.render().el);            
+            if(!this.el.parentElement)
+                $(document.body).append(this.render().el);
 
             if(opt.alignTo) {
                 this.alignTo(opt.alignTo.of, opt.alignTo);
