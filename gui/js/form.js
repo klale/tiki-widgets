@@ -11,7 +11,6 @@ define([
     'iframetransport'
 ], function($, _, Backbone, Globalize, moment, base, calendar, menu, tools) {
 
-    
 
     /*
     HTML4
@@ -207,7 +206,11 @@ define([
         sm.set('value', [])
         sm.set('value', new Collection(..))
         */
-
+        defaults: function() {
+            return {
+                options: new Backbone.Collection()
+            }
+        },
         validate: function(attrs, options) {
             options = this.get('options');
             if(!options.length)
@@ -680,7 +683,9 @@ define([
             'blur': 'onBlur'
         },
         hotkeys: {
-            'keydown return': 'onReturnKeyDown'
+            'keydown return': 'onReturnKeyDown',
+            'keydown left': 'onLeftKeyDown',
+            'keydown right': 'onRightKeyDown'
         },
         defaultmodel: StringModel,
     
@@ -757,7 +762,19 @@ define([
             // On eg future numeric textfield, type is supposed to only 
             // trigger when hitting an allowed key.
             this.trigger('type', {e: e, character: String.fromCharCode(e.which)});
-        }
+        },
+        onRightKeyDown: function(e) {
+            var curr = $.Range.current(),
+                end = curr.end();
+            if(curr.range.collapsed && end.offset == end.container.length)
+                e.preventDefault(); // prevent page from scrolling right
+        },
+        onLeftKeyDown: function(e) {
+            var curr = $.Range.current();
+            if(curr.range.collapsed && curr.start().offset == 0)
+                e.preventDefault(); // prevent page from scrolling left
+        }        
+        
     });
 
 
@@ -1044,7 +1061,8 @@ define([
         },
         onClick: function(e) {             
             e.preventDefault();
-            if(this.$el.is(':inside(.gui-disabled)'))
+            // if(this.$el.is(':inside(.gui-disabled)'))
+            if(this.$el.closest('.gui-disabled')[0])
                 return;
             this.model.set('value', true);
             this.$el.removeClass('active');
@@ -1138,10 +1156,12 @@ define([
                     model: this.model
                 });
                 var body = this.el.ownerDocument.body;
+                
+                this.datepicker.alignTo(this.$('button.calendar'), {my: 'left top', at: 'left bottom'});   
 
                 this.datepicker.$el.on('keydown', _.bind(this.onDatePickerKeyDown, this));
                 this.datepicker.$el.on('blur', _.bind(this.hideDatePicker, this));
-                $(body).append(this.datepicker.el);
+                // $(body).append(this.datepicker.el);
             }
             return this.datepicker;
         },

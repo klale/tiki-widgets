@@ -27,8 +27,8 @@ var MonthCalendarModel = Backbone.Model.extend({
     },
     parse: function(json) {
         if(json.date) {
-            var m = tools.interpretdate(json.date).toDate();
-            if(date) 
+            var m = tools.interpretdate(json.date);
+            if(m) 
                 json.date = m.toDate()
         }
         return json;

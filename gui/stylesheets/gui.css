@@ -745,7 +745,8 @@ pre .xml .cdata {
   -ms-user-select: none;
   -o-user-select: none;
   user-select: none;
-  height: 17px; }
+  height: 17px;
+  display: inline-block; }
   .gui-checkbox:active:before, .gui-radio:active:before, .gui-checkbox.active:before, .active.gui-radio:before {
     background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e6e6e6), color-stop(1, #c7c7c7));
     background: -ms-linear-gradient(top, #c7c7c7 0%, #e6e6e6 100%);
@@ -763,6 +764,9 @@ pre .xml .cdata {
     -webkit-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     -ms-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     outline: none; }
+  .ie7 .gui-checkbox, .ie7 .gui-radio {
+    zoom: 1;
+    *display: inline; }
   .gui-checkbox:before, .gui-radio:before {
     -webkit-border-radius: 3px;
     -moz-border-radius: 3px;

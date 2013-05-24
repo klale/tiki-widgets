@@ -159,6 +159,7 @@
     outline: none;
     @include user-select(none);
     height: 17px;
+    @include inline-block();
 
     // icon
     &:before {

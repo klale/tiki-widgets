@@ -50,6 +50,7 @@ define([
         events: {
             'mousedown': 'bringToTop',
             'focusin': 'onFocusIn',
+            'dragdown header': 'onHeaderDragDown',
             'draginit header': 'onHeaderDragInit',
             'draginit .resize': 'onResizeDragInit',
             'dragmove .resize': 'onResizeDragMove',
@@ -85,7 +86,7 @@ define([
             var currz = parseInt(this.$el.css('z-index') || 0),
                 dialogs = $(document.body).children('.gui-win');
         
-            if(currz-100 === dialogs.length-1)
+            if(currz-101 === dialogs.length-1)
                 return;
         
             dialogs.each(function() {
@@ -93,7 +94,7 @@ define([
                 if(z > currz) 
                     $(this).css('z-index', z-1);
             });
-            this.$el.css('z-index', (dialogs.length-1) + 100);
+            this.$el.css('z-index', (dialogs.length-1) + 101);
         },
         close: function() {
             this.$el.remove();
@@ -113,10 +114,15 @@ define([
         onFocusIn: function(e) {
             this.bringToTop();
         },
+        onHeaderDragDown: function(e, drag) {
+            var offset = $(e.currentTarget.offsetParent).offset(); 
+            drag.offsetx = e.pageX - offset.left;
+            drag.offsety = e.pageY - offset.top;
+        },
         onHeaderDragInit: function(e, drag) {
             drag.only();
-            drag.representative(this.el, e.offsetX, e.offsetY);            
-        },
+            drag.representative(this.el, drag.offsetx, drag.offsety);                        
+        },       
         onResizeDragInit: function(e, drag) {
             drag.winpos = $(this.el).offset();
             drag.only();
