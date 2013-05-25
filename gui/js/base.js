@@ -314,6 +314,39 @@ define([
         this.focus();
         window.scrollTo(x, y);
     };
+    
+    // $.fn.scrollMeOnly = function() {
+    //     this.on('mousewheel DOMMouseScroll', function(e) {
+    //         var scrollTo = null;
+    //         if(e.type == 'mousewheel')
+    //             scrollTo = (e.originalEvent.wheelDelta * -1);
+    //         else if(e.type == 'DOMMouseScroll')
+    //             scrollTo = 40 * e.originalEvent.detail;
+    //         
+    //         if(scrollTo) {
+    //             e.preventDefault();
+    //             $(window).scrollTop(scrollTo + $(window).scrollTop());
+    //         }
+    //     });
+    // };
+
+    $.fn.scrollMeOnly = function() {
+        $(this).bind('mousewheel DOMMouseScroll', function(e) {
+            // e.stopPropagation();
+               // e.preventDefault();
+               // e.cancelBubble = false;
+            var t = e.target;
+            var reachedBottom = (t.scrollTop + $(t).height()) >= e.target.scrollHeight - 5;
+            var isScrollingDown = e.wheelDelta < 0;
+            // console.log('Scroll top: ', e.target.scrollTop, e.target.scrollHeight, $(e.target).height());
+
+            if(reachedBottom && isScrollingDown) {
+                e.preventDefault();
+                return false;                    
+            }
+        });
+    };
+
 
     $.fn.box = function() {
         return {
@@ -426,7 +459,7 @@ define([
             return function(el) {
                 return $(el).closest(selector).length;
             };
-        }),
+        })
         
     });
     
