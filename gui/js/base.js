@@ -535,38 +535,7 @@ define([
             }, this);
             return backboneset.call(this, attrs, options);
         };
-        
-        Backbone.Model.prototype.parse = function(json, xhr) {
-            // convert json to Models and Collections
-            var attr, model, models, collection, options;
-            for (var prop in json) {
-                if (this.defaults && this.defaults[prop]) {
-                    attr = this.defaults[prop];
-                    if (attr instanceof Backbone.Model) {
-                        model = attr.clone();
-                        model.set(json[prop]);
-                        json[prop] = model;
-                    } else if (attr instanceof Backbone.Collection) {
-                        models = attr.map(function (model) { return model.clone(); });
-                        options = _.clone(attr.options);
-                        collection = new attr.constructor(models, options);
-                        collection.add(json[prop]);
-                        json[prop] = collection;
-                    }
-                }
-            }
-            return json;
-        };
-        
-        Backbone.Model.prototype.toJSON = function() {
-            if(!this.defaults)
-                return _.clone(this.attributes)
-
-            return _.object(_.map(this.attributes, function(v,k) {
-                return [k, v && v.toJSON ? v.toJSON() : v];
-            }));
-        };
-        
+                
     
         _.each(["Model", "Collection", "View", "Router"], function(klass) {
             var extend = Backbone[klass].extend;
@@ -691,6 +660,11 @@ define([
             if(defaults.hasOwnProperty(key) && obj[key] === undefined) 
                 obj[key] = defaults[key];
         return obj;
+    };
+    _.arrayify = function(v) {
+        if(!_.isArray(v)) 
+            v = [v];
+        return v;
     };
 
 

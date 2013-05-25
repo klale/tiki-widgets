@@ -89,8 +89,8 @@ define([
                 format: attr.format
             });
         }
-    });    
-
+    });
+    
     var BoolModel = FieldModel.extend({
         set_value: function(value, attrs) {
             attrs['value'] = !!value;
@@ -160,6 +160,11 @@ define([
                     valuemodel: arguments[0]
                 });
         },
+        defaults: function() {
+            return {
+                value: new this.valuemodel(null, {parse:true})
+            }
+        },
         validate: function(attrs, options) {  
             if(!(attrs.value instanceof this.valuemodel))
                 return "Value is not instance of "+this.valuemodel;
@@ -173,8 +178,14 @@ define([
                 attrs['value'] = undefined;
         },
         parse: function(json) {
-            if(json.value)
+            if(json.value != null && !json.value.attributes)
                 json.value = new this.valuemodel(json.value, {parse:true});
+            
+            // TODO: why is the defaults not kicking in here? even though json
+            // does not contain a "value" key at all.
+            if(!json.value) {
+                json.value = new this.valuemodel(null, {parse:true});
+            }
             return json;
         },
         toJSON: function() {
@@ -205,10 +216,22 @@ define([
         sm.set('value', '123')
         sm.set('value', [])
         sm.set('value', new Collection(..))
+
+        // Set options later
+        sm.set('options', [{id:'foo', text: 'Foo'}, ...])
+
         */
+        constructor: function(attributes, options) {
+            options = _.defs(options, {parse: true});
+            Backbone.Model.call(this, attributes, options);
+        },
         defaults: function() {
+            var value = new Backbone.Collection();
+            value.on('all', this.onValueAll, this);
             return {
-                options: new Backbone.Collection()
+                options: new Backbone.Collection(),
+                value: value, // `value` is a subset of `options`
+                strict: false
             }
         },
         validate: function(attrs, options) {
@@ -231,35 +254,73 @@ define([
                 _.pop(attrs, 'value');
             }
         },
+        set_options: function(val, attrs) {
+            if(val instanceof Backbone.Collection) {
+                // replace the entire collection
+                var options = val;
+                attrs['options'] = options;
+            }
+            else {
+                // update the existing collection
+                var options = this.get('options');
+                options.reset(_.arrayify(val));
+                val = _.arrayify(val);
+                _.pop(attrs, 'options');
+            }
+            // Silently update the value-collection to be
+            // a subset of the exact same model objects
+            var value = this.get('value');
+            if(value)
+            value.each(function(v) {
+                var model = options.get(v.id);
+                if(model && model.cid != v.cid) {
+                    value.remove(v, {silent: true});
+                    value.add(model, {silent: true});
+                }
+            });
+        },
         parseValue: function(v, options) {
             // Todo: this method needs another iteration
+            if(!v) return;
             options = options || this.get('options');
-            if(!_.isArray(v)) 
-                v = [v];
-            
-            var val = _.compact(_.map(v, function(v) {
-                if(_.isString(v))
-                    return options.get(v);
-                else if(_.isObject(v) && v.id)
-                    return options.get(v.id);
+            var strict = this.get('strict');
+            if(strict && !options)
+                // Todo: trigger invalid here
+                console.log('Invalid enum (no options are set): ' + v + ' ');
+            return _.compact(_.map(_.arrayify(v), function(v) {
+                var id = (_.isObject(v) && v.id) ? v.id : v, 
+                    model = options ? options.get(id) : null;
+                    
+                if(model)
+                    return model;
+                if(strict) {
+                    // Todo: trigger invalid here
+                    console.log('Invalid enum: ' + v);
+                }
+                else {
+                    // any value is allowed, turn v into a model
+                    if(v instanceof Backbone.Model)
+                        return v;
+                    else if(_.isObject(v))
+                        return new Backbone.Model(v);
+                    else // assume scalar
+                        return new Backbone.Model({id: v, text: v});
+                }
             }));
-            return val;
         },
         getopt: function(id) {
             return this.get('options').get(id.id || id);
         },
         parse: function(json) {
-            // SimpleFormRow.render passes a complete <Model> to the field constructor.
-            // new form.Text({..rawjson..})
-            // new form.Text(modelobj)
-            if(json.attributes)
-                json = json.attributes;
-
-            if(!(json.options instanceof Backbone.Collection))
+            // Upgrade options
+            if(json.options != null && !json.options.models) {
                 json.options = new Backbone.Collection(json.options);
-            if(!(json.value instanceof Backbone.Collection))
+            }
+            // Upgrade value
+            if(json.value != null && !json.value.models) {
                 json.value = new Backbone.Collection(this.parseValue(json.value, json.options));
-            json.value.on('all', this.onValueAll, this);
+                json.value.on('all', this.onValueAll, this);
+            }
             return json;
         },
         toJSON: function() {
@@ -985,6 +1046,8 @@ define([
         render: function() {
             this.$el.toggleClass('gui-checked', this.model.get('value'));
             this.$el.html(this.model.get('text') || '');
+            this.$el.attr('name', this.model.get('name'));
+            
             return this;
         },
         onClick: function(e) {             
@@ -1144,6 +1207,7 @@ define([
         },
         render: function() {
             this.textfield.render();
+            this.$el.toggleClass('gui-disabled', !this.model.get('enabled'));            
             return this;
         },
         onModelChange: function() {
