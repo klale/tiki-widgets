@@ -41,7 +41,7 @@ define([
         defaults: function() {
             return {
                 options: new Options()
-            }
+            };
         },
         parse: function(json, xhr) {
             // parse config shorthands

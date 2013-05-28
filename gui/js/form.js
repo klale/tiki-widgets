@@ -134,11 +134,11 @@ define([
                 if(date === null)
                     return; // ok
                 else if(date === false) 
-                    return 'Not a date'                
+                    return 'Not a date';                
                 else if(date instanceof window.Date)
                     return date.valueOf() ? undefined : 'Not a date';
                 else
-                    return 'Not a date'
+                    return 'Not a date';    
             }
         },        
         format: function(value) {
@@ -183,7 +183,7 @@ define([
         defaults: function() {
             return {
                 value: new this.valuemodel(null, {parse:true})
-            }
+            };
         },
         validate: function(attrs, options) {  
             if(!(attrs.value instanceof this.valuemodel))
@@ -252,7 +252,7 @@ define([
                 options: new Backbone.Collection(),
                 value: value, // `value` is a subset of `options`
                 strict: false
-            }
+            };
         },
         validate: function(attrs, options) {
             options = this.get('options');

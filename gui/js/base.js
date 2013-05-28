@@ -54,9 +54,9 @@ define([
                     });
                 }
                 return el.currentStyle[prop] ? el.currentStyle[prop] : null;
-            }
+            };
             return this;
-        }
+        };
 
     
     $(function() {    
@@ -231,7 +231,7 @@ define([
             this.children().eq(index).before(this.children().last());
         }
         return this;
-    }
+    };
 
     $.fn.make = function(className) {
         this.each(function() {
@@ -239,15 +239,15 @@ define([
             $(this).addClass(className);
         });
         return this;
-    }
+    };
 
     $.fn.containedBy = function(parent) {
+        parent = $(parent)[0];
         var isContainedBy = false;
-        var parent = $(parent)[0];
     
         this.parents().each(function(i, par) {
             if(par === parent) {
-                isContainedBy = true
+                isContainedBy = true;
                 return false; // break
             }
         });
@@ -255,28 +255,28 @@ define([
     };
 
     $.fn.center = function(args) {
-        var args = $.extend({
+        args = $.extend({
             // defaults
             top: null  // center horizontally, manually specify top
-        }, args || {})
+        }, args || {});
 
         this.each(function() {
-    		var self = $(this);
-            coords = get_center(self.outerWidth(), self.outerHeight())
-            var left = coords[0], top = coords[1]
+            var self = $(this);
+            coords = get_center(self.outerWidth(), self.outerHeight());
+            var left = coords[0], top = coords[1];
 		
-    		if(args.top !== null) {
-    		    top = args.top
-    		}
-        	self.css({top: top, left: left});
+            if(args.top !== null) {
+                top = args.top;
+            }
+            self.css({top: top, left: left});
        });
     };
     var get_center = function(width, height) {        
-        var winHeight = $(window).height()
-        var winWidth = $(window).width()		
-        var top = ((winHeight - height) / 2) + $(window).scrollTop()
-        var left = ((winWidth - width) / 2) + $(window).scrollLeft()
-        return [left, top]
+        var winHeight = $(window).height();
+        var winWidth = $(window).width();		
+        var top = ((winHeight - height) / 2) + $(window).scrollTop();
+        var left = ((winWidth - width) / 2) + $(window).scrollLeft();
+        return [left, top];
     };
 
     $.fn.getAllAttributes = function() {
@@ -299,7 +299,7 @@ define([
         return attributes;
     };
     $.fn.attrs = function(attrs) {
-        if(arguments.length == 0) {
+        if(arguments.length === 0) {
             return $(this).getAllAttributes();
         }
         _.each(attrs || {}, function(val, key) {
@@ -409,7 +409,7 @@ define([
             left: left + 'px',
             top: top + 'px'
         });
-    }
+    };
 
 
     $.fn.reverse = [].reverse;
@@ -443,10 +443,10 @@ define([
             return function(el) {
                 var re = text.replace(/^\/+|\/+$/, '').split('/'); // strip slashes, then split
                 return new RegExp(re[0], re[1]).test($(el).text());
-            }
+            };
         }),
         tabable: function(el) {
-            return el.tabIndex !== -1 && $(el).closest('.gui-disabled').length == 0;
+            return el.tabIndex !== -1 && $(el).closest('.gui-disabled').length === 0;
         },
         inviewport: function(el) {
             var scrollTop = $(window).scrollTop(),
@@ -493,7 +493,7 @@ define([
                 _.each(originalOptions.files || [], function(f) {
                     var name = f.name,
                         file = f.file;
-                    formdata.append(f.name, f.file)
+                    formdata.append(f.name, f.file);
                 });
 
                 // Add some ajax settings
@@ -511,7 +511,7 @@ define([
             abort: function() {
             
             }
-        }
+        };
     
     });
 
@@ -529,15 +529,15 @@ define([
         // A simple class supporting events and initialize
         Backbone.Class = function() {
             if(this.initialize)
-                this.initialize.apply(this, arguments)
-        }
+                this.initialize.apply(this, arguments);
+        };
         Backbone.Class.extend = Backbone.Model.extend;
         _.extend(Backbone.Class, Backbone.Events);
     
 
         Backbone.Collection.prototype.move = function(model, toIndex, options) {
-            var fromIndex = this.indexOf(model),
-                options = options || {};
+            options = options || {};
+            var fromIndex = this.indexOf(model);
             if(fromIndex == -1) {
                 throw new Error("Can't move a model that's not in the collection");
             }
@@ -551,7 +551,7 @@ define([
         var backboneset = Backbone.Model.prototype.set;
         Backbone.Model.prototype.set = function(key, value, options) {
             var attrs, attr, val;
-            if(_.isObject(key) || key == null) {
+            if(_.isObject(key) || key === null) {
                 attrs = key;
                 options = value;
             } else {
@@ -594,7 +594,7 @@ define([
                     protoProps.beforeinitcls.call(child);
                 
                 if(protoProps.initcls)
-                    inits.push(protoProps.initcls)
+                    inits.push(protoProps.initcls);
 
                 // add all keys from all mixins if not already declared
                 // in protoProps. 
@@ -613,8 +613,8 @@ define([
                     // }
                     protoProps.delegateEvents = function(events) {
                         Backbone.View.prototype.delegateEvents.call(this, events);
-                        this._delegateHotkeys(this.hotkeys);
-                    }                
+                        this._delegateHotkeys();
+                    };                
                 }
 
                 // Then exend as usual
@@ -625,7 +625,7 @@ define([
                     inits[i].call(child);
             
                 return child;            
-            }
+            };
         });
     
         /*
@@ -634,7 +634,7 @@ define([
         }
         */
         var delegateHotkeySplitter = /^(\S+)\s+(\S+)\s*(.*)$/;    
-        Backbone.View.prototype._delegateHotkeys = function(events) {    
+        Backbone.View.prototype._delegateHotkeys = function() {    
             if(!this.hotkeys) return;
         
             var events = this.hotkeys;
@@ -652,7 +652,7 @@ define([
     
                 this.$el.on(eventName, selector || null, hotkey, method);
             }      
-        }
+        };
     })(Backbone);
 
 
@@ -707,7 +707,7 @@ define([
     A modified copy of Underscore.template (v1.3.3), adding the `settings` 
     variable to the rendering scope, along with the usual 'obj' and '_'.
     */
-    ;(function(_) {
+    (function(_) {
         var noMatch = /.^/;
 
         var settings = {
@@ -747,9 +747,9 @@ define([
           // blocks.
       
           // Don't trust ordering of keys in `helpers` object
-          var helpers = _.map(helpers || {}, function(v,k) { return {k:k,v:v}});
-          var keys = _.map(helpers, function(v) { return v.k});
-          var helpersArgs = _.map(helpers, function(v) { return v.v});
+          helpers = _.map(helpers || {}, function(v,k) { return {k:k,v:v}; });
+          var keys = _.map(helpers, function(v) { return v.k; });
+          var helpersArgs = _.map(helpers, function(v) { return v.v; });
       
           var source = "__p+='" + text
             .replace(escaper, function(match) {
@@ -947,7 +947,7 @@ define([
 
         if(trim) {
             var lines = ce.text().split('\n');
-            var lines = _.compact(_.map(lines, function(line) {
+            lines = _.compact(_.map(lines, function(line) {
                 return $.trim(line);
             }));
             return lines.join('\n');
@@ -993,7 +993,7 @@ define([
             return false;
         var keys = gui.keys,
             key = e.which,
-            arrows = [keys.LEFT, keys.RIGHT, keys.UP, keys.DOWN]    
+            arrows = [keys.LEFT, keys.RIGHT, keys.UP, keys.DOWN];    
         return _.indexOf(arrows, e.which) !== -1;
     };
 
@@ -1008,7 +1008,7 @@ define([
 
     gui.randhex = function(len) {
         var out = [],
-            chars = "abcdef0123456789"
+            chars = "abcdef0123456789";
             len = len || 32;
         for(var i=0; i<len; i++)
             out.push(chars.charAt(Math.floor(Math.random() * chars.length)));

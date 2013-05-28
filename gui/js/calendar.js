@@ -19,9 +19,8 @@ var MonthCalendarModel = Backbone.Model.extend({
             date: new Date(),
             items: new Backbone.Collection(),
             fill: false
-        }
+        };
     },
-    internalFormat: 'YYYY-MM-DD', // Todo: Don't hard-code this    
     set_date: function(v, attrs) {
         attrs['date'] = v ? tools.interpretdate(v, this.get('date')) : undefined;
     },
@@ -76,18 +75,18 @@ exp.MonthCalendar = Backbone.View.extend({
     initialize: function(config) {
         config = config || {};
         this.model = config.model || new MonthCalendarModel(config, {parse:true});
-        this.listenTo(this.model, 'change', this.onModelChange, this)
+        this.listenTo(this.model, 'change', this.onModelChange, this);
     },
     onModelChange: function(model) {
         var attrs = model.changedAttributes();
         this.render();
     },
     showNextMonth: function() {
-        var date = this.model.get('date')
+        var date = this.model.get('date');
         this.model.set('date', moment(date).clone().add({months: 1}));
     },
     showPrevMonth: function() {
-        var date = this.model.get('date')
+        var date = this.model.get('date');
         this.model.set('date', moment(date).clone().subtract({months: 1}));
     },
     
@@ -103,7 +102,7 @@ exp.MonthCalendar = Backbone.View.extend({
         m.date(1);
         var firstWeekdayOfMonth = m.day() - 1;
         if(firstWeekdayOfMonth == -1)
-            firstWeekdayOfMonth = 6        
+            firstWeekdayOfMonth = 6;        
         m.subtract('days', firstWeekdayOfMonth);
     
         // Create the main table
@@ -123,9 +122,9 @@ exp.MonthCalendar = Backbone.View.extend({
         }
         
         // Add all the days
-        for(var i=0; i<42; i++) {
-            if(i % 7 == 0) {
-               var tr = $('<tr></tr>').appendTo(tbody);
+        for(i=0; i<42; i++) {
+            if(i % 7 === 0) {
+               tr = $('<tr></tr>').appendTo(tbody);
             }
         
             // Add optional cell styling
@@ -134,7 +133,7 @@ exp.MonthCalendar = Backbone.View.extend({
             if(m.month() !== month) {
                 cls.push('gray');
             }
-            if(day == 6 || day == 0) { // saturday or sunday
+            if(day == 6 || day === 0) { // saturday or sunday
                 cls.push('weekend');
             }
             if(m.date() == today_date && m.month() == today_month) {
