@@ -100,18 +100,22 @@ define([
     var StringModel = FieldModel.extend({
     });
 
-        
+
     var NumberModel = FieldModel.extend({
         validate: function(attrs, options) {
-            if(_.isNaN(attrs.value))
+            if(attrs.value === null)
+                return;
+            else if(_.isNaN(attrs.value))
                 return "Not a number";
         },
         format: function(value) {
             return Globalize.format(value || '', this.get('format'));
         },
         set_value: function(value, attrs) {
-            if(_.isString(value))
-                attrs['value'] = Globalize.parseFloat(value);
+            if(!value && value !== 0) 
+                attrs['value'] = null;
+            else if(_.isString(value) && value)
+                attrs['value'] = Globalize.parseFloat(value); // returns NaN on fail.
             else
                 attrs['value'] = _.isNumber(value) ? value : NaN;
         }
