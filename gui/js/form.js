@@ -421,7 +421,6 @@ define([
             _.bindAll(this, 'addOne', 'removeOne', 'propagateToModel', 'propagateToFields', 
                 'onModelChange', 'onModelInvalid', 'onModelSync', 'onModelError');
             this.model = config.model || new Backbone.Model();
-            this.views = {};
             this.fields = new Fields(config.fields);
             this.remoteValidate = config.remoteValidate;
             
@@ -445,15 +444,13 @@ define([
                 'invalid': this.onModelInvalid,
                 'sync': this.onModelSync,
                 'error': this.onModelError});
-            
+                        
             if(this.remoteValidate)
                 this.listenTo(this.model, 'change', this.onModelChange);
         },
-
-        onFieldInvalid: function(model) {
-            this.views[model.cid].$el.addClass('invalid');
+        onFieldInvalid: function(model, error) {
+            this.showError(model, error);
         },
-
         onModelChange: function() {
             _.each(this.model.changedAttributes(), function(v,k) {
                 var model = this.fields.findWhere({name: k});
@@ -612,12 +609,19 @@ define([
 
         initialize: function(config) {
             SimpleForm.__super__.initialize.call(this, config);
+            this.views = {};
             this.metadata = config.metadata || {};
         },
         render: function() {
             this.$el.html(this.template());
             return SimpleForm.__super__.render.call(this);
         },
+        showError: function(model, error) {
+            this.views[model.cid].$('>.field>*').addClass('invalid');
+        },
+        hideError: function(model) {
+            this.views[model.cid].$('>.field>*').removeClass('invalid');
+        },        
         addOne: function(model) {
             var view = new SimpleFormRow({
                 model: model,
@@ -987,7 +991,7 @@ define([
                 })
             });
             this.menu.selectable.on('choose', this.onMenuChoose);
-            this.menu.on('hide', this.onMenuHide);            
+            this.menu.on('hide', this.onMenuHide);
             this.menu.render();
         },        
         render: function() {
@@ -1014,14 +1018,18 @@ define([
             this.menu.show().alignTo(this.el);
         },
         onMouseDown: function(e) {
+            if(this.$el.is(':inside(.gui-disabled)')) {
+                e.preventDefault(); // don't focus
+                return;
+            }
             this.showMenu();
+            this.menu.el.focus();
             e.stopPropagation();
             e.preventDefault();
         },
         onMenuChoose: function(e) {
             var option = e.model;
             var id = option.get('id');
-
             this.model.get('value').set([this.model.getopt(id)]);
         },
         onMenuHide: function() {
@@ -1029,6 +1037,7 @@ define([
         },
         onDownKeyDown: function(e) {
             this.showMenu();
+            this.menu.el.focus();
             e.preventDefault();
         },
         onBlur: function() {
@@ -1072,10 +1081,10 @@ define([
         },
         onClick: function(e) {             
             e.preventDefault();
-            // Todo: try to do this instead:
-            // events: {'click :not(:inside(.gui-disabled))': 'onClick'}
-            if(this.$el.is(':inside(.gui-disabled)'))
+            if(this.$el.is(':inside(.gui-disabled)')) {
+                e.preventDefault(); // don't focus
                 return;
+            }
 
             this.model.set('value', !this.model.get('value'));
             this.$el.removeClass('active');
@@ -1207,8 +1216,9 @@ define([
     var Date = Backbone.View.extend({
         className: 'gui-date',
         events: {
+            'mousedown': 'onMouseDown',
             'keydown': 'onKeyDown',
-            'click button.calendar': 'showDatePicker'
+            'click button.calendar': 'onButtonClick'
         },
         hotkeys: {
             'keydown esc': 'onEscKeyDown',
@@ -1285,6 +1295,15 @@ define([
             this.showDatePicker();
             e.preventDefault();
             e.stopPropagation();            
+        },
+        onButtonClick: function(e) {
+            if(this.$el.is(':inside(.gui-disabled)'))
+                return;
+            this.showDatePicker();            
+        },
+        onMouseDown: function(e) {
+            if(this.$el.is(':inside(.gui-disabled)'))
+                e.preventDefault(); // don't focus
         },
         onDatePickerKeyDown: function(e) {
             if(e.keyCode == base.keys.ESC)

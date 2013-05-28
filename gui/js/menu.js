@@ -143,7 +143,8 @@ define([
         },
         hotkeys: {
             'keydown right': 'onRightKeyDown',
-            'keydown left': 'onLeftKeyDown'
+            'keydown left': 'onLeftKeyDown',
+            'keydown esc': 'onESCKeyDown'
         },
         _isroot: true,
         initialize: function(config) {
@@ -336,6 +337,9 @@ define([
             var model = this._parentmenu.selectable.getSelectedModel();
             model.set('expanded', false);
             this._parentmenu.el.focus();
+        },
+        onESCKeyDown: function(e) {
+            this._hideAll();
         }
     });
 

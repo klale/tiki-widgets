@@ -177,6 +177,7 @@
         line-height: 16px;
         margin-right: 6px;
         margin-left: 3px;
+        color: #333;
     }
 
     &.gui-checked:before {
@@ -189,6 +190,7 @@
         &:before {
             @include gradient(#f4f4f4, #f4f4f4);
             border: 1px solid #ccc !important;
+            color: #aaa;
         }
         &:focus:before {
             border: 1px solid #ccc !important;
@@ -213,18 +215,15 @@
     line-height: 18px;
     
     &:before {
-        // draw a radio
+        // draw a circle
         @include border-radius(13px);
         position: absolute;
         left: 0px;
         top: 0px;
-        
+        font-size: 8px;
+        line-height: 15px;        
     }
     &.gui-checked:before {
-        @extend .iconstyle;
-        font-size: 8px;
-        line-height: 15px;
-        color: #555;
     	content: "\f111";        
     }    
 }
@@ -325,6 +324,9 @@
         }
         @include gradient(#f4f4f4, #f4f4f4);        
         border: 1px solid #ccc !important;
+        button {
+            opacity: 0.4;
+        }
 
         &:focus {
             border: 1px solid #ccc !important;

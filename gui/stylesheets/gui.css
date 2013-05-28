@@ -1,4 +1,4 @@
-.iconstyle, .gui-checkbox:before, .gui-radio:before, .gui-radio.gui-checked:before, .token-direction.asc .direction, .columnfield li.asc .direction, .token-direction.desc .direction, .columnfield li.desc .direction, .columnfield .buttons button, .gui-menu i {
+.iconstyle, .gui-checkbox:before, .gui-radio:before, .token-direction.asc .direction, .columnfield li.asc .direction, .token-direction.desc .direction, .columnfield li.desc .direction, .columnfield .buttons button, .gui-menu i {
   font-family: 'icons';
   speak: none;
   font-style: normal;
@@ -794,7 +794,8 @@ pre .xml .cdata {
     font-size: 11px;
     line-height: 16px;
     margin-right: 6px;
-    margin-left: 3px; }
+    margin-left: 3px;
+    color: #333; }
     .gui-checkbox:before i, .gui-radio:before i {
       display: none; }
     .ie7 .gui-checkbox:before i, .ie7 .gui-radio:before i {
@@ -815,7 +816,8 @@ pre .xml .cdata {
       background: -moz-linear-gradient(top, #f4f4f4 0%, #f4f4f4 100%);
       filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#f4f4f4', endColorstr='#f4f4f4') chroma(color=black);
       background-color: #f4f4f4;
-      border: 1px solid #cccccc !important; }
+      border: 1px solid #cccccc !important;
+      color: #aaa; }
     .gui-disabled .gui-checkbox:focus:before, .gui-disabled .gui-radio:focus:before, .gui-checkbox.gui-disabled:focus:before, .gui-disabled.gui-radio:focus:before {
       border: 1px solid #cccccc !important;
       box-shadow: none; }
@@ -835,11 +837,10 @@ pre .xml .cdata {
     border-radius: 13px;
     position: absolute;
     left: 0px;
-    top: 0px; }
-  .gui-radio.gui-checked:before {
+    top: 0px;
     font-size: 8px;
-    line-height: 15px;
-    color: #555;
+    line-height: 15px; }
+  .gui-radio.gui-checked:before {
     content: "\f111"; }
 
 /* ========= */
@@ -941,6 +942,8 @@ pre .xml .cdata {
     border: 1px solid #cccccc !important; }
     .gui-disabled .gui-combo span, .gui-combo.gui-disabled span {
       color: #999; }
+    .gui-disabled .gui-combo button, .gui-combo.gui-disabled button {
+      opacity: 0.4; }
     .gui-disabled .gui-combo:focus, .gui-combo.gui-disabled:focus {
       border: 1px solid #cccccc !important;
       box-shadow: none; }
