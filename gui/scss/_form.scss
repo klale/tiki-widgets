@@ -210,9 +210,8 @@
     @extend .gui-checkbox;
     padding-left: 25px;
     position: relative;
-    line-height: 20px;
+    line-height: 18px;
     
-
     &:before {
         // draw a radio
         @include border-radius(13px);
@@ -222,12 +221,11 @@
         
     }
     &.gui-checked:before {
-//        content: '\263B'; // black smiley
-//        content: '\00B7'; // middot
-        content: '\2022'; // back dot
-        font-weight: bold;
-        font-size: 30px;
-        line-height: 11px;
+        @extend .iconstyle;
+        font-size: 8px;
+        line-height: 15px;
+        color: #555;
+    	content: "\f111";        
     }    
 }
 
@@ -422,8 +420,6 @@
 /* ============= */
 .gui-date {
     position: relative;
-    display: inline-block;
-    width: 150px;
     
     > button {
         position: absolute;
@@ -435,12 +431,7 @@
     }
     .gui-text {
         @extend .gui-text;
-//        @include glowoutline();
-        border: 1px solid #ccc;
-//        min-height: 20px;
-//        line-height: 20px;
-        text-indent: 22px;    
-//        background-color: #fff;
+        text-indent: 22px;
     }
 }
 

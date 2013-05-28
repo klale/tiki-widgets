@@ -23,22 +23,22 @@ var MonthCalendarModel = Backbone.Model.extend({
     },
     internalFormat: 'YYYY-MM-DD', // Todo: Don't hard-code this    
     set_date: function(v, attrs) {
-        attrs['date'] = v ? tools.interpretdate(v, this.get('date')).toDate() : undefined;
+        attrs['date'] = v ? tools.interpretdate(v, this.get('date')) : undefined;
     },
     parse: function(json) {
         if(json.date) {
             var m = tools.interpretdate(json.date);
-            if(m) 
-                json.date = m.toDate()
+            if(m) json.date = m;
         }
         return json;
     },
+    // Override to change the serialization format
     toJSON: function() {
         var json = _.clone(this.attributes);
         if(json.date)
-            json.date = moment(json.date).format(this.internalFormat);
+            json.date = json.date.toISOString();
         return json;
-    }
+    }    
 });
 
 /**

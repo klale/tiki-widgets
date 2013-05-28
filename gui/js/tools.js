@@ -1065,40 +1065,50 @@ define([
         yymmdd: /^(\d{2})(\d{2})(\d{2})$/
     };    
     tools.interpretdate = function(value, basedate) {
-        if(value instanceof Date) 
-            return moment(value);
-        
-        var s = $('<div>'+value+'</div>').getPreText();
-        if(s == 'now') {
-            // var now = new Date();
-            // return moment(new Date(now.getFullYear(), now.getMonth(), now.getDate())); // trim time
-            return moment();
+        var date = false;
+        if(value instanceof Date) {
+            date = value;
         }
-        else if(basedate && s && tests.dateManip.test(s)) {
-            // Date manipulation
-            // >>> dateManip.exec('+1d')
-            // ["+1d", "+", "1", "d"]
-            s = tests.dateManip.exec(s);
-            var method = s[1] == '-' ? 'subtract' : 'add';
-            var unit = s[3] || 'd';
-            var num = parseInt(s[2]);    
-            return moment(basedate || new Date())[method](unit, num);
+        else {
+            var s = $('<div>'+value+'</div>').getPreText();
+            if(s == 'now') {
+                date = new Date()
+            }
+            else if(basedate && s && tests.dateManip.test(s)) {
+                // Date manipulation
+                // >>> dateManip.exec('+1d')
+                // ["+1d", "+", "1", "d"]
+                s = tests.dateManip.exec(s);
+                var method = s[1] == '-' ? 'subtract' : 'add';
+                var unit = s[3] || 'd';
+                var num = parseInt(s[2]);    
+                date = moment(basedate || new Date())[method](unit, num).toDate();
+            }
+            else if(/^\d+$/.test(s)) { // Timestamp, millis
+                date = new Date(parseInt(s));
+            }        
+            else if(s) {
+                if(tests.iscompactdate.test(s)) {
+                    var matcher = tests.yyyymmdd.test(s) ? tests.yyyymmdd : tests.yymmdd;
+                    var gr = matcher.exec(s);
+                    var year = parseInt(gr[1]) > 1000 ? gr[1] : parseInt(gr[1])+2000;
+                    date = new Date(year, gr[2]-1, gr[3]) // month is zero-based
+                } 
+                else {
+                    // Let globalize parse it
+                    var result = Globalize.parseDate(value);
+                    if(result)
+                        date = result;
+                    else {                        
+                        // let moment have a go as well
+                        var m = moment(date || value);  
+                        if(m && m.toDate().valueOf())
+                            date = m.toDate();
+                    }
+                }
+            }
         }
-        else if(/^\d+$/.test(s)) { // Timestamp, millis
-            return moment(parseInt(s));
-        }        
-        else if(s) {
-            if(tests.iscompactdate.test(s)) {
-                // moment(s, "YYYYMMDD") doesn't work for some reason
-                var matcher = tests.yyyymmdd.test(s) ? tests.yyyymmdd : tests.yymmdd;
-                var gr = matcher.exec(s);
-                var year = parseInt(gr[1]) > 1000 ? gr[1] : parseInt(gr[1])+2000;
-                return moment((new Date(year, gr[2]-1, gr[3])).getTime()); // month is zero-based
-            } 
-            var date = Globalize.parseDate(value);
-            // let moment have a go as well if Globalze can't parse
-            return moment(date || value);  
-        }
+        return date; // false or window.Date object
     };
 
 

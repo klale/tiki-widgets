@@ -80,25 +80,25 @@ define([
             if(!this.el.parentNode)
                 $(document.body).append(this.render().el);
             this.bringToTop();
-            // this.el.focus();
+            return this;
         },
         bringToTop: function() {
             var currz = parseInt(this.$el.css('z-index') || 0),
-                dialogs = $(document.body).children('.gui-win');
-        
-            if(currz-101 === dialogs.length-1)
-                return;
+                dialogs = $(document.body).children('.gui-win, .gui-dialog');
+            if(currz-100 === dialogs.length-1)
+                return this;
         
             dialogs.each(function() {
                 var z = parseInt($(this).css('z-index'));
                 if(z > currz) 
                     $(this).css('z-index', z-1);
             });
-            this.$el.css('z-index', (dialogs.length-1) + 101);
+            this.$el.css('z-index', (dialogs.length-1) + 100);
+            return this;
         },
         close: function() {
             this.$el.remove();
-            this.trigger('close');            
+            this.trigger('close', this);            
         },
         center: function(args) {            
             var el = $(this.el),
@@ -110,6 +110,7 @@ define([
             var top = ((winHeight - height) / 2) + $(window.document).scrollTop(),
                 left = ((winWidth - width) / 2) + $(window.document).scrollLeft();
             el.css({left: left, top: top});
+            return this;
         },
         onFocusIn: function(e) {
             this.bringToTop();

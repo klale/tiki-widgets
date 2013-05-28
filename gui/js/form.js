@@ -102,51 +102,67 @@ define([
 
         
     var NumberModel = FieldModel.extend({
-        validate: function(attrs, options) {            
+        validate: function(attrs, options) {
             if(_.isNaN(attrs.value))
                 return "Not a number";
         },
         format: function(value) {
-            return Globalize.format(value, this.get('format'));
+            return Globalize.format(value || '', this.get('format'));
         },
         set_value: function(value, attrs) {
-            if(_.isNumber(value)) 
-                attrs['value'] = value;
-            else if(_.isString(value))
-                attrs['value'] = Globalize.parseFloat(value);                
+            if(_.isString(value))
+                attrs['value'] = Globalize.parseFloat(value);
+            else
+                attrs['value'] = _.isNumber(value) ? value : NaN;
         }
     });    
 
     var DateTimeModel = FieldModel.extend({
-        mixins: [base.ChildModel],
-        defaults: {
-            format: 'd'
+        defaults: function() {
+            // Apply a default date format
+            return _.extend({}, _.result(FieldModel.prototype, 'defaults'), {
+                format: 'd'
+            });
         },
-        internalFormat: 'YYYY-MM-DD', // Todo: Don't hard-code this
-        validate: function(attrs, options) {  
-            // if(!(attrs.value instanceof Date) || _.isNaN(attrs.value.valueOf())) {
-            // Todo: try to interpret the value only once
-            if(!tools.interpretdate(attrs.value)) {
-                return "Not a date";
+        validate: function(attrs, options) {
+            if('value' in attrs) {
+                var date = attrs.value;
+                if(date === null)
+                    return; // ok
+                else if(date === false) 
+                    return 'Not a date'                
+                else if(date instanceof window.Date)
+                    return date.valueOf() ? undefined : 'Not a date';
+                else
+                    return 'Not a date'
             }
         },        
         format: function(value) {
             return Globalize.format(value, this.get('format'));
         },        
-        set_value: function(v, attrs) {
-            attrs['value'] = v ? tools.interpretdate(v, this.get('value')).toDate() : undefined;
+        set_value: function(v, attrs) {     
+            if(!v)
+                attrs['value'] = null;
+            else {            
+                // try to parse it
+                var m = tools.interpretdate(v, this.get('value'));
+                attrs['value'] = m; // a window.Date or `false` 
+            }
         },
         parse: function(json) {
-            if(json.date)
-                json.date = tools.interpretdate(json.date).toDate();
+            if(json.value) {
+                var m = tools.interpretdate(json.value);
+                if(m) json.value = m;
+            }
             return json;
         },
+        // Override to change the serialization format
         toJSON: function() {
             var json = _.clone(this.attributes);
-            json.date = json.date.format(this.internalFormat);
+            if(json.value)
+                json.value = json.value.toISOString();
             return json;
         }
-        
     });
 
 
@@ -175,7 +191,7 @@ define([
             else if(_.isObject(v))
                 attrs['value'] = new this.valuemodel(v);
             else
-                attrs['value'] = undefined;
+                attrs['value'] = null;
         },
         parse: function(json) {
             if(json.value != null && !json.value.attributes)
@@ -762,7 +778,7 @@ define([
                 name = this.model.get('name'),
                 html = renderer ? renderer(this) : this.model.getFormattedValue();
 
-            this.$el.attr('name', name).html(html);            
+            this.$el.attr('name', name).html(html);
             this.$el.toggleClass('invalid', !!this.model.validationError);
             this.$el.toggleClass('gui-disabled', !this.model.get('enabled'));
             return this;
@@ -1200,7 +1216,8 @@ define([
             config = config || {};
             this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config, {parse:true});
             // Pass this.model into the textfield
-            this.textfield = new Text({model: this.model});
+            this.textfield = new Text({model: this.model, modeltype: DateTimeModel});
+
             this.$el.append('<button class="calendar" tabindex="-1"></button>');
             this.$el.append(this.textfield.el);            
             this.listenTo(this.model, 'change:value', this.onModelChange, this);

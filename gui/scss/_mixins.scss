@@ -34,16 +34,18 @@ $selected_grad_focused: #638CF5 #2464F3;
 }
 
 
-@mixin icon($icon: '') {
+.iconstyle {
     font-family: 'icons';
     speak: none;
     font-style: normal;
     font-weight: normal;
     font-variant: normal;
     text-transform: none;
-//    line-height: 1;
-    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: antialiased;    
+}
 
+@mixin icon($icon: '') {
+    @extend .iconstyle;
     @if $icon {
         &:before {
             content: $icon;
@@ -51,16 +53,8 @@ $selected_grad_focused: #638CF5 #2464F3;
     }
 }
 
-
 @mixin icon-before($icon) {
-    font-family: 'icons';
-    speak: none;
-    font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-//    line-height: 1;
-    -webkit-font-smoothing: antialiased;
+    @extend .iconstyle;
 
     // ie7 uses an i-element holding the icon character
     i { 
@@ -79,15 +73,7 @@ $selected_grad_focused: #638CF5 #2464F3;
 }
 
 @mixin icon-after($icon) {
-    font-family: 'icons';
-    speak: none;
-    font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-//    line-height: 1;
-    -webkit-font-smoothing: antialiased;
-    
+    @extend .iconstyle;
     &:after {
         content: $icon;
     };

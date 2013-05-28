@@ -1,3 +1,12 @@
+.iconstyle, .gui-checkbox:before, .gui-radio:before, .gui-radio.gui-checked:before, .token-direction.asc .direction, .columnfield li.asc .direction, .token-direction.desc .direction, .columnfield li.desc .direction, .columnfield .buttons button, .gui-menu i {
+  font-family: 'icons';
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  -webkit-font-smoothing: antialiased; }
+
 @-webkit-keyframes overPulse {
   from {
     box-shadow: 0 0 3px rgba(14, 158, 211, 0.4);
@@ -776,13 +785,6 @@ pre .xml .cdata {
     background: -moz-linear-gradient(top, white 0%, #e0e0e0 100%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='#e0e0e0') chroma(color=black);
     background-color: white;
-    font-family: 'icons';
-    speak: none;
-    font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-    -webkit-font-smoothing: antialiased;
     display: inline-block;
     width: 15px;
     height: 15px;
@@ -826,7 +828,7 @@ pre .xml .cdata {
 .gui-radio {
   padding-left: 25px;
   position: relative;
-  line-height: 20px; }
+  line-height: 18px; }
   .gui-radio:before {
     -webkit-border-radius: 13px;
     -moz-border-radius: 13px;
@@ -835,10 +837,10 @@ pre .xml .cdata {
     left: 0px;
     top: 0px; }
   .gui-radio.gui-checked:before {
-    content: '\2022';
-    font-weight: bold;
-    font-size: 30px;
-    line-height: 11px; }
+    font-size: 8px;
+    line-height: 15px;
+    color: #555;
+    content: "\f111"; }
 
 /* ========= */
 /* = Combo = */
@@ -1020,9 +1022,7 @@ pre .xml .cdata {
 /* = DateField = */
 /* ============= */
 .gui-date {
-  position: relative;
-  display: inline-block;
-  width: 150px; }
+  position: relative; }
   .gui-date > button {
     position: absolute;
     left: 4px;
@@ -1031,7 +1031,6 @@ pre .xml .cdata {
     filter: none;
     border: none; }
   .gui-date .gui-text, .gui-date .gui-password, .gui-date .gui-textarea {
-    border: 1px solid #cccccc;
     text-indent: 22px; }
 
 .gui-simpleform > ul > li {
@@ -1085,36 +1084,20 @@ pre .xml .cdata {
     .ie7 .token-direction i, .ie7 .columnfield li i, .columnfield .ie7 li i {
       zoom: 1;
       *display: inline; }
-  .token-direction.asc .direction, .columnfield li.asc .direction {
-    font-family: 'icons';
-    speak: none;
+  .token-direction.asc .direction i, .columnfield li.asc .direction i {
+    display: none; }
+  .ie7 .token-direction.asc .direction i, .ie7 .columnfield li.asc .direction i, .columnfield .ie7 li.asc .direction i {
     font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-    -webkit-font-smoothing: antialiased; }
-    .token-direction.asc .direction i, .columnfield li.asc .direction i {
-      display: none; }
-    .ie7 .token-direction.asc .direction i, .ie7 .columnfield li.asc .direction i, .columnfield .ie7 li.asc .direction i {
-      font-style: normal;
-      display: inline; }
-    .token-direction.asc .direction:before, .columnfield li.asc .direction:before {
-      content: "\e120"; }
-  .token-direction.desc .direction, .columnfield li.desc .direction {
-    font-family: 'icons';
-    speak: none;
+    display: inline; }
+  .token-direction.asc .direction:before, .columnfield li.asc .direction:before {
+    content: "\e120"; }
+  .token-direction.desc .direction i, .columnfield li.desc .direction i {
+    display: none; }
+  .ie7 .token-direction.desc .direction i, .ie7 .columnfield li.desc .direction i, .columnfield .ie7 li.desc .direction i {
     font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-    -webkit-font-smoothing: antialiased; }
-    .token-direction.desc .direction i, .columnfield li.desc .direction i {
-      display: none; }
-    .ie7 .token-direction.desc .direction i, .ie7 .columnfield li.desc .direction i, .columnfield .ie7 li.desc .direction i {
-      font-style: normal;
-      display: inline; }
-    .token-direction.desc .direction:before, .columnfield li.desc .direction:before {
-      content: "\e124"; }
+    display: inline; }
+  .token-direction.desc .direction:before, .columnfield li.desc .direction:before {
+    content: "\e124"; }
   .token-direction.selected i, .columnfield li.selected i {
     font-style: normal;
     color: #fff;
@@ -1170,13 +1153,6 @@ pre .xml .cdata {
     padding: 2px 4px;
     background-color: #fff; }
     .columnfield .buttons button {
-      font-family: 'icons';
-      speak: none;
-      font-style: normal;
-      font-weight: normal;
-      font-variant: normal;
-      text-transform: none;
-      -webkit-font-smoothing: antialiased;
       display: inline-block;
       cursor: default;
       padding: 6px 12px;
@@ -1427,13 +1403,6 @@ pre .xml .cdata {
     overflow: hidden;
     padding: 0px; }
   .gui-menu i {
-    font-family: 'icons';
-    speak: none;
-    font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-    -webkit-font-smoothing: antialiased;
     display: none; }
     .gui-menu i:before {
       content: ""; }
