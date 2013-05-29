@@ -435,6 +435,15 @@
         @extend .gui-text;
         text-indent: 22px;
     }
+    &.invalid {
+            .gui-text {
+            border: 1px solid red;
+            background-color: #ffece7;
+            &:focus {
+                @include glowoutlineinvalid();
+            }
+        }
+    }    
 }
 
 

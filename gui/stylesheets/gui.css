@@ -1035,6 +1035,16 @@ pre .xml .cdata {
     border: none; }
   .gui-date .gui-text, .gui-date .gui-password, .gui-date .gui-textarea {
     text-indent: 22px; }
+  .gui-date.invalid .gui-text, .gui-date.invalid .gui-password, .gui-date.invalid .gui-textarea {
+    border: 1px solid red;
+    background-color: #ffece7; }
+    .gui-date.invalid .gui-text:focus, .gui-date.invalid .gui-password:focus, .gui-date.invalid .gui-textarea:focus {
+      box-shadow: 0 0 5px rgba(255, 0, 0, 0.4);
+      -moz-box-shadow: 0 0 5px rgba(255, 0, 0, 0.4);
+      -webkit-box-shadow: 0 0 5px rgba(255, 0, 0, 0.4);
+      -ms-box-shadow: 0 0 5px rgba(255, 0, 0, 0.4);
+      border-color: red !important;
+      outline: none; }
 
 .gui-simpleform > ul > li {
   margin-bottom: 5px; }

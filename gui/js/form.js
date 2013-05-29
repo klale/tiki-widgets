@@ -714,6 +714,8 @@ define([
     
         initialize: function(config) {
             // Collect all fields
+            this.views = {};
+            
             if(!config.fields) {
                 config.fields = [];
                 this.$('*[name]').each(function() {
@@ -826,8 +828,6 @@ define([
                 wasInvalid = !!this.model.validationError;
 
             this.model.set({'value': text}, {validate: true});
-
-
             if(wasInvalid && !this.model.validationError)
                 // there is a small change the new value above is the same as
                 // before making it invalid, not triggering change -> render.
@@ -1018,7 +1018,7 @@ define([
             this.menu.show().alignTo(this.el);
         },
         onMouseDown: function(e) {
-            if(this.$el.is(':inside(.gui-disabled)')) {
+            if(this.$el.closest('.gui-disabled').length) {
                 e.preventDefault(); // don't focus
                 return;
             }
@@ -1081,7 +1081,7 @@ define([
         },
         onClick: function(e) {             
             e.preventDefault();
-            if(this.$el.is(':inside(.gui-disabled)')) {
+            if(this.$el.closest('.gui-disabled').length) {
                 e.preventDefault(); // don't focus
                 return;
             }
@@ -1230,19 +1230,25 @@ define([
             config = config || {};
             this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config, {parse:true});
             // Pass this.model into the textfield
-            this.textfield = new Text({model: this.model, modeltype: DateTimeModel});
+            this.textfield = new Text({model: this.model});
 
+            this.listenTo(this.textfield, 'fieldblur', this.onTextFieldBlur, this),
             this.$el.append('<button class="calendar" tabindex="-1"></button>');
             this.$el.append(this.textfield.el);            
-            this.listenTo(this.model, 'change:value', this.onModelChange, this);
+            this.listenTo(this.model, 'change', this.onModelChange, this);
         },
         render: function() {
             this.textfield.render();
-            this.$el.toggleClass('gui-disabled', !this.model.get('enabled'));            
+            this.$el.toggleClass('gui-disabled', !this.model.get('enabled'));
+            this.$el.toggleClass('invalid', !!this.model.validationError);
             return this;
         },
         onModelChange: function() {
             this.hideDatePicker();
+            this.render();
+        },
+        onTextFieldBlur: function() {
+            this.$el.toggleClass('invalid', !!this.model.validationError);                
         },
         getDatePicker: function() {
             // Lazy-create a DatePicker 
@@ -1297,12 +1303,14 @@ define([
             e.stopPropagation();            
         },
         onButtonClick: function(e) {
-            if(this.$el.is(':inside(.gui-disabled)'))
-                return;
+            if(this.$el.closest('.gui-disabled').length) {
+                return;                
+            }
+
             this.showDatePicker();            
         },
         onMouseDown: function(e) {
-            if(this.$el.is(':inside(.gui-disabled)'))
+            if(this.$el.closest('.gui-disabled').length)
                 e.preventDefault(); // don't focus
         },
         onDatePickerKeyDown: function(e) {
