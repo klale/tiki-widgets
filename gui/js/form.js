@@ -393,7 +393,14 @@ define([
     // = Mixins =
     // ==========
     var ErrorMessages = {
-        showError: function(model, error) {
+        initialize: function(config) {
+            _.bindAll(this, 'onShowError', 'onHideError');
+            this.listenTo(this.form, {
+                'showerror': this.onShowError,
+                'hideerror': this.onHideError
+            });
+        },
+        onShowError: function(model, error) {
             var view = this.views[model.cid];
             var el = view.$el.parent().find('.error');
             if(el.length) 
@@ -403,7 +410,7 @@ define([
                 view.$el.parent().addClass('invalid');
             }
         },
-        hideError: function(model) {
+        onHideError: function(model) {
             var view = this.views[model.cid];
             view.$el.parent().find('.error').fadeOutFast();
             view.$el.parent().removeClass('invalid');
@@ -414,28 +421,74 @@ define([
     // =========
     // = Forms =
     // =========
-    var Form = Backbone.View.extend({
-        className: '',
+    /*
+    // Declare a set of fields, to use in one or more
+    // form layouts.
+    var f = new Form({
+        fields: [
+            {type: 'text', name: 'foo'},
+            {type: 'text', name: 'bar'}
+        ],
+        model: {
+            foo: 'I am foo',
+            bar: 'I am bar
+        }
+    })
+    
+    // Put the form in a basic ul/li layout
+    var layout = new SimpleForm({
+        form: f,
+        metadata: {
+            'foo': {label: 'Foo'},
+            'bar': {label: 'Bar'},
+        }
+    })
+    
+    // Or create a form layout of your own..
+    var ExampleForm = Backbone.View.extend({
+        className: 'example-form',
 
         initialize: function(config) {
-            _.bindAll(this, 'addOne', 'removeOne', 'propagateToModel', 'propagateToFields', 
+            this.form = config.form;
+            this.views = {};        
+        },
+        render: function() {
+            this.fields.each(function(field) {
+                this.addOne(field);
+            }, this);
+            return this;
+        },
+        addOne: function(model) {
+            var view = new viewtypes[model.get('type')]({model: model});
+            this.views[model.cid] = view;
+            this.model.set(model.get('name'), model.get('value'));
+            this.$el.append(view.render().el)
+        },
+        removeOne: function(model) {
+            this.views[model.cid].remove();
+        }
+    });
+
+    */
+    var Form = Backbone.Model.extend({
+        initialize: function(config) {
+            _.bindAll(this, 'propagateToModel', 'propagateToFields', 
                 'onModelChange', 'onModelInvalid', 'onModelSync', 'onModelError');
-            this.model = config.model || new Backbone.Model();
             this.fields = new Fields(config.fields);
             this.remoteValidate = config.remoteValidate;
             
-            if(config.model) {
-                _.each(config.model.attributes, function(v,k) {
-                    var fieldmodel = this.fields.findWhere({name: k});
-                    if(fieldmodel) {
-                        fieldmodel.set('value', v);
-                    }
-                }, this);
-            }
+            if(_.isObject(config.model) && config.model.attributes)
+                this.model = config.model;
+            else
+                this.model = new Backbone.Model(config.model);
+            
+            _.each(this.model.attributes, function(v,k) {
+                var fieldmodel = this.fields.findWhere({name: k});
+                if(fieldmodel)
+                    fieldmodel.set('value', v);
+            }, this);
             
             this.listenTo(this.fields, {
-                'add': this.addOne,
-                'remove': this.removeOne,
                 'change:value': this.propagateToModel,
                 'invalid': this.onFieldInvalid});
 
@@ -448,49 +501,6 @@ define([
             if(this.remoteValidate)
                 this.listenTo(this.model, 'change', this.onModelChange);
         },
-        onFieldInvalid: function(model, error) {
-            this.showError(model, error);
-        },
-        onModelChange: function() {
-            _.each(this.model.changedAttributes(), function(v,k) {
-                var model = this.fields.findWhere({name: k});
-                if(model)
-                    this.remoteValidateOne(model);
-            }, this);
-        },
-        onModelInvalid: function(model, error, resp) {
-            _.each(error.errors || [], function(error) {
-                var model = this.fields.findWhere({name: error.name});
-                this.showError(model, error);
-            }, this);
-        },
-        onModelSync: function(model, respdata, c) {
-            // Hide all error messages if any
-            if(c.headers && c.headers['X-Validate'] == 'single') {
-                model = this.fields.findWhere({name: _.keys(c.attrs)[0]});
-                this.hideError(model);
-            }
-            else {            
-                _.each(model.changedAttributes(), function(val, name) {
-                    var model = this.fields.findWhere({name: name});
-                    if(model)
-                        this.hideError(model);
-                }, this);
-            }
-            
-            // inspect result for certain magic keywords
-            respdata = respdata || {};
-            if(respdata.redirect)
-                window.location.href = respdata.redirect;
-
-        },
-        onModelError: function(model, resp, options) {
-            if(resp.status == 422) {
-                resp = JSON.parse(resp.responseText);
-                model.trigger('invalid', model, resp, resp);        
-            }
-        },
-
         remoteValidateOne: function(model) {
             (attr = {})[model.get('name')] = model.toJSON().value;
             this.model.save(null, {
@@ -498,31 +508,6 @@ define([
                 headers: {'X-Validate': 'single'}
             });
         },   
-        render: function() {
-            this.fields.each(function(field) {
-                this.addOne(field);
-            }, this);
-            return this;
-        },
-        addOne: function(model) {
-            // Implement in subclass
-            // Example:
-            // var view = new viewtypes[model.get('type')]({model: model});
-            // this.views[model.cid] = view;
-            // this.model.set(model.get('name'), model.get('value'));
-            // this.$el.append(view.render().el)
-        },
-        removeOne: function(model) {
-            // Implement in subclass
-            // Example:
-            // this.views[model.cid].remove();
-        },
-        showError: function(field, error) {
-            // Implement in subclass
-        },        
-        hideError: function(field) {
-            // Implement in subclass    
-        },
                 
         // Use this to change the model of an existing form.
         // Useful for a "row editing" form - a single form, and many models.
@@ -542,7 +527,6 @@ define([
                 field.model.set('value', new_value);
             });
             this.fields.on('change:value', this.propagateToModel); // resume propagation to model
-
             
             // Set the new model
             this.model = model;
@@ -550,8 +534,6 @@ define([
             model.on('invalid', this.onInvalid);
             model.on('sync', this.onSync);
             model.on('error', this.onError);
-
-
         },        
         propagateToModel: function(field) {
             // field changes propagate to the model using field.get('name') as key.
@@ -570,6 +552,48 @@ define([
             }, this);
             this.fields.on('change:value', this.propagateToModel); // resume
         },
+        onFieldInvalid: function(model, error) {
+            this.trigger('showerror', model, error);
+        },
+        onModelChange: function() {
+            _.each(this.model.changedAttributes(), function(v,k) {
+                var model = this.fields.findWhere({name: k});
+                if(model)
+                    this.remoteValidateOne(model);
+            }, this);
+        },
+        onModelInvalid: function(model, error, resp) {
+            _.each(error.errors || [], function(error) {
+                var model = this.fields.findWhere({name: error.name});
+                this.trigger('showerror', model, error);
+            }, this);
+        },
+        onModelSync: function(model, respdata, c) {
+            // Hide all error messages if any
+            if(c.headers && c.headers['X-Validate'] == 'single') {
+                model = this.fields.findWhere({name: _.keys(c.attrs)[0]});
+                this.trigger('hideerror', model);
+            }
+            else {            
+                _.each(model.changedAttributes(), function(val, name) {
+                    var model = this.fields.findWhere({name: name});
+                    if(model)
+                        this.trigger('hideerror', model);
+                }, this);
+            }
+            
+            // inspect result for certain magic keywords
+            respdata = respdata || {};
+            if(respdata.redirect)
+                window.location.href = respdata.redirect;
+
+        },
+        onModelError: function(model, resp, options) {
+            if(resp.status == 422) {
+                resp = JSON.parse(resp.responseText);
+                model.trigger('invalid', model, resp, resp);        
+            }
+        },        
         onSync: function() {
         },
         onInvalid: function() {
@@ -581,8 +605,7 @@ define([
 
 
 
-
-    var SimpleForm = Form.extend({
+    var SimpleForm = Backbone.View.extend({
         /* A simple <ul> based form layout.
         Example
         -------
@@ -602,26 +625,23 @@ define([
         body.append(myform.render().el);
         myform.model.save()
         */
-        
         className: 'gui-simpleform',
         template: _.template('<ul class="form"></ul>'),
         mixins: [ErrorMessages],
 
         initialize: function(config) {
-            SimpleForm.__super__.initialize.call(this, config);
+            this.form = config.form || new Form(config);
             this.views = {};
             this.metadata = config.metadata || {};
+            ErrorMessages.initialize.call(this, config);
         },
         render: function() {
             this.$el.html(this.template());
-            return SimpleForm.__super__.render.call(this);
+            this.form.fields.each(function(field) {
+                this.addOne(field);
+            }, this);
+            return this;
         },
-        showError: function(model, error) {
-            this.views[model.cid].$('>.field>*').addClass('invalid');
-        },
-        hideError: function(model) {
-            this.views[model.cid].$('>.field>*').removeClass('invalid');
-        },        
         addOne: function(model) {
             var view = new SimpleFormRow({
                 model: model,
@@ -629,11 +649,11 @@ define([
             });
             this.$('>ul').append(view.render().el);
             this.views[model.cid] = view;
-            this.model.set(model.get('name'), model.get('value'), {silent: true});            
+            // this.model.set(model.get('name'), model.get('value'), {silent: true});            
         },
         removeOne: function(field) {
             this.views[field.cid].remove();
-        }        
+        }
     });
 
     var SimpleFormRow = Backbone.View.extend({
@@ -709,13 +729,13 @@ define([
         ]
     });
     */
-    var CustomForm = Form.extend({
+    var CustomForm = Backbone.View.extend({
         mixins: [ErrorMessages],
     
         initialize: function(config) {
-            // Collect all fields
             this.views = {};
-            
+
+            // Collect all fields            
             if(!config.fields) {
                 config.fields = [];
                 this.$('*[name]').each(function() {
@@ -730,9 +750,11 @@ define([
                     config.fields.push(field);
                 });            
             }
-            CustomForm.__super__.initialize.call(this, config);
-        
-            this.fields.each(function(model) {
+            
+            this.form = config.form || new Form(config)
+
+            
+            this.form.fields.each(function(model) {
                 var el = this.$('div[name="'+model.get('name')+'"]'),
                     View = viewtypes[model.get('type')];
                 view = new View({el:el, model:model});
@@ -741,6 +763,8 @@ define([
                 view.$el.addClass(view.className);
                 view.render().delegateEvents();
             }, this);
+            
+            ErrorMessages.initialize.call(this, config);
         },    
         render: function() {
             return this;
@@ -780,8 +804,10 @@ define([
             config = config || {};
             this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config);
             this.listenTo(this.model, 'change', this.render, this);
+            if($.browser.ltie8)
+                this.$el.iefocus(); 
             if($.browser.ltie9)
-                this.$el.iefocus();
+                this.$el.on('mousedown', _.bind(this.onIEMouseDown, this));
         },
         render: function() {
             var renderer = this.model.get('renderer'),
@@ -798,6 +824,8 @@ define([
         // = Field interface =
         // ===================
         focus: function() {
+            if(this.$el.closest('.gui-disabled')[0]) 
+                return; // ie7/8
             this.$el.moveCursorToEnd();
             this.$el.selectAll();
         },
@@ -858,8 +886,14 @@ define([
             var curr = $.Range.current();
             if(curr.range.collapsed && curr.start().offset == 0)
                 e.preventDefault(); // prevent page from scrolling left
-        }        
-        
+        },
+        onIEMouseDown: function(e) {
+            if(this.$el.closest('.gui-disabled').length) {
+                e.preventDefault(); // don't focus
+                var focusable = this.$el.parent().closest('*:focusable');
+                window.setTimeout(function() { focusable.focus(); }, 1); 
+            }
+        }
     });
 
 
@@ -1023,7 +1057,7 @@ define([
                 return;
             }
             this.showMenu();
-            this.menu.el.focus();
+            // this.menu.el.focus();
             e.stopPropagation();
             e.preventDefault();
         },
@@ -1064,17 +1098,22 @@ define([
             tabindex: 0
         },
         defaultmodel: BoolModel,
+        _nativeType: 'checkbox',
     
         initialize: function(config)  {
             this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config);
             this.listenTo(this.model, 'change', this.render, this);
-
-            this.$el.html('<i>&#xe0fe;</i>');
-            this.$el.attr(this.attributes || {}).addClass(this.className);
+            // this.$el.attr(this.attributes || {}).addClass(this.className);
         },
         render: function() {
             this.$el.toggleClass('gui-checked', this.model.get('value'));
-            this.$el.html(this.model.get('text') || '');
+            
+            if($.browser.ltie9) {
+                var checked = this.model.get('value') ? 'checked': '';
+                this.$el.html('<input type="'+this._nativeType+'" unselectable="on" tabindex="-1" '+checked+'/>'+(this.model.get('text') || ''));
+            }
+            else
+                this.$el.html(this.model.get('text') || '');
             this.$el.attr('name', this.model.get('name'));
             
             return this;
@@ -1144,6 +1183,7 @@ define([
 
     var Radio = Checkbox.extend({
         className: 'gui-radio',
+        _nativeType: 'radio',
         initialize: function(config)  {
             this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config);
             this.listenTo(this.model, 'change', this.render, this);
@@ -1258,11 +1298,9 @@ define([
                 });
                 var body = this.el.ownerDocument.body;
                 
-                this.datepicker.alignTo(this.$('button.calendar'), {my: 'left top', at: 'left bottom'});   
-
+                this.datepicker.alignTo(this.$('button.calendar'), {my: 'left top', at: 'left bottom'});
                 this.datepicker.$el.on('keydown', _.bind(this.onDatePickerKeyDown, this));
-                this.datepicker.$el.on('blur', _.bind(this.hideDatePicker, this));
-                // $(body).append(this.datepicker.el);
+                this.datepicker.$el.on('focusleave', _.bind(this.hideDatePicker, this));
             }
             return this.datepicker;
         },
@@ -1270,8 +1308,9 @@ define([
             var datepicker = this.getDatePicker(),
                 body = this.el.ownerDocument.body;
             
-            datepicker.render().$el.appendTo(body).css('opacity', 1).show().focus();
-            datepicker.alignTo(this.$('button.calendar'), {my: 'left top', at: 'left bottom'});   
+            datepicker.render().$el.appendTo(body).css('opacity', 1).show();
+            datepicker.alignTo(this.$('button.calendar'), {my: 'left top', at: 'left bottom'});
+            datepicker.el.focus();
         },
         hideDatePicker: function() {
             if(this.datepicker) {
@@ -1306,7 +1345,6 @@ define([
             if(this.$el.closest('.gui-disabled').length) {
                 return;                
             }
-
             this.showDatePicker();            
         },
         onMouseDown: function(e) {
@@ -1340,6 +1378,10 @@ define([
             this.calendar = new calendar.MonthCalendar({date: this.model.get('value')});
             this.$el.append(this.calendar.render().el);
             this.listenTo(this.model, 'change:value', this.onModelChange, this);
+            if($.browser.ltie9)
+                this.$el.ieshadow();
+            if($.browser.ltie8)
+                this.$el.iefocus();
         },
         render: function() {
             var date = moment(this.model.get('value'));

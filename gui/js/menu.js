@@ -131,7 +131,7 @@ define([
     
     */
     var Menu = Backbone.View.extend({
-        tagName: 'ul', 
+        tagName: 'div', 
         className: 'gui-menu',
         attributes: {
             tabindex: 0
@@ -173,24 +173,28 @@ define([
             this.selectable.on('choose', this.onSelectableChoose, this);
             this.selectable.on('select', this.onSelectableSelect, this);
             this.selectable.on('unselect', this.onSelectableUnselect, this);
-        },
-        render: function() {
-            this.$el.empty();
-            this.model.get('options').each(function(option) {
-                this.addOne(option);
-            }, this);
-                        
-            if($.browser.ltie9) {
-                this.$el.attr('unselectable', 'on');
+
+            if($.browser.ltie8) {
                 this.$el.iefocus();
                 this.el.hideFocus = true;
             }
+            if($.browser.ltie10)
+                this.$el.attr('unselectable', 'on');                     
+        },
+        render: function() {
+            this.$el.empty().append('<ul></ul>');
+            this.model.get('options').each(function(option) {
+                this.addOne(option);
+            }, this);
+            
+            if($.browser.ltie9)
+                this.$el.ieshadow();            
             return this;
         },
         addOne: function(option) {
             var view = makeview(option.get('view') || Option, option);
             this._views[option.cid] = view;
-            this.$el.append(view.render().el);
+            this.$('>ul').append(view.render().el);
             
             // render a submenu as well?
             if(option.get('submenu') && option.get('expanded'))

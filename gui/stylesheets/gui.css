@@ -1,4 +1,4 @@
-.iconstyle, .gui-checkbox:before, .gui-radio:before, .token-direction.asc .direction, .columnfield li.asc .direction, .token-direction.desc .direction, .columnfield li.desc .direction, .columnfield .buttons button, .gui-menu i {
+.iconstyle, .gui-checkbox:before, .gui-radio:before, .token-direction.asc .direction, .columnfield li.asc .direction, .token-direction.desc .direction, .columnfield li.desc .direction, .columnfield .buttons button, .gui-menu > ul i {
   font-family: 'icons';
   speak: none;
   font-style: normal;
@@ -605,7 +605,7 @@ pre .xml .cdata {
   .gui-text.empty, .empty.gui-password, .empty.gui-textarea {
     font-style: italic;
     color: #999; }
-  .gui-text:focus, .gui-password:focus, .gui-textarea:focus {
+  .gui-text:focus, .gui-password:focus, .gui-textarea:focus, .gui-text.focus, .focus.gui-password, .focus.gui-textarea {
     box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     -moz-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     -webkit-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
@@ -615,7 +615,7 @@ pre .xml .cdata {
   .gui-text.invalid, .invalid.gui-password, .invalid.gui-textarea {
     border: 1px solid red;
     background-color: #ffece7; }
-    .gui-text.invalid:focus, .invalid.gui-password:focus, .invalid.gui-textarea:focus {
+    .gui-text.invalid:focus, .invalid.gui-password:focus, .invalid.gui-textarea:focus, .gui-text.invalid.focus, .invalid.focus.gui-password, .invalid.focus.gui-textarea {
       box-shadow: 0 0 5px rgba(255, 0, 0, 0.4);
       -moz-box-shadow: 0 0 5px rgba(255, 0, 0, 0.4);
       -webkit-box-shadow: 0 0 5px rgba(255, 0, 0, 0.4);
@@ -633,9 +633,11 @@ pre .xml .cdata {
     color: #aaa;
     background-color: #f4f4f4;
     border: 1px solid #cccccc !important; }
-    .gui-disabled .gui-text:focus, .gui-disabled .gui-password:focus, .gui-disabled .gui-textarea:focus, .gui-text.gui-disabled:focus, .gui-disabled.gui-password:focus, .gui-disabled.gui-textarea:focus {
+    .gui-disabled .gui-text:focus, .gui-disabled .gui-password:focus, .gui-disabled .gui-textarea:focus, .gui-disabled .gui-text.focus, .gui-disabled .focus.gui-password, .gui-disabled .focus.gui-textarea, .gui-text.gui-disabled:focus, .gui-disabled.gui-password:focus, .gui-disabled.gui-textarea:focus, .gui-text.gui-disabled.focus, .gui-disabled.focus.gui-password, .gui-disabled.focus.gui-textarea {
       border: 1px solid #cccccc !important;
       box-shadow: none; }
+  .ie7 .gui-text, .ie7 .gui-password, .ie7 .gui-textarea {
+    height: 19px; }
 
 .gui-password {
   -webkit-text-security: disc; }
@@ -780,11 +782,6 @@ pre .xml .cdata {
     -webkit-border-radius: 3px;
     -moz-border-radius: 3px;
     border-radius: 3px;
-    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e0e0e0), color-stop(1, white));
-    background: -ms-linear-gradient(top, white 0%, #e0e0e0 100%);
-    background: -moz-linear-gradient(top, white 0%, #e0e0e0 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='#e0e0e0') chroma(color=black);
-    background-color: white;
     display: inline-block;
     width: 15px;
     height: 15px;
@@ -795,7 +792,12 @@ pre .xml .cdata {
     line-height: 16px;
     margin-right: 6px;
     margin-left: 3px;
-    color: #333; }
+    color: #333;
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e0e0e0), color-stop(1, white));
+    background: -ms-linear-gradient(top, white 0%, #e0e0e0 100%);
+    background: -moz-linear-gradient(top, white 0%, #e0e0e0 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='#e0e0e0') chroma(color=black);
+    background-color: white; }
     .gui-checkbox:before i, .gui-radio:before i {
       display: none; }
     .ie7 .gui-checkbox:before i, .ie7 .gui-radio:before i {
@@ -806,6 +808,12 @@ pre .xml .cdata {
     .ie7 .gui-checkbox:before, .ie7 .gui-radio:before {
       zoom: 1;
       *display: inline; }
+    .ie9 .gui-checkbox:before, .ie9 .gui-radio:before {
+      background-color: #fff;
+      box-shadow: inset 0 -8px 13px -2px rgba(0, 0, 0, 0.15);
+      -webkit-border-radius: 4px;
+      -moz-border-radius: 4px;
+      border-radius: 4px; }
   .gui-checkbox.gui-checked:before, .gui-checked.gui-radio:before {
     content: "\e0fe"; }
   .gui-disabled .gui-checkbox, .gui-disabled .gui-radio, .gui-checkbox.gui-disabled, .gui-disabled.gui-radio {
@@ -842,6 +850,8 @@ pre .xml .cdata {
     line-height: 15px; }
   .gui-radio.gui-checked:before {
     content: "\f111"; }
+  .ie7 .gui-radio, .ie8 .gui-radio {
+    padding-left: 0px; }
 
 /* ========= */
 /* = Combo = */
@@ -865,7 +875,7 @@ pre .xml .cdata {
   height: 24px;
   border: 1px solid #bcbcbc;
   /* Add a magnifying glass icon when typing in a searchable dropdown */ }
-  .gui-combo:focus {
+  .gui-combo:focus, .gui-combo.focus {
     box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     -moz-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     -webkit-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
@@ -944,7 +954,7 @@ pre .xml .cdata {
       color: #999; }
     .gui-disabled .gui-combo button, .gui-combo.gui-disabled button {
       opacity: 0.4; }
-    .gui-disabled .gui-combo:focus, .gui-combo.gui-disabled:focus {
+    .gui-disabled .gui-combo:focus, .gui-disabled .gui-combo.focus, .gui-combo.gui-disabled:focus, .gui-combo.gui-disabled.focus {
       border: 1px solid #cccccc !important;
       box-shadow: none; }
 
@@ -1034,9 +1044,10 @@ pre .xml .cdata {
     filter: none;
     border: none; }
   .gui-date .gui-text, .gui-date .gui-password, .gui-date .gui-textarea {
-    text-indent: 22px; }
+    text-indent: 22px;
+    width: auto;
+    display: block; }
   .gui-date.invalid .gui-text, .gui-date.invalid .gui-password, .gui-date.invalid .gui-textarea {
-    border: 1px solid red;
     background-color: #ffece7; }
     .gui-date.invalid .gui-text:focus, .gui-date.invalid .gui-password:focus, .gui-date.invalid .gui-textarea:focus {
       box-shadow: 0 0 5px rgba(255, 0, 0, 0.4);
@@ -1275,68 +1286,6 @@ pre .xml .cdata {
     height: 16px;
     cursor: se-resize;
     z-index: 1; }
-  .ie7 .gui-win, .ie7 .gui-dialog, .ie8 .gui-win, .ie8 .gui-dialog {
-    /* Left, right */
-    /* Bottom */
-    /* Top */ }
-    .ie7 .gui-win .ds, .ie7 .gui-dialog .ds, .ie8 .gui-win .ds, .ie8 .gui-dialog .ds {
-      position: absolute;
-      overflow: hidden; }
-    .ie7 .gui-win .ds_l, .ie7 .gui-dialog .ds_l,
-    .ie7 .gui-win .ds_r,
-    .ie7 .gui-dialog .ds_r, .ie8 .gui-win .ds_l, .ie8 .gui-dialog .ds_l,
-    .ie8 .gui-win .ds_r,
-    .ie8 .gui-dialog .ds_r {
-      top: 20px;
-      bottom: 20px;
-      width: 20px;
-      overflow: hidden; }
-    .ie7 .gui-win .ds_l, .ie7 .gui-dialog .ds_l, .ie8 .gui-win .ds_l, .ie8 .gui-dialog .ds_l {
-      left: -20px;
-      background: url(../img/ds_vert.png) repeat-y; }
-    .ie7 .gui-win .ds_r, .ie7 .gui-dialog .ds_r, .ie8 .gui-win .ds_r, .ie8 .gui-dialog .ds_r {
-      right: -20px;
-      background: url(../img/ds_vert.png) repeat-y top right; }
-    .ie7 .gui-win .ds_bl, .ie7 .gui-dialog .ds_bl,
-    .ie7 .gui-win .ds_br,
-    .ie7 .gui-dialog .ds_br, .ie8 .gui-win .ds_bl, .ie8 .gui-dialog .ds_bl,
-    .ie8 .gui-win .ds_br,
-    .ie8 .gui-dialog .ds_br {
-      width: 40px;
-      height: 50px;
-      bottom: -30px; }
-    .ie7 .gui-win .ds_bl, .ie7 .gui-dialog .ds_bl, .ie8 .gui-win .ds_bl, .ie8 .gui-dialog .ds_bl {
-      left: -20px;
-      background: url(../img/ds_corners.png) no-repeat bottom left; }
-    .ie7 .gui-win .ds_br, .ie7 .gui-dialog .ds_br, .ie8 .gui-win .ds_br, .ie8 .gui-dialog .ds_br {
-      right: -20px;
-      background: url(../img/ds_corners.png) no-repeat bottom right; }
-    .ie7 .gui-win .ds_b, .ie7 .gui-dialog .ds_b, .ie8 .gui-win .ds_b, .ie8 .gui-dialog .ds_b {
-      bottom: -30px;
-      left: 20px;
-      right: 20px;
-      height: 30px;
-      background: url(../img/ds_hor.png) repeat-x left bottom; }
-    .ie7 .gui-win .ds_tl, .ie7 .gui-dialog .ds_tl,
-    .ie7 .gui-win .ds_tr,
-    .ie7 .gui-dialog .ds_tr, .ie8 .gui-win .ds_tl, .ie8 .gui-dialog .ds_tl,
-    .ie8 .gui-win .ds_tr,
-    .ie8 .gui-dialog .ds_tr {
-      height: 25px;
-      top: -5px;
-      width: 40px; }
-    .ie7 .gui-win .ds_tl, .ie7 .gui-dialog .ds_tl, .ie8 .gui-win .ds_tl, .ie8 .gui-dialog .ds_tl {
-      left: -20px;
-      background: url(../img/ds_corners.png) no-repeat top left; }
-    .ie7 .gui-win .ds_tr, .ie7 .gui-dialog .ds_tr, .ie8 .gui-win .ds_tr, .ie8 .gui-dialog .ds_tr {
-      right: -20px;
-      background: url(../img/ds_corners.png) no-repeat top right; }
-    .ie7 .gui-win .ds_t, .ie7 .gui-dialog .ds_t, .ie8 .gui-win .ds_t, .ie8 .gui-dialog .ds_t {
-      left: 20px;
-      right: 20px;
-      top: -5px;
-      height: 5px;
-      background: url(../img/ds_hor.png) repeat-x; }
 
 .gui-dialog > .content {
   bottom: 30px; }
@@ -1369,9 +1318,7 @@ pre .xml .cdata {
   z-index: 500;
   overflow: visible;
   background-color: #fff;
-  outline: none;
-  list-style-type: none;
-  margin: 0; }
+  outline: none; }
   .gui-menu .selected {
     background-color: #7c7c7c;
     color: #fff;
@@ -1384,41 +1331,45 @@ pre .xml .cdata {
     .ie7 .gui-menu:focus .selected, .ie8 .gui-menu:focus .selected, .ie7 .gui-menu.focus .selected, .ie8 .gui-menu.focus .selected {
       filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#638cf5', endColorstr='#2464f3') chroma(color=black);
       background-color: #638cf5; }
-  .gui-menu > li {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    -o-user-select: none;
-    user-select: none;
-    cursor: default;
-    list-style-type: none;
+  .gui-menu > ul {
     margin: 0;
-    padding: 4px 15px;
-    color: #444;
-    display: block;
-    text-decoration: none;
-    position: relative; }
-    .gui-menu > li.disabled {
-      color: #aaa; }
-    .gui-menu > li.submenu > i {
+    list-style-type: none; }
+    .gui-menu > ul > li {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      -o-user-select: none;
+      user-select: none;
+      cursor: default;
+      list-style-type: none;
+      margin: 0;
+      padding: 4px 15px;
+      color: #444;
       display: block;
-      position: absolute;
-      right: 0px;
-      top: 0px;
-      bottom: 0px;
-      line-height: 22px;
-      width: 20px; }
-  .gui-menu > li.spacer {
-    margin: 5px 0;
-    background-color: #ddd;
-    height: 1px;
-    overflow: hidden;
-    padding: 0px; }
-  .gui-menu i {
-    display: none; }
-    .gui-menu i:before {
-      content: ""; }
+      text-decoration: none;
+      position: relative; }
+      .gui-menu > ul > li.disabled {
+        color: #aaa; }
+      .gui-menu > ul > li.submenu > i {
+        display: block;
+        position: absolute;
+        right: 0px;
+        top: 0px;
+        bottom: 0px;
+        line-height: 22px;
+        width: 20px; }
+    .gui-menu > ul > li.spacer {
+      padding: 0;
+      font-size: 0px;
+      line-height: 0px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #dddddd;
+      margin-bottom: 5px; }
+    .gui-menu > ul i {
+      display: none; }
+      .gui-menu > ul i:before {
+        content: ""; }
 
 /* ============ */
 /* = Calendar = */
@@ -1503,7 +1454,9 @@ pre .xml .cdata {
   -o-user-select: none;
   user-select: none;
   width: 250px;
-  position: absolute;
+  position: absolute !important;
+  left: 0px;
+  top: 0px;
   background-color: #fff;
   z-index: 1000;
   cursor: default; }
@@ -1539,44 +1492,45 @@ pre .xml .cdata {
   .gui-datepicker .gui-calendar .day.selected .date {
     color: #fff; }
 
-.gui-filterview {
+.gui-filter {
   margin-bottom: 20px;
   margin-top: 20px; }
-  .gui-filterview li {
+  .gui-filter li {
     zoom: 1;
     /* For IE 6/7 (trigger hasLayout) */
-    margin-bottom: 3px; }
-    .gui-filterview li:before, .gui-filterview li:after {
+    margin-bottom: 3px;
+    display: block; }
+    .gui-filter li:before, .gui-filter li:after {
       content: "";
       display: table; }
-    .gui-filterview li:after {
+    .gui-filter li:after {
       clear: both; }
-  .gui-filterview .title {
+  .gui-filter .title {
     display: inline-block;
     width: 70px;
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: bold;
     line-height: 25px; }
-  .gui-filterview .fields {
+  .gui-filter .fields {
     display: inline-block; }
-    .gui-filterview .fields > .gui-combobox, .gui-filterview .fields > .gui-date, .gui-filterview .fields > .gui-text, .gui-filterview .fields > .gui-password, .gui-filterview .fields > .gui-textarea, .gui-filterview .fields > .gui-datefield {
+    .gui-filter .fields > div {
       width: 150px;
       display: inline-block;
       margin-left: 20px;
       box-sizing: border-box; }
-    .gui-filterview .fields > *:first-child {
+    .gui-filter .fields > *:first-child {
       margin-left: 0px; }
-  .gui-filterview .gui-form > * {
+  .gui-filter .gui-form > * {
     margin-right: 20px;
     height: 26px;
     overflow: hidden;
     float: left; }
-  .gui-filterview .buttons {
+  .gui-filter .buttons {
     margin-top: 10px; }
-  .gui-filterview .tools {
+  .gui-filter .tools {
     display: inline-block; }
-    .gui-filterview .tools button {
+    .gui-filter .tools button {
       display: inline-block;
       cursor: default;
       padding: 4px 8px;
@@ -1605,7 +1559,7 @@ pre .xml .cdata {
       color: #555;
       text-shadow: white 0px 1px;
       height: 26px; }
-      .gui-filterview .tools button:not(.disabled):active {
+      .gui-filter .tools button:not(.disabled):active {
         background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e6e6e6), color-stop(1, #c8c8c8));
         background: -ms-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
         background: -moz-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
@@ -1615,9 +1569,9 @@ pre .xml .cdata {
         -moz-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3);
         -webkit-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3);
         -ms-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3); }
-      .gui-filterview .tools button.disabled {
+      .gui-filter .tools button.disabled {
         color: #aaaaaa !important; }
-    .gui-filterview .tools button.remove:hover {
+    .gui-filter .tools button.remove:hover {
       display: inline-block;
       cursor: default;
       padding: 4px 8px;
@@ -1646,7 +1600,7 @@ pre .xml .cdata {
       color: #555;
       text-shadow: white 0px 1px;
       padding-left: 25px; }
-      .gui-filterview .tools button.remove:hover:not(.disabled):active {
+      .gui-filter .tools button.remove:hover:not(.disabled):active {
         background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e6e6e6), color-stop(1, #c8c8c8));
         background: -ms-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
         background: -moz-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
@@ -1656,14 +1610,14 @@ pre .xml .cdata {
         -moz-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3);
         -webkit-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3);
         -ms-box-shadow: inset 0px 2px 8px rgba(0, 0, 0, 0.3); }
-      .gui-filterview .tools button.remove:hover.disabled {
+      .gui-filter .tools button.remove:hover.disabled {
         color: #aaaaaa !important; }
-    .gui-filterview .tools button.remove {
+    .gui-filter .tools button.remove {
       border-color: transparent;
       background: none;
       padding-left: 25px;
       position: relative; }
-      .gui-filterview .tools button.remove:before {
+      .gui-filter .tools button.remove:before {
         z-index: 1;
         content: '';
         display: inline-block;
@@ -1776,3 +1730,57 @@ pre .xml .cdata {
     zoom: 1;
     *display: inline;
     padding: 1px 10px 3px 10px; }
+
+.gui-ie-dropshadow {
+  /* Left, right */
+  /* Bottom */
+  /* Top */ }
+  .gui-ie-dropshadow .ds {
+    position: absolute;
+    overflow: hidden; }
+  .gui-ie-dropshadow .ds_l,
+  .gui-ie-dropshadow .ds_r {
+    top: 20px;
+    bottom: 20px;
+    width: 20px;
+    overflow: hidden; }
+  .gui-ie-dropshadow .ds_l {
+    left: -20px;
+    background: url(../img/ds_vert.png) repeat-y; }
+  .gui-ie-dropshadow .ds_r {
+    right: -20px;
+    background: url(../img/ds_vert.png) repeat-y top right; }
+  .gui-ie-dropshadow .ds_bl,
+  .gui-ie-dropshadow .ds_br {
+    width: 40px;
+    height: 50px;
+    bottom: -30px; }
+  .gui-ie-dropshadow .ds_bl {
+    left: -20px;
+    background: url(../img/ds_corners.png) no-repeat bottom left; }
+  .gui-ie-dropshadow .ds_br {
+    right: -20px;
+    background: url(../img/ds_corners.png) no-repeat bottom right; }
+  .gui-ie-dropshadow .ds_b {
+    bottom: -30px;
+    left: 20px;
+    right: 20px;
+    height: 30px;
+    background: url(../img/ds_hor.png) repeat-x left bottom; }
+  .gui-ie-dropshadow .ds_tl,
+  .gui-ie-dropshadow .ds_tr {
+    height: 25px;
+    top: -5px;
+    width: 40px; }
+  .gui-ie-dropshadow .ds_tl {
+    left: -20px;
+    background: url(../img/ds_corners.png) no-repeat top left; }
+  .gui-ie-dropshadow .ds_tr {
+    right: -20px;
+    background: url(../img/ds_corners.png) no-repeat top right; }
+  .gui-ie-dropshadow .ds_t {
+    left: 20px;
+    right: 20px;
+    top: -5px;
+    height: 5px;
+    background: url(../img/ds_hor.png) repeat-x; }

@@ -60,24 +60,22 @@ define([
             config = config || {};
             this.title = config.title || this.title;
             this.template = config.template || this.template;
+
+            if($.browser.ltie8)
+                this.$el.iefocus();
         },    
         render: function() {
             this.$el.html(this._template({title: this.title}));
-            
-            // Add a dropshadow in old ie
-            if($.browser.ltie9) {
-                var divs = ['ds_l','ds_r','ds_t','ds_b','ds_tl','ds_tr','ds_bl','ds_br'];
-                _.each(divs, function(item) {
-                    this.$el.append($('<div class="ds '+item+'"><div>'));
-                }, this);
-                this.$el.iefocus();
-                this.$('> header h2, > header, > .resize').attr('unselectable', 'on');
-            }
+
+            if($.browser.ltie9)
+                this.$el.ieshadow();
+            if($.browser.ltie10)
+                this.$('> header h2, > header, > .resize').attr('unselectable', 'on');            
             return this;
         },
 
         show: function() {
-            if(!this.el.parentNode)
+            if(!this.el.parentElement)
                 $(document.body).append(this.render().el);
             this.bringToTop();
             return this;

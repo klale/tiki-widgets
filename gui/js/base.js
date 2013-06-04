@@ -114,6 +114,35 @@ define([
     // =====================
     // = jQuery extensions =
     // =====================
+    // From jQuery UI 1.9.1
+    function visible( element ) {
+    	return $.expr.filters.visible( element ) &&
+    		!$( element ).parents().andSelf().filter(function() {
+    			return $.css( this, "visibility" ) === "hidden";
+    		}).length;
+    }    
+    function focusable( element, isTabIndexNotNaN ) {
+    	var map, mapName, img,
+    		nodeName = element.nodeName.toLowerCase();
+    	if ( "area" === nodeName ) {
+    		map = element.parentNode;
+    		mapName = map.name;
+    		if ( !element.href || !mapName || map.nodeName.toLowerCase() !== "map" ) {
+    			return false;
+    		}
+    		img = $( "img[usemap=#" + mapName + "]" )[0];
+    		return !!img && visible( img );
+    	}
+    	return ( /input|select|textarea|button|object/.test( nodeName ) ?
+    		!element.disabled :
+    		"a" === nodeName ?
+    			element.href || isTabIndexNotNaN :
+    			isTabIndexNotNaN) &&
+    		// the element and all of its ancestors must be visible
+    		visible( element );
+    }
+    
+    
     // Todo: don't fiddle with the global jquery
     $.fn.jget = function() {
         if(this.length > 0) {
@@ -154,6 +183,7 @@ define([
                 }
             });
         }
+        return this;
     };
     $.fn.ieunselectable = function() { 
         this.each(function() { 
@@ -360,11 +390,12 @@ define([
     $.fn.fadeOutFast = function(options) {        
         options = options || {};
         this.each(function(i, el) {
+            var method = options.detach ? 'detach':'remove';
             if($.browser.ltie9) 
-                $(el).remove();
+                $(el)[method]();
             else
                 $(el).fadeOut('fast', function() {
-                    $(el)[options.detach ? 'detach':'remove']().css({opacity: 1, display: 'block'});
+                    $(el)[method]().css({opacity: 1, display: 'block'});
                 });
         });
     };
@@ -459,9 +490,22 @@ define([
             return function(el) {
                 return $(el).closest(selector).length;
             };
-        })
-        
+        }),
+    	focusable: function(el) {
+    		return focusable(el, !isNaN($.attr(el, "tabindex")));
+    	}
     });
+
+    $.fn.ieshadow = function() {
+        this.each(function() {
+            var f = document.createDocumentFragment();
+            _.each(['ds_l','ds_r','ds_t','ds_b','ds_tl','ds_tr','ds_bl','ds_br'], function(item) {
+                f.appendChild($('<div class="ds '+item+'"></div>')[0]);
+            }, this);
+            $(this).addClass('gui-ie-dropshadow').append(f);
+        });
+        return this;
+    };
     
     window.$ = $;
 

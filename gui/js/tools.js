@@ -549,10 +549,8 @@ define([
             }
         },
         onDragLeave: function(e, drag) {
-            console.log('leave')
         },
         onDragEnter: function(e, drag) {
-            console.log('Enter')
         },
         onEscKeyDown: function(e) {
             this.abort();
@@ -561,11 +559,6 @@ define([
         
         
     });
-    /*
-    1. Man drar
-    2. 
-    */
-
 
     /*
     Example:
@@ -581,9 +574,7 @@ define([
             {title: 'Lorem', col2: 'Ipsum'},
         ]
     });
-    
     */
-    
     tools.TableColumnModel = Backbone.Model.extend({
         defaults: {
             visible: true,

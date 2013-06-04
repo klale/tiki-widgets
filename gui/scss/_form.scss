@@ -17,13 +17,13 @@
         font-style: italic;
         color: #999;
     }
-    &:focus {
+    &:focus,&.focus {
         @include glowoutline();
     };
     &.invalid {
         border: 1px solid red;
         background-color: #ffece7;
-        &:focus {
+        &:focus,&.focus {
             @include glowoutlineinvalid();
         }
     }    
@@ -37,11 +37,15 @@
         background-color: #f4f4f4;
         border: 1px solid #ccc !important;
 
-        &:focus {
+        &:focus,&.focus {
             border: 1px solid #ccc !important;
             box-shadow: none;
         }
     }    
+    
+    .ie7 & {
+        height: 19px;
+    }
 }
 
 .gui-password {
@@ -165,7 +169,6 @@
     &:before {
         // draw a checkbox
         @include border-radius(3px);
-        @include gradient(#fff, #e0e0e0);
         @include icon-before("\00a0"); // blank space
         @include inline-block();
         width: 15px;
@@ -178,6 +181,13 @@
         margin-right: 6px;
         margin-left: 3px;
         color: #333;
+        @include gradient(#fff, #e0e0e0);
+
+        .ie9 & {
+            background-color: #fff;  
+            box-shadow: inset 0 -8px 13px -2px rgba( 0, 0, 0, .15);
+            @include border-radius(4px);
+        }
     }
 
     &.gui-checked:before {
@@ -226,6 +236,10 @@
     &.gui-checked:before {
     	content: "\f111";        
     }    
+    
+    .ie7 &, .ie8 & {
+        padding-left: 0px;        
+    }    
 }
 
 
@@ -243,7 +257,7 @@
     height: 24px;    
     border: 1px solid #bcbcbc;
 
-    &:focus {
+    &:focus,&.focus {
         @include glowoutline();        
     }
     
@@ -328,7 +342,7 @@
             opacity: 0.4;
         }
 
-        &:focus {
+        &:focus,&.focus {
             border: 1px solid #ccc !important;
             box-shadow: none;
         }
@@ -434,10 +448,11 @@
     .gui-text {
         @extend .gui-text;
         text-indent: 22px;
+        width: auto;
+        display: block;
     }
     &.invalid {
-            .gui-text {
-            border: 1px solid red;
+        .gui-text {
             background-color: #ffece7;
             &:focus {
                 @include glowoutlineinvalid();

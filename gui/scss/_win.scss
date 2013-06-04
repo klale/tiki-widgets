@@ -43,11 +43,6 @@
         cursor: se-resize;
         z-index: 1;
     }
-
-    // Add a manual dropshadow in ie8
-    .ie7 &, .ie8 & {
-        @include ie-dropshadow();
-    }
 }
 
 
