@@ -7,31 +7,45 @@ $selected_grad: #aaa #888;
 $selected_grad_focused: #638CF5 #2464F3;
 
 
+@mixin inline-block() {
+    display: inline-block;
+    .ie7 & {
+        zoom: 1;
+        *display: inline;
+    }
+}
+
 
 @mixin glowtext() {
     color: rgb(14, 158, 211);
     text-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
 }
-
 @mixin glowoutline() {
     // Cyan glow
-    &:focus {
-        @include box-shadow(0 0 5px rgba(14, 158, 211, 0.4));
-        border-color: rgb(14, 158, 211) !important;
-        outline: none;
-    }
+    @include box-shadow(0 0 5px rgba(14, 158, 211, 0.4));
+    border-color: rgb(14, 158, 211) !important;
+    outline: none;
+}
+@mixin glowoutlineinvalid() {
+    // Red glow
+    @include box-shadow(0 0 5px rgba(255, 0, 0, 0.4));
+    border-color: rgb(255, 0, 0) !important;
+    outline: none;
 }
 
-@mixin icon($icon: '') {
+
+.iconstyle {
     font-family: 'icons';
     speak: none;
     font-style: normal;
     font-weight: normal;
     font-variant: normal;
     text-transform: none;
-//    line-height: 1;
-    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: antialiased;    
+}
 
+@mixin icon($icon: '') {
+    @extend .iconstyle;
     @if $icon {
         &:before {
             content: $icon;
@@ -39,16 +53,17 @@ $selected_grad_focused: #638CF5 #2464F3;
     }
 }
 
-
 @mixin icon-before($icon) {
-    font-family: 'icons';
-    speak: none;
-    font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-//    line-height: 1;
-    -webkit-font-smoothing: antialiased;
+    @extend .iconstyle;
+
+    // ie7 uses an i-element holding the icon character
+    i { 
+        display: none; 
+    }
+    .ie7 & i {
+        font-style: normal;
+        display: inline;
+    }
 
     @if $icon {
         &:before {
@@ -58,15 +73,7 @@ $selected_grad_focused: #638CF5 #2464F3;
 }
 
 @mixin icon-after($icon) {
-    font-family: 'icons';
-    speak: none;
-    font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-//    line-height: 1;
-    -webkit-font-smoothing: antialiased;
-    
+    @extend .iconstyle;
     &:after {
         content: $icon;
     };
@@ -90,7 +97,8 @@ $selected_grad_focused: #638CF5 #2464F3;
         color: #fff;
         border-color: darken($selected, 20%);
     }
-    &:focus .selected {
+    &:focus .selected,
+    &.focus .selected {
         @include two-color-gradient($selected_grad_focused);      
         border-color: darken($selected_focused, 20%);        
     }    
@@ -188,8 +196,11 @@ $selected_grad_focused: #638CF5 #2464F3;
         top,
         $start 0%,
         $stop 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{$start}', endColorstr='#{$stop}') chroma(color=#000000);                                   
-    background-color: $start;    
+    
+    .ie7 &, .ie8 & {
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{$start}', endColorstr='#{$stop}') chroma(color=#000000);                                   
+        background-color: $start;
+    }
 }
 
 
@@ -209,6 +220,7 @@ $selected_grad_focused: #638CF5 #2464F3;
     box-shadow: $args;
     -moz-box-shadow: $args;
     -webkit-box-shadow: $args;
+    -ms-box-shadow: $args;    
 }
 @mixin small-shadow() {
     @include box-shadow(0 2px 5px rgba(0,0,0,0.3))
@@ -286,6 +298,7 @@ $selected_grad_focused: #638CF5 #2464F3;
     overflow: visible; /* Removes crazy padding in IE7 */
     @include border-radius($radius);
     font-size: 12px;
+    outline: none;
     @include user-select(none);
     @include button2color($start, $end, $neg);
 }
@@ -303,7 +316,7 @@ $selected_grad_focused: #638CF5 #2464F3;
         text-shadow: lighten($end, 70%) 0px 1px;        
     }
     &:not(.btn-disabled):active {
-        @include gradient(darken($end, 10%), darken($start, 10%));
+//        @include gradient(darken($end, 10%), darken($start, 10%));
         @include box-shadow(inset 0px 2px 6px rgba(0, 0, 0, 0.4));        
     }
 }
@@ -395,6 +408,9 @@ $selected_grad_focused: #638CF5 #2464F3;
 @mixin token {
     position: relative;
     display: inline-block;
+    height: 15px;
+    overflow: hidden;
+    line-height: 130%;
     padding: 2px 10px;
     border: 1px solid #94B5D2;
     margin-right: 3px;
@@ -402,73 +418,12 @@ $selected_grad_focused: #638CF5 #2464F3;
     @include border-radius(10px);
     cursor: default;
     margin-bottom: 4px;
-}
 
-
-
-@mixin ie-dropshadow() {
-    .ds {
-        position: absolute;
-        overflow: hidden;        
+    .ie7 & {
+        zoom: 1;
+        *display: inline;
+        padding: 1px 10px 3px 10px;
+        
     }
-    /* Left, right */
-    .ds_l,
-    .ds_r {   
-        top: 20px;    
-        bottom: 20px;    
-        width: 20px;     
-        overflow: hidden;
-    }    
-    .ds_l {
-        left: -20px;
-        background: url(../img/ds_vert.png) repeat-y;
-    }
-    .ds_r {
-        right: -20px;
-        background: url(../img/ds_vert.png) repeat-y top right;    
-    }
-    /* Bottom */
-    .ds_bl,
-    .ds_br {
-        width: 40px;
-        height: 50px;
-        bottom: -30px;    
-    }
-    .ds_bl {
-        left: -20px;
-        background: url(../img/ds_corners.png) no-repeat bottom left;    
-    }
-    .ds_br {
-        right: -20px;
-        background: url(../img/ds_corners.png) no-repeat bottom right;    
-    }
-    .ds_b {
-        bottom: -30px;
-        left: 20px;
-        right: 20px;
-        height: 30px;
-        background: url(../img/ds_hor.png) repeat-x left bottom;
-    }
-    /* Top */
-    .ds_tl,
-    .ds_tr {
-        height: 25px;
-        top: -5px;
-        width: 40px;
-    }
-    .ds_tl {
-        left: -20px;
-        background: url(../img/ds_corners.png) no-repeat top left;    
-    }
-    .ds_tr {
-        right: -20px;
-        background: url(../img/ds_corners.png) no-repeat top right;    
-    }
-    .ds_t {
-        left: 20px;
-        right: 20px;
-        top: -5px;
-        height: 5px;
-        background: url(../img/ds_hor.png) repeat-x;
-    }
+    
 }

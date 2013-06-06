@@ -3,9 +3,9 @@ define([
     'underscore',
     'backbone',
     './base',
-    'moment',
-    'jquerypp'
-], function($, _, Backbone, gui, moment) {
+    './tools',    
+    'moment'
+], function($, _, Backbone, gui, tools, moment) {
 
 var exp = {};    
 
@@ -13,6 +13,32 @@ var exp = {};
 // =================
 // = MonthCalendar =
 // =================
+var MonthCalendarModel = Backbone.Model.extend({
+    defaults: function() {
+        return {
+            date: new Date(),
+            items: new Backbone.Collection(),
+            fill: false
+        };
+    },
+    set_date: function(v, attrs) {
+        attrs['date'] = v ? tools.interpretdate(v, this.get('date')) : undefined;
+    },
+    parse: function(json) {
+        if(json.date) {
+            var m = tools.interpretdate(json.date);
+            if(m) json.date = m;
+        }
+        return json;
+    },
+    // Override to change the serialization format
+    toJSON: function() {
+        var json = _.clone(this.attributes);
+        if(json.date)
+            json.date = json.date.toISOString();
+        return json;
+    }    
+});
 
 /**
  * A month calendar.
@@ -46,30 +72,27 @@ exp.MonthCalendar = Backbone.View.extend({
         'click .nextmonth': 'showNextMonth'
     },
 
-    initialize: function(conf) {
-        conf = conf || {};
-        this.date = moment(conf.date || new Date());
-        this.fill = conf.fill;
+    initialize: function(config) {
+        config = config || {};
+        this.model = config.model || new MonthCalendarModel(config, {parse:true});
+        this.listenTo(this.model, 'change', this.onModelChange, this);
+    },
+    onModelChange: function(model) {
+        var attrs = model.changedAttributes();
+        this.render();
     },
     showNextMonth: function() {
-        var m = this.date.add({months: 1});
-        this.render();
-        this.trigger('monthchange')
+        var date = this.model.get('date');
+        this.model.set('date', moment(date).clone().add({months: 1}));
     },
     showPrevMonth: function() {
-        var m = this.date.subtract({months: 1});
-        this.render();
-        this.trigger('monthchange')        
+        var date = this.model.get('date');
+        this.model.set('date', moment(date).clone().subtract({months: 1}));
     },
-    showMonth: function(date) {
-        this.date = moment(date);
-        this.render()
-    },
-    daysInMonth: function(year, month) {
-        return new Date(year, month, 0).getDate();
-    },    
+    
     render: function() {
-        var m = this.date.clone(),
+        var date = moment(this.model.get('date')),
+            m = date.clone(),
             month = m.month(),
             today = moment(new Date()),
             today_month = today.month(),
@@ -79,19 +102,19 @@ exp.MonthCalendar = Backbone.View.extend({
         m.date(1);
         var firstWeekdayOfMonth = m.day() - 1;
         if(firstWeekdayOfMonth == -1)
-            firstWeekdayOfMonth = 6        
+            firstWeekdayOfMonth = 6;        
         m.subtract('days', firstWeekdayOfMonth);
-
+    
         // Create the main table
-        var table = $(this.template({monthname: this.date.format('MMMM')}));
+        var table = $(this.template({monthname: date.format('MMMM')}));
         var tbody = table.children('tbody');
-
+    
         // Render the header
         table.find('thead .header').html(this.templateHeader({
-            monthname: this.date.format('MMMM'),
-            year: this.date.format('YYYY')
+            monthname: date.format('MMMM'),
+            year: date.format('YYYY')
         }));
-
+    
         // Add the weekday names
         var tr = table.find('thead').append('<tr class="weekdays"></tr>');                
         for(var i=0,days=[1,2,3,4,5,6,0]; i<days.length; i++) {
@@ -99,9 +122,9 @@ exp.MonthCalendar = Backbone.View.extend({
         }
         
         // Add all the days
-        for(var i=0; i<42; i++) {
-            if(i % 7 == 0) {
-               var tr = $('<tr></tr>').appendTo(tbody);
+        for(i=0; i<42; i++) {
+            if(i % 7 === 0) {
+               tr = $('<tr></tr>').appendTo(tbody);
             }
         
             // Add optional cell styling
@@ -110,7 +133,7 @@ exp.MonthCalendar = Backbone.View.extend({
             if(m.month() !== month) {
                 cls.push('gray');
             }
-            if(day == 6 || day == 0) { // saturday or sunday
+            if(day == 6 || day === 0) { // saturday or sunday
                 cls.push('weekend');
             }
             if(m.date() == today_date && m.month() == today_month) {
@@ -128,10 +151,6 @@ exp.MonthCalendar = Backbone.View.extend({
                     date: m.date(),
                     ymd: m.format('YYYY-MM-DD')
                 }));
-                html.on('draginit', function(event, drag) {
-                    console.log('foo')
-                    drag.vertical();
-                });
                 tr.append(html);
             }
             m.add('days', 1);
@@ -142,6 +161,7 @@ exp.MonthCalendar = Backbone.View.extend({
         
         return this;    
     }
+
 
     
 });

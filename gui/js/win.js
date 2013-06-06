@@ -2,7 +2,7 @@ define([
     'jquery', 
     'underscore',
     'backbone',
-    './base',
+    './base'
 ], function($, _, Backbone, gui) {
 
     var win = {};
@@ -20,7 +20,7 @@ define([
             '<div class="content"></div>'
         ),
         
-        initialize: function(config) {
+        initialize: function(config) {
             this.resizable = config.resizable;
         },
         render: function() {
@@ -50,6 +50,7 @@ define([
         events: {
             'mousedown': 'bringToTop',
             'focusin': 'onFocusIn',
+            'dragdown header': 'onHeaderDragDown',
             'draginit header': 'onHeaderDragInit',
             'draginit .resize': 'onResizeDragInit',
             'dragmove .resize': 'onResizeDragMove',
@@ -59,34 +60,31 @@ define([
             config = config || {};
             this.title = config.title || this.title;
             this.template = config.template || this.template;
+
+            if($.browser.ltie8)
+                this.$el.iefocus();
         },    
         render: function() {
             this.$el.html(this._template({title: this.title}));
 
-            // Add a dropshadow in old ie
-            if($.browser.ltie9) {
-                var divs = ['ds_l','ds_r','ds_t','ds_b','ds_tl','ds_tr','ds_bl','ds_br'];
-                _.each(divs, function(item) {
-                    this.$el.append($('<div class="ds '+item+'"><div>'));
-                }, this);
-                this.$el.iefocus();
-                this.$('> header h2, > header, > .resize').attr('unselectable', 'on');
-            }
+            if($.browser.ltie9)
+                this.$el.ieshadow();
+            if($.browser.ltie10)
+                this.$('> header h2, > header, > .resize').attr('unselectable', 'on');            
             return this;
         },
 
         show: function() {
-            if(!this.el.parentNode)
+            if(!this.el.parentElement)
                 $(document.body).append(this.render().el);
             this.bringToTop();
-            // this.el.focus();
+            return this;
         },
         bringToTop: function() {
             var currz = parseInt(this.$el.css('z-index') || 0),
-                dialogs = $(document.body).children('.gui-win');
-        
+                dialogs = $(document.body).children('.gui-win, .gui-dialog');
             if(currz-100 === dialogs.length-1)
-                return;
+                return this;
         
             dialogs.each(function() {
                 var z = parseInt($(this).css('z-index'));
@@ -94,10 +92,11 @@ define([
                     $(this).css('z-index', z-1);
             });
             this.$el.css('z-index', (dialogs.length-1) + 100);
+            return this;
         },
         close: function() {
             this.$el.remove();
-            this.trigger('close');            
+            this.trigger('close', this);            
         },
         center: function(args) {            
             var el = $(this.el),
@@ -108,21 +107,21 @@ define([
 
             var top = ((winHeight - height) / 2) + $(window.document).scrollTop(),
                 left = ((winWidth - width) / 2) + $(window.document).scrollLeft();
-
-            // var top = 10;
-
             el.css({left: left, top: top});
+            return this;
         },
-
-
         onFocusIn: function(e) {
             this.bringToTop();
         },
-        onHeaderDragInit: function(e, drag) {
-            var xtra = this.$('>header').getOffsetPadding();
-            drag.only();
-            drag.representative(this.el, e.offsetX+xtra.x, e.offsetY+xtra.y);
+        onHeaderDragDown: function(e, drag) {
+            var offset = $(e.currentTarget.offsetParent).offset(); 
+            drag.offsetx = e.pageX - offset.left;
+            drag.offsety = e.pageY - offset.top;
         },
+        onHeaderDragInit: function(e, drag) {
+            drag.only();
+            drag.representative(this.el, drag.offsetx, drag.offsety);                        
+        },       
         onResizeDragInit: function(e, drag) {
             drag.winpos = $(this.el).offset();
             drag.only();
@@ -134,10 +133,7 @@ define([
         },
         onResizeDragEnd: function(e, drag) {
             drag.element.attr('style', '');
-        },
-
-
-
+        }
     });
 
 
@@ -150,8 +146,8 @@ define([
                 '<div class="buttons"></div>'+
             '</footer>'+
             '<div class="resize"></div>'
-        ),
-    })
+        )
+    });
 
     // win.Info
     // win.Warning

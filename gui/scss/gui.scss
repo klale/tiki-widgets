@@ -1,17 +1,19 @@
 @import "_mixins.scss";
+@import "_icons.scss";
 @import "_highlight.scss";
 @import "_buttons.scss";
 @import "_editor.scss";
 @import "_form.scss";
 @import "_tools.scss";
 @import "_win.scss";
-@import "_icons.scss";
+
+
 
 
 /* ============ */
 /* = Dropdown = */
 /* ============ */
-.gui-dropdownlist {
+.gui-menu {
     display: block;
     min-width: 100px;
     position: absolute; 
@@ -24,31 +26,53 @@
     border-radius: 3px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);    
     z-index: 500;
-    overflow-y: scroll;
+    overflow: visible;
     background-color: #fff;    
     outline: none;
-    list-style-type: none;
-    margin: 0;
     
     @include selectables();
     
 
-    > li {         
-        @include user-select(none);
-        cursor: default;
-        list-style-type: none;
+    > ul { 
         margin: 0;
-        padding: 4px 15px;
-        color: #444;
-        display: block;
-        text-decoration: none;        
+        list-style-type: none;        
+        > li {
+            @include user-select(none);
+            cursor: default;
+            list-style-type: none;
+            margin: 0;
+            padding: 4px 15px;
+            color: #444;
+            display: block;
+            text-decoration: none;        
+            position: relative;
         
-        &.disabled {
-            color: #aaa;
-        }        
+            &.disabled {
+                color: #aaa;
+            }        
+            &.submenu > i {
+                display: block;
+                position: absolute;
+                right: 0px;
+                top: 0px;
+                bottom: 0px;
+                line-height: 22px;
+                width: 20px;
+            }
+        }
+        > li.spacer {
+            padding: 0;
+            font-size: 0px;
+            line-height: 0px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 5px;
+        }
+        i {
+            @include icon();
+            display: none;
+        }
     }
-
-
 }
 
 
@@ -103,6 +127,7 @@
         &.day > div {
             padding: 1px;
             overflow: hidden;
+            position: relative;
             .date {
                 position: absolute;
                 top: 2px;
@@ -127,9 +152,6 @@
         &.weekend {
             background-color: #f8f8f8;
         }
-        &.selected {
-            background-color: #f8f8f8;
-        }
     }
     &:focus .day.selected .date {
         color: #fff;
@@ -144,20 +166,34 @@
 /* = DatePicker = */
 /* ============== */
 .gui-datepicker {
-    @extend .gui-calendar;
     @include border-radius(3px);
     @include box-shadow(0 2px 5px rgba(0,0,0,0.3));
     @include user-select(none);    
+    
     @include selectables();
     width: 250px;
-    position: absolute;
+    // Todo: $.position thinks .gui-datepicker has position:static, causing it 
+    // to add postion:relative as an inline style.
+    position: absolute !important;
+    left: 0px;
+    top: 0px;
     background-color: #fff;
     z-index: 1000;
     cursor: default;
     
+    &:focus {
+        outline: none;
+    }
+    
     td.day > div {
         min-height: 20px;
         position: relative;
+    }
+    .gui-calendar {
+        @include selectables(); // Todo: shouldn't have to repeat this
+        .day.selected .date {
+            color: #fff;
+        }
     }
 }
 
@@ -168,10 +204,11 @@
 // ==============
 // = FilterView =
 // ==============
-.gui-filterview {
+.gui-filter {
     li {
         @include clearfloat();
         margin-bottom: 3px;
+        display: block;
     }
     .title {
         display: inline-block;
@@ -183,7 +220,7 @@
     }
     .fields {
         display: inline-block;
-        >.gui-combobox, >.gui-date, >.gui-text, >.gui-datefield {
+        >div {
             width: 150px;
             display: inline-block;
             margin-left: 20px;
@@ -328,7 +365,6 @@
                     color: #000;
                 }
             }
-            
         }
     }    
 }
@@ -362,4 +398,72 @@
 
 .gui-token {
     @include token();
+}
+
+
+.gui-ie-dropshadow {
+    .ds {
+        position: absolute;
+        overflow: hidden;        
+    }
+    /* Left, right */
+    .ds_l,
+    .ds_r {   
+        top: 20px;    
+        bottom: 20px;    
+        width: 20px;     
+        overflow: hidden;
+    }    
+    .ds_l {
+        left: -20px;
+        background: url(../img/ds_vert.png) repeat-y;
+    }
+    .ds_r {
+        right: -20px;
+        background: url(../img/ds_vert.png) repeat-y top right;    
+    }
+    /* Bottom */
+    .ds_bl,
+    .ds_br {
+        width: 40px;
+        height: 50px;
+        bottom: -30px;    
+    }
+    .ds_bl {
+        left: -20px;
+        background: url(../img/ds_corners.png) no-repeat bottom left;    
+    }
+    .ds_br {
+        right: -20px;
+        background: url(../img/ds_corners.png) no-repeat bottom right;    
+    }
+    .ds_b {
+        bottom: -30px;
+        left: 20px;
+        right: 20px;
+        height: 30px;
+        background: url(../img/ds_hor.png) repeat-x left bottom;
+    }
+    /* Top */
+    .ds_tl,
+    .ds_tr {
+        height: 25px;
+        top: -5px;
+        width: 40px;
+    }
+    .ds_tl {
+        left: -20px;
+        background: url(../img/ds_corners.png) no-repeat top left;    
+    }
+    .ds_tr {
+        right: -20px;
+        background: url(../img/ds_corners.png) no-repeat top right;    
+    }
+    .ds_t {
+        left: 20px;
+        right: 20px;
+        top: -5px;
+        height: 5px;
+        background: url(../img/ds_hor.png) repeat-x;
+    }
 }

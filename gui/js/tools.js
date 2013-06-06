@@ -3,11 +3,12 @@ define([
     'underscore',
     'backbone',
     'moment',    
+    'globalize/sv_se',
     './base',
-    './tools',    
-], function($, _, Backbone, moment, gui, tools) {
+    './tools'    
+], function($, _, Backbone, moment, Globalize, gui, tools) {
 
-
+    // Todo: Make Globalize an optional dep
     var tools = {};
 
     function reverseSortBy(sortByFunction) {
@@ -32,7 +33,7 @@ define([
         },
         events: {
             // 'dragover': 'onDragOver',
-            'drop': 'onDrop',
+            'drop': 'onDrop'
         },    
         initialize: function(config) {
             if(config.el) {
@@ -133,9 +134,8 @@ define([
     Example
     -------
     this.selectable = new tools.Selectable({
-        el: this.el,                        // common ancestor for the selectables
-        selectables: 'li',                  // a selector expression
-        hotspots: 'li > span',              // optional, must click this to select
+        el: this.el,              // common ancestor for the selectables
+        selectables: 'li',        // a selector expression
         chooseOnClick: true,
         chooseOnDblClick: false,
 
@@ -145,7 +145,7 @@ define([
     */
     tools.Selectable = Backbone.View.extend({
         events: {
-            'mousedown': 'onMouseDown',
+            'mousedown': 'onMouseDown'
         },
         hotkeys: {
             'keydown meta+a': 'onMetaAKeyDown'
@@ -153,15 +153,16 @@ define([
         initialize: function(config) {
             _.bindAll(this, 'onSelectableMouseDown', 'onSelectableDblClick', 'onSelectableKeyDown')
             this.selectables = config.selectables;
-            this.hotspots = config.hotspots || config.selectables;
+            this.collection = config.collection; // optional
+
             this.$el.on('keydown', this.onSelectableKeyDown);            
-            this.$el.on('mousedown', config.hotspots, this.onSelectableMouseDown);
+            this.$el.on('mousedown', config.selectables, this.onSelectableMouseDown);
             
             // Todo: Replace these silly arguments with the out-commented code below?
             if(config.chooseOnDblClick)
-                this.$el.on('dblclick', config.hotspots, this.onSelectableDblClick);
+                this.$el.on('dblclick', config.selectables, this.onSelectableDblClick);
             if(config.chooseOnClick)
-                this.$el.on('click', config.hotspots, this.onSelectableDblClick);            
+                this.$el.on('click', config.selectables, this.onSelectableDblClick);            
             
             // this.triggerChooseOn = config.triggerChooseOn || ['keydown enter', 'dblclick li'];
             // _.each(this.triggerChooseOn, function(evtstr) {
@@ -180,23 +181,22 @@ define([
         },
 
         off: function() {
-            this.$el.off('mousedown', this.hotspots, this.onSelectableMouseDown);
-            this.$el.off('dblclick', this.hotspots, this.onSelectableDblClick);            
+            this.$el.off('mousedown', this.selectables, this.onSelectableMouseDown);
+            this.$el.off('dblclick', this.selectables, this.onSelectableDblClick);
+            this.$el.off('click', this.selectables, this.onSelectableDblClick);
             this.$el.off('keydown', this.onSelectableKeyDown);            
         },
         onMouseDown: function(e) {
-            // if(!$(e.target).parentsUntil(this.el, this.selectables).length || e.target == this.el)
-            //     this.deselectAll();
+            if(!$(e.target).closest(this.el, this.selectables).length || e.target == this.el) {
+                this.unselectAll();
+            }
         },
         onMetaAKeyDown: function(e) {
             this.selectAll();
             e.preventDefault();
         },
         onSelectableMouseDown: function(e) {
-            var el = $(e.target).closest(this.selectables, this.el);
-            
-            if(!el[0]) return;
-            
+            var el = $(e.currentTarget);
         
             if(e.metaKey) {
                 this.toggle(el);
@@ -207,7 +207,7 @@ define([
                     b = el.index(),
                     start = Math.min(a,b),
                     end = Math.max(a,b);
-                this.deselectAll();
+                this.unselectAll();
                 this.$(this.selectables).slice(start, end+1).addClass('selected');
                 el.make('head');
             
@@ -221,56 +221,92 @@ define([
             }
         },
         onSelectableDblClick: function(e) {
-            var el = $(e.currentTarget);
+            var el = $(e.currentTarget),
+                e = {selected: el};
+            if(this.collection)
+                e.model = this.collection.at(el.index())
+
             this.selectOne(el);
-            this.trigger('choose', {selected: el});
+            this.trigger('choose', e);
         },
         getSelected: function() {
             return this.$(this.selectables).filter('.selected');
         },
         getSelectedModels: function(collection) {
+            collection = collection || this.collection;
             return this.getSelected().map(function() {
                 return collection.at($(this).index());
             }).toArray();
+        },
+        getSelectedModel: function(collection) {
+            return (collection || this.collection).at(this.getSelected().filter(':first').index());
         },
         getSelectables: function() {
             return this.$(this.selectables);
         },
         toggle: function(el) {
             if($(el).is('.selected')) 
-                this.deselect(el);
+                this.unselect(el);
             else
                 this.select(el);
         },
         select: function(el) {
-            if(_.isNumber(el)) {
-                el = this.$(this.selectables+':nth-child('+el+')')
-            }
+            if(_.isNumber(el))
+                el = this.$(this.selectables+':nth-child('+el+')');
+
+            var ev = {
+                el: el[0],
+                selected: this.getSelected()
+            };
+            if(this.collection)
+                ev.model = this.collection.at(el.index());
+                
             $(el).addClass('selected');
-            this.trigger('select', {selected: this.getSelected()});
+            this.trigger('select', ev);
             this.trigger('change');
         },
         selectOne: function(el) {
             if(!el || !el[0])
                 el = this.$(this.selectables+':visible:first');
-            this.deselectAll();
-            this.select(el);
+
+            if(!el || !el.is(this.selectables)) 
+                return;
+            
+
+
+            if(!el.hasClass('selected')) {
+                this.unselectAll();                
+                this.select(el);
+            }
+
             el.make('head').make('tail');
         },
         selectAll: function() {
-            this.deselectAll();
+            this.unselectAll();
             this.$(this.selectables).addClass('selected');
             this.$(this.selectables).first().addClass('tail');
             this.$(this.selectables).last().addClass('head');
             this.trigger('select');
             this.trigger('change');
         },
-        deselect: function(el) {
+        unselect: function(el) {
+            var ev = {el: el[0]};
+            if(this.collection)
+                ev.model = this.collection.at(el.index());
+            
             $(el).removeClass('selected');
-            this.trigger('deselect');
+            this.trigger('unselect', ev);
+            this.trigger('deselect'); // legacy
             this.trigger('change');
+            
+            if(this.collection)
+                ev.model = this.collection.at(el.index())            
         },
-        deselectAll: function() {
+
+        unselectAll: function() {
+            this.$('.selected').each(_.bind(function(i, el) {
+                this.unselect($(el));
+            }, this))
             this.$('.selected').removeClass('selected');
             this.$('.head').removeClass('.head');
             this.$('.tail').removeClass('.tail');
@@ -292,14 +328,15 @@ define([
         },
         selectDown: function() {
             
-        },
-        
-        
+        },        
         onSelectableKeyDown: function(e) {
             if(e.which == gui.keys.ENTER) {
-                var sel = this.getSelected();
-                if(sel[0]) {
-                    this.trigger('choose', {selected: sel});
+                var el = this.getSelected(),
+                    ev = {selected: el};
+                if(el[0]) {
+                    if(this.collection)
+                        ev.model = this.collection.at(el.index())
+                    this.trigger('choose', ev);
                 }
                 e.preventDefault();
             }
@@ -312,8 +349,8 @@ define([
                 
                 var head = this.$('.head'),
                     tail = this.$('.tail'),
-                    prev = head.prevAll(':visible:first'),
-                    next = head.nextAll(':visible:first');
+                    prev = head.prevAll(this.selectables+':visible:first'),
+                    next = head.nextAll(this.selectables+':visible:first');
 
                 // within visible viewport? next, down and outside?
                 if(e.which == gui.keys.DOWN)
@@ -333,9 +370,9 @@ define([
             
                 if(!e.shiftKey) {
                     if(e.which == gui.keys.DOWN && next[0]) 
-                        this.selectOne(tail.nextAll(':visible:first'));
+                        this.selectOne(tail.nextAll(this.selectables+':visible:first'));
                     else if(e.which == gui.keys.UP && prev[0]) 
-                        this.selectOne(tail.prevAll(':visible:first'));
+                        this.selectOne(tail.prevAll(this.selectables+':visible:first'));
                 }    
                 else {            
                     if(e.which == gui.keys.DOWN && next[0]) {
@@ -344,14 +381,14 @@ define([
                             this.select(next);
                             next.make('head');
                         } else {
-                            this.deselect(head);
+                            this.unselect(head);
                             next.make('head');
                         }
                     }
                     else if(e.which == gui.keys.UP && prev[0]) {
                         var below = head.index() > tail.index()
                         if(below) {
-                            this.deselect(head);
+                            this.unselect(head);
                             prev.make('head');
                         } else {
                             this.select(prev);
@@ -361,6 +398,11 @@ define([
                 }
             }
         }
+    });
+    // legacy        
+    _.extend(tools.Selectable.prototype, {
+        deselect: tools.Selectable.prototype.unselect, 
+        deselectAll: tools.Selectable.prototype.unselectAll
     });
 
 
@@ -427,10 +469,10 @@ define([
             var x = e.offsetX, 
                 y = e.offsetY; // important to access offsetX/Y props here
             
-            drag.ghostEl = drag.element.clone().appendTo(document.body)
+            drag.ghostEl = drag.element.clone().addClass('gui-ghost').appendTo(document.body)
             drag.ghostEl.css({position: 'absolute'})
             drag.index = drag.element.index();            
-            drag.element.remove()
+            drag.element.detach()
             drag.representative(drag.ghostEl, x, y)
 
             drag.name = 'gui-sort';
@@ -500,29 +542,23 @@ define([
         onDragEnd: function(e, drag) {
             if(drag.success) {
                 drag.spaceholder.replaceWith(drag.element);
+                this.trigger('sort', {drag: drag});
             }
             else {
                 this.abort()
             }
         },
         onDragLeave: function(e, drag) {
-            console.log('leave')
         },
         onDragEnter: function(e, drag) {
-            console.log('Enter')
         },
         onEscKeyDown: function(e) {
             this.abort();
             e.preventDefault();
-        },        
+        }
         
         
     });
-    /*
-    1. Man drar
-    2. 
-    */
-
 
     /*
     Example:
@@ -538,16 +574,14 @@ define([
             {title: 'Lorem', col2: 'Ipsum'},
         ]
     });
-    
     */
-    
     tools.TableColumnModel = Backbone.Model.extend({
         defaults: {
             visible: true,
             sort: null, //'asc',
             sortprio: null , // 1
             name: null, // 'title'
-            title: null, // 'Title',
+            title: null // 'Title',
             
         }
     });
@@ -634,7 +668,7 @@ define([
                 this.model.set('direction', 'desc')
             else if(dir=='desc')
                 this.model.set('direction', '')            
-        },
+        }
         
     });
     
@@ -729,7 +763,7 @@ define([
             }, this);
 
 
-            this.$('table').iefocus();
+            this.$('table.body').iefocus();
             this.$('>.head').ieunselectable();        
             return this;
         },
@@ -743,7 +777,7 @@ define([
         onRowAdd: function(model, collection, options) {
             options = options || {};
             var tr = this.renderOne(model);
-            this.$('table tbody').insertAt(options.index || -1, tr);
+            this.$('table.body tbody').insertAt(options.index || -1, tr);
         },
         onRowsReset: function() {
             this.render();
@@ -889,7 +923,7 @@ define([
         events: {
             'blur': 'apply',
             'mousedown': 'stopPropagation',
-            'keydown': 'stopPropagation',
+            'keydown': 'stopPropagation'
         },
         hotkeys: {
             'keydown return': 'apply',
@@ -935,7 +969,7 @@ define([
             window.setTimeout(_.bind(function() {
                this.prevfoc.focus(); 
             }, this), 500)            
-        },        
+        }     
     });
 
 
@@ -995,29 +1029,83 @@ define([
             }        
         }
     };
-
+    
     tools.TabChain = {
-        render: function() {
-            var focusable = this.$('*:focusable');
-            var first = focusable.first(),
-                last = focusable.last();
-            focusable.first().on('keydown', function(e) {
-                if(e.which == gui.keys.TAB && e.shiftKey) { 
-                    last.focus();
-                    e.preventDefault();
-                }               
-            });            
-            focusable.last().on('keydown', function(e) {
-                if(e.which == gui.keys.TAB && !e.shiftKey) {
-                    first.focus();
-                    e.preventDefault();
-                }
-            });            
+        initialize: function() {
+            this.$el.on('keydown', _.bind(this._onKeyDown, this));
+        },
+        _onKeyDown: function(e) {
+            if(e.which == gui.keys.TAB) {
+                var set = this.$('*:tabable'),
+                    index = set.index(e.target),
+                    next = set[index + (e.shiftKey ? -1 : 1)];
+                (next || set[e.shiftKey ? set.length-1 : 0]).focus();
+                e.preventDefault();
+            }
         }
-    }
+    };
 
 
-return tools;
+    // =========
+    // = Utils =
+    // =========
+    var tests = {
+        dateManip: /^([\+\-])?(\d{0,3})(\w)?$/,
+        iscompactdate: /^(\d{2,4})(\d{2})(\d{2})$/,
+        yyyymmdd: /^(\d{4})(\d{2})(\d{2})$/,
+        yymmdd: /^(\d{2})(\d{2})(\d{2})$/
+    };    
+    tools.interpretdate = function(value, basedate) {
+        var date = false;
+        if(value instanceof Date) {
+            date = value;
+        }
+        else {
+            var s = $('<div>'+value+'</div>').getPreText();
+            if(s == 'now') {
+                date = new Date()
+            }
+            else if(basedate && s && tests.dateManip.test(s)) {
+                // Date manipulation
+                // >>> dateManip.exec('+1d')
+                // ["+1d", "+", "1", "d"]
+                s = tests.dateManip.exec(s);
+                var method = s[1] == '-' ? 'subtract' : 'add';
+                var unit = s[3] || 'd';
+                var num = parseInt(s[2]);    
+                date = moment(basedate || new Date())[method](unit, num).toDate();
+            }
+            else if(/^\d+$/.test(s)) { // Timestamp, millis
+                date = new Date(parseInt(s));
+            }        
+            else if(s) {
+                if(tests.iscompactdate.test(s)) {
+                    var matcher = tests.yyyymmdd.test(s) ? tests.yyyymmdd : tests.yymmdd;
+                    var gr = matcher.exec(s);
+                    var year = parseInt(gr[1]) > 1000 ? gr[1] : parseInt(gr[1])+2000;
+                    date = new Date(year, gr[2]-1, gr[3]) // month is zero-based
+                } 
+                else {
+                    // Let globalize parse it
+                    var result = Globalize.parseDate(value);
+                    if(result)
+                        date = result;
+                    else {                        
+                        // let moment have a go as well
+                        var m = moment(date || value);  
+                        if(m && m.toDate().valueOf())
+                            date = m.toDate();
+                    }
+                }
+            }
+        }
+        return date; // false or window.Date object
+    };
+
+
+
+
+    return tools;
 
 });
 

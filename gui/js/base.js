@@ -26,8 +26,15 @@ define([
         ESC: 27,
         SPACE: 32,
         TAB: 9,
-        BACKSPACE: 8
+        BACKSPACE: 8,
+        SHIFT: 15,
+        CTRL: 17,
+        ALT: 18
     };
+    gui.modifierKeys = {
+        16: 'shift',
+        17: 'ctrl',
+        18: 'alt'};
 
 
     // ================
@@ -47,17 +54,20 @@ define([
                     });
                 }
                 return el.currentStyle[prop] ? el.currentStyle[prop] : null;
-            }
+            };
             return this;
-        }
+        };
 
     
     $(function() {    
         $(document.body).bind('keydown', function(e) {
-            gui._keyDownEvent = e;
+            var editable = $(e.target).attr('contenteditable');
+            if(!(e.which in gui.modifierKeys) && !editable) {
+                gui._keyDownEvent = e;
+            }
         });
         $(document.body).bind('keyup', function(e) {
-            gui._keyDownEvent = null;
+            // gui._keyDownEvent = null;
         });
 
 
@@ -81,8 +91,7 @@ define([
                 }
                 else {
                     // fire a non-bubbling focusleave
-                    // $(parent).triggerHandler('focusleave');
-                    $(parent).trigger('focusleave', {newFocused: newFocused, justLostFocus: justLostFocus});                
+                    $(parent).triggerHandler('focusleave', {newFocused: newFocused, justLostFocus: justLostFocus});                                    
                 }
             });
         });
@@ -105,6 +114,35 @@ define([
     // =====================
     // = jQuery extensions =
     // =====================
+    // From jQuery UI 1.9.1
+    function visible( element ) {
+    	return $.expr.filters.visible( element ) &&
+    		!$( element ).parents().andSelf().filter(function() {
+    			return $.css( this, "visibility" ) === "hidden";
+    		}).length;
+    }    
+    function focusable( element, isTabIndexNotNaN ) {
+    	var map, mapName, img,
+    		nodeName = element.nodeName.toLowerCase();
+    	if ( "area" === nodeName ) {
+    		map = element.parentNode;
+    		mapName = map.name;
+    		if ( !element.href || !mapName || map.nodeName.toLowerCase() !== "map" ) {
+    			return false;
+    		}
+    		img = $( "img[usemap=#" + mapName + "]" )[0];
+    		return !!img && visible( img );
+    	}
+    	return ( /input|select|textarea|button|object/.test( nodeName ) ?
+    		!element.disabled :
+    		"a" === nodeName ?
+    			element.href || isTabIndexNotNaN :
+    			isTabIndexNotNaN) &&
+    		// the element and all of its ancestors must be visible
+    		visible( element );
+    }
+    
+    
     // Todo: don't fiddle with the global jquery
     $.fn.jget = function() {
         if(this.length > 0) {
@@ -145,6 +183,7 @@ define([
                 }
             });
         }
+        return this;
     };
     $.fn.ieunselectable = function() { 
         this.each(function() { 
@@ -222,7 +261,7 @@ define([
             this.children().eq(index).before(this.children().last());
         }
         return this;
-    }
+    };
 
     $.fn.make = function(className) {
         this.each(function() {
@@ -230,15 +269,15 @@ define([
             $(this).addClass(className);
         });
         return this;
-    }
+    };
 
     $.fn.containedBy = function(parent) {
+        parent = $(parent)[0];
         var isContainedBy = false;
-        var parent = $(parent)[0];
     
         this.parents().each(function(i, par) {
             if(par === parent) {
-                isContainedBy = true
+                isContainedBy = true;
                 return false; // break
             }
         });
@@ -246,28 +285,28 @@ define([
     };
 
     $.fn.center = function(args) {
-        var args = $.extend({
+        args = $.extend({
             // defaults
             top: null  // center horizontally, manually specify top
-        }, args || {})
+        }, args || {});
 
         this.each(function() {
-    		var self = $(this);
-            coords = get_center(self.outerWidth(), self.outerHeight())
-            var left = coords[0], top = coords[1]
+            var self = $(this);
+            coords = get_center(self.outerWidth(), self.outerHeight());
+            var left = coords[0], top = coords[1];
 		
-    		if(args.top !== null) {
-    		    top = args.top
-    		}
-        	self.css({top: top, left: left});
+            if(args.top !== null) {
+                top = args.top;
+            }
+            self.css({top: top, left: left});
        });
     };
     var get_center = function(width, height) {        
-        var winHeight = $(window).height()
-        var winWidth = $(window).width()		
-        var top = ((winHeight - height) / 2) + $(window).scrollTop()
-        var left = ((winWidth - width) / 2) + $(window).scrollLeft()
-        return [left, top]
+        var winHeight = $(window).height();
+        var winWidth = $(window).width();		
+        var top = ((winHeight - height) / 2) + $(window).scrollTop();
+        var left = ((winWidth - width) / 2) + $(window).scrollLeft();
+        return [left, top];
     };
 
     $.fn.getAllAttributes = function() {
@@ -290,7 +329,7 @@ define([
         return attributes;
     };
     $.fn.attrs = function(attrs) {
-        if(arguments.length == 0) {
+        if(arguments.length === 0) {
             return $(this).getAllAttributes();
         }
         _.each(attrs || {}, function(val, key) {
@@ -305,6 +344,39 @@ define([
         this.focus();
         window.scrollTo(x, y);
     };
+    
+    // $.fn.scrollMeOnly = function() {
+    //     this.on('mousewheel DOMMouseScroll', function(e) {
+    //         var scrollTo = null;
+    //         if(e.type == 'mousewheel')
+    //             scrollTo = (e.originalEvent.wheelDelta * -1);
+    //         else if(e.type == 'DOMMouseScroll')
+    //             scrollTo = 40 * e.originalEvent.detail;
+    //         
+    //         if(scrollTo) {
+    //             e.preventDefault();
+    //             $(window).scrollTop(scrollTo + $(window).scrollTop());
+    //         }
+    //     });
+    // };
+
+    $.fn.scrollMeOnly = function() {
+        $(this).bind('mousewheel DOMMouseScroll', function(e) {
+            // e.stopPropagation();
+               // e.preventDefault();
+               // e.cancelBubble = false;
+            var t = e.target;
+            var reachedBottom = (t.scrollTop + $(t).height()) >= e.target.scrollHeight - 5;
+            var isScrollingDown = e.wheelDelta < 0;
+            // console.log('Scroll top: ', e.target.scrollTop, e.target.scrollHeight, $(e.target).height());
+
+            if(reachedBottom && isScrollingDown) {
+                e.preventDefault();
+                return false;                    
+            }
+        });
+    };
+
 
     $.fn.box = function() {
         return {
@@ -315,13 +387,15 @@ define([
         };
     };
 
-    $.fn.fadeOutFast = function() {        
+    $.fn.fadeOutFast = function(options) {        
+        options = options || {};
         this.each(function(i, el) {
+            var method = options.detach ? 'detach':'remove';
             if($.browser.ltie9) 
-                $(el).remove();
+                $(el)[method]();
             else
                 $(el).fadeOut('fast', function() {
-                    $(el).remove().css({opacity: 1, display: 'block'});
+                    $(el)[method]().css({opacity: 1, display: 'block'});
                 });
         });
     };
@@ -366,7 +440,7 @@ define([
             left: left + 'px',
             top: top + 'px'
         });
-    }
+    };
 
 
     $.fn.reverse = [].reverse;
@@ -375,13 +449,20 @@ define([
     $.browser.ltie9 = $.browser.msie && parseInt($.browser.version) < 9;
     $.browser.ltie10 = $.browser.msie && parseInt($.browser.version) < 10;
 
+
+
     // ==============================
     // = jQuery selector extensions =
     // ==============================
+	// Mark a function for use in filtering
+	var markFunction = function(fn) {
+		fn.sizzleFilter = true;
+		return fn;
+	};    
     $.extend($.expr[':'], {
         selectable: function(el) {
             // visible and not disabled
-            return $(el).is(':visible') && !$(el).is('.disabled');
+            return $(el).is(':visible') && !$(el).is('.gui-disabled');
         }, 
         floating: function(el) {
             // absolute or fixed positioned
@@ -389,12 +470,14 @@ define([
             var pos2 = $(el).css('position');
             return  pos2 == 'absolute' || pos2 == 'fixed';            
         },
-        containsre: function(el, index, meta, stack) {
-            var re = meta[3].replace(/^\/+|\/+$/, '').split('/'); // strip slashes, then split
-            return new RegExp(re[0], re[1]).test($(el).text());
-        },
-        focusable: function(el) {
-            return el.tabIndex !== -1;
+        containsre: markFunction(function(text, context, xml) {
+            return function(el) {
+                var re = text.replace(/^\/+|\/+$/, '').split('/'); // strip slashes, then split
+                return new RegExp(re[0], re[1]).test($(el).text());
+            };
+        }),
+        tabable: function(el) {
+            return el.tabIndex !== -1 && $(el).closest('.gui-disabled').length === 0;
         },
         inviewport: function(el) {
             var scrollTop = $(window).scrollTop(),
@@ -402,8 +485,32 @@ define([
                 height = $(window).height();
         
             return (elTop > scrollTop) && (elTop < scrollTop+height);
-        }    
+        },
+        inside: markFunction(function(selector, context, xml) {
+            return function(el) {
+                return $(el).closest(selector).length;
+            };
+        }),
+    	focusable: function(el) {
+    		return focusable(el, !isNaN($.attr(el, "tabindex")));
+    	}
     });
+
+    $.fn.ieshadow = function() {
+        this.each(function() {
+            var f = document.createDocumentFragment();
+            _.each(['ds_l','ds_r','ds_t','ds_b','ds_tl','ds_tr','ds_bl','ds_br'], function(item) {
+                f.appendChild($('<div class="ds '+item+'"></div>')[0]);
+            }, this);
+            $(this).addClass('gui-ie-dropshadow').append(f);
+        });
+        return this;
+    };
+    
+    window.$ = $;
+
+
+
 
 
     // ==========================
@@ -430,7 +537,7 @@ define([
                 _.each(originalOptions.files || [], function(f) {
                     var name = f.name,
                         file = f.file;
-                    formdata.append(f.name, f.file)
+                    formdata.append(f.name, f.file);
                 });
 
                 // Add some ajax settings
@@ -448,7 +555,7 @@ define([
             abort: function() {
             
             }
-        }
+        };
     
     });
 
@@ -466,15 +573,15 @@ define([
         // A simple class supporting events and initialize
         Backbone.Class = function() {
             if(this.initialize)
-                this.initialize.apply(this, arguments)
-        }
+                this.initialize.apply(this, arguments);
+        };
         Backbone.Class.extend = Backbone.Model.extend;
         _.extend(Backbone.Class, Backbone.Events);
     
 
         Backbone.Collection.prototype.move = function(model, toIndex, options) {
-            var fromIndex = this.indexOf(model),
-                options = options || {};
+            options = options || {};
+            var fromIndex = this.indexOf(model);
             if(fromIndex == -1) {
                 throw new Error("Can't move a model that's not in the collection");
             }
@@ -488,52 +595,24 @@ define([
         var backboneset = Backbone.Model.prototype.set;
         Backbone.Model.prototype.set = function(key, value, options) {
             var attrs, attr, val;
-            if(_.isObject(key) || key == null) {
+            if(_.isObject(key) || key === null) {
                 attrs = key;
                 options = value;
             } else {
                 attrs = {};
                 attrs[key] = value;
             }            
-            _.each(attrs, function(value, key) {
+            _.each(_.clone(attrs), function(value, key) {
                  var setter = 'set_' + key;                 
-                 typeof this[setter] === 'function' &&
-                     (attrs[key] = this[setter](value, this.attributes[key], options));
+                 if(typeof this[setter] === 'function') {
+                     this[setter](value, attrs, options, key); // var v = 
+                     // if(v !== undefined)
+                     //     attrs[key] = v;
+                 }
             }, this);
             return backboneset.call(this, attrs, options);
         };
-        
-        Backbone.Model.prototype.parse = function(json, xhr) {
-            // convert json to Models and Collections
-            var attr, model, models, collection, options;
-            for (var prop in json) {
-                if (this.defaults && this.defaults[prop]) {
-                    attr = this.defaults[prop];
-                    if (attr instanceof Backbone.Model) {
-                        model = attr.clone();
-                        model.set(json[prop]);
-                        json[prop] = model;
-                    } else if (attr instanceof Backbone.Collection) {
-                        models = attr.map(function (model) { return model.clone(); });
-                        options = _.clone(attr.options);
-                        collection = new attr.constructor(models, options);
-                        collection.add(json[prop]);
-                        json[prop] = collection;
-                    }
-                }
-            }
-            return json;
-        };
-        
-        Backbone.Model.prototype.toJSON = function() {
-            if(!this.defaults)
-                return _.clone(this.attributes)
-
-            return _.object(_.map(this.attributes, function(v,k) {
-                return [k, v && v.toJSON ? v.toJSON() : v];
-            }));
-        };
-        
+                
     
         _.each(["Model", "Collection", "View", "Router"], function(klass) {
             var extend = Backbone[klass].extend;
@@ -559,7 +638,7 @@ define([
                     protoProps.beforeinitcls.call(child);
                 
                 if(protoProps.initcls)
-                    inits.push(protoProps.initcls)
+                    inits.push(protoProps.initcls);
 
                 // add all keys from all mixins if not already declared
                 // in protoProps. 
@@ -578,8 +657,8 @@ define([
                     // }
                     protoProps.delegateEvents = function(events) {
                         Backbone.View.prototype.delegateEvents.call(this, events);
-                        this._delegateHotkeys(this.hotkeys);
-                    }                
+                        this._delegateHotkeys();
+                    };                
                 }
 
                 // Then exend as usual
@@ -590,7 +669,7 @@ define([
                     inits[i].call(child);
             
                 return child;            
-            }
+            };
         });
     
         /*
@@ -599,7 +678,7 @@ define([
         }
         */
         var delegateHotkeySplitter = /^(\S+)\s+(\S+)\s*(.*)$/;    
-        Backbone.View.prototype._delegateHotkeys = function(events) {    
+        Backbone.View.prototype._delegateHotkeys = function() {    
             if(!this.hotkeys) return;
         
             var events = this.hotkeys;
@@ -617,7 +696,7 @@ define([
     
                 this.$el.on(eventName, selector || null, hotkey, method);
             }      
-        }
+        };
     })(Backbone);
 
 
@@ -643,6 +722,27 @@ define([
         delete obj[key];
         return v;
     };
+    // 
+    /*
+    Fill in a given object with default properties.
+    _.defs(options, {
+        defaultvalue1: 'a',
+        defaultvalue2: 'b'
+    });
+    */
+    _.defs = function(obj, defaults) {
+        if(!obj) 
+            return _.clone(defaults);
+        for(var key in defaults)
+            if(defaults.hasOwnProperty(key) && obj[key] === undefined) 
+                obj[key] = defaults[key];
+        return obj;
+    };
+    _.arrayify = function(v) {
+        if(!_.isArray(v)) 
+            v = [v];
+        return v;
+    };
 
 
     /* 
@@ -651,7 +751,7 @@ define([
     A modified copy of Underscore.template (v1.3.3), adding the `settings` 
     variable to the rendering scope, along with the usual 'obj' and '_'.
     */
-    ;(function(_) {
+    (function(_) {
         var noMatch = /.^/;
 
         var settings = {
@@ -691,9 +791,9 @@ define([
           // blocks.
       
           // Don't trust ordering of keys in `helpers` object
-          var helpers = _.map(helpers || {}, function(v,k) { return {k:k,v:v}});
-          var keys = _.map(helpers, function(v) { return v.k});
-          var helpersArgs = _.map(helpers, function(v) { return v.v});
+          helpers = _.map(helpers || {}, function(v,k) { return {k:k,v:v}; });
+          var keys = _.map(helpers, function(v) { return v.k; });
+          var helpersArgs = _.map(helpers, function(v) { return v.v; });
       
           var source = "__p+='" + text
             .replace(escaper, function(match) {
@@ -755,6 +855,15 @@ define([
             this.prototype.hotkeys = _.extend({}, parentHotkeys, this.prototype.hotkeys);        
         }
     };
+    
+    /* merge the "defaults" dict of the super class */
+    gui.ChildModel = {
+        initcls: function() {
+            var parentDefaults = this.__super__.defaults || {};
+            this.prototype.defaults = _.extend({}, parentDefaults, this.prototype.defaults);
+        }
+    };
+    
 
 
 
@@ -882,7 +991,7 @@ define([
 
         if(trim) {
             var lines = ce.text().split('\n');
-            var lines = _.compact(_.map(lines, function(line) {
+            lines = _.compact(_.map(lines, function(line) {
                 return $.trim(line);
             }));
             return lines.join('\n');
@@ -928,7 +1037,7 @@ define([
             return false;
         var keys = gui.keys,
             key = e.which,
-            arrows = [keys.LEFT, keys.RIGHT, keys.UP, keys.DOWN]    
+            arrows = [keys.LEFT, keys.RIGHT, keys.UP, keys.DOWN];    
         return _.indexOf(arrows, e.which) !== -1;
     };
 
@@ -943,7 +1052,7 @@ define([
 
     gui.randhex = function(len) {
         var out = [],
-            chars = "abcdef0123456789"
+            chars = "abcdef0123456789";
             len = len || 32;
         for(var i=0; i<len; i++)
             out.push(chars.charAt(Math.floor(Math.random() * chars.length)));
