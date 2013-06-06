@@ -603,16 +603,32 @@ define([
                 attrs[key] = value;
             }            
             _.each(_.clone(attrs), function(value, key) {
+                
                  var setter = 'set_' + key;                 
                  if(typeof this[setter] === 'function') {
                      this[setter](value, attrs, options, key); // var v = 
                      // if(v !== undefined)
                      //     attrs[key] = v;
                  }
+                 else if(this.traits && this.traits[key]) {
+                     attrs[key] = this.traits[key].parse(value);
+                 }
             }, this);
             return backboneset.call(this, attrs, options);
         };
-                
+
+        Backbone.Model.prototype.sync = function(method, model, options) {
+            if (this.toRemoteJSON && (method == 'update' || method == 'create')) {
+                var newModel = this.clone();
+                newModel.clear({ silent: true });
+                newModel.set(this.toRemoteJSON(), { silent: true });
+                return Backbone.sync.call(newModel, method, newModel, options);
+            } else {
+                return Backbone.sync.call(this, method, this, options);
+            }
+        };
+        
+
     
         _.each(["Model", "Collection", "View", "Router"], function(klass) {
             var extend = Backbone[klass].extend;
@@ -863,6 +879,14 @@ define([
             this.prototype.defaults = _.extend({}, parentDefaults, this.prototype.defaults);
         }
     };
+    
+    gui.Traits = {
+        toRemoteJSON: function() {
+            return _.object(_.map(this.traits, function(trait,k) {
+                return [k, trait.toJSON(this.attributes[k])]
+            }, this))
+        }
+    }
     
 
 
