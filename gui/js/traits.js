@@ -31,10 +31,10 @@ define([
         parse: function(v) {
             if(!v && v !== 0) 
                 return null;
-            else if(_.isString(value))
-                return Globalize.parseFloat(value) || null; // returns NaN on fail.
+            else if(_.isString(v))
+                return Globalize.parseFloat(v) || null; // returns NaN on fail.
             else
-                return _.isNumber(value) ? value : null;            
+                return _.isNumber(v) ? v : null;            
         },
         toJSON: function(v) {
             return v;
