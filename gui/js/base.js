@@ -7,6 +7,7 @@ define([
 ], function($, _, Backbone) {
     
 
+
     
     // =============
     // = Namespace =
@@ -35,6 +36,20 @@ define([
         16: 'shift',
         17: 'ctrl',
         18: 'alt'};
+
+
+
+
+
+
+    $.browser.ltie8 = $.browser.msie && parseInt($.browser.version) < 8;
+    $.browser.ltie9 = $.browser.msie && parseInt($.browser.version) < 9;
+    $.browser.ltie10 = $.browser.msie && parseInt($.browser.version) < 10;
+
+    if($.browser.ltie8) {
+        $(document.body).addClass('gui-ie7');
+    }
+
 
 
     // ================
@@ -174,10 +189,10 @@ define([
                         this.focus(); 
                     }, this), 1);
                     this.focus();
-                    e.stopPropagation();
+                    // e.stopPropagation();
                 });
                 if($.browser.ltie8) {
-                    this.hideFocus = true;                                    
+                    this.hideFocus = true;
                     $(this).bind('focus', function(e) { $(e.target).addClass('focus'); });
                     $(this).bind('blur', function(e) { $(e.target).removeClass('focus'); });
                 }
@@ -401,6 +416,21 @@ define([
     };
 
 
+    function tabChainTabKeyDown(e) {
+        var set = $(e.currentTarget).find('*:tabable'),
+            index = set.index(e.target),
+            next = set[index + (e.shiftKey ? -1 : 1)];        
+        (next || set[e.shiftKey ? set.length-1 : 0]).focus();
+        e.preventDefault();
+    }
+
+    $.fn.tabChain = function(options) {
+        this.each(function() {
+            $(this).on('keydown tab', null, tabChainTabKeyDown); 
+        });        
+    }
+
+
     /*
     Example
     -------
@@ -445,10 +475,24 @@ define([
 
     $.fn.reverse = [].reverse;
 
-    $.browser.ltie8 = $.browser.msie && parseInt($.browser.version) < 8;
-    $.browser.ltie9 = $.browser.msie && parseInt($.browser.version) < 9;
-    $.browser.ltie10 = $.browser.msie && parseInt($.browser.version) < 10;
 
+
+
+
+    if($.browser.ltie8) {
+        var field = null;
+        $(document).on('mousedown', function(e) {
+            field = $(e.target).closest('.gui-radio, .gui-checkbox, .gui-btn');
+            if(field[0] && !field.closest('.gui-disabled')[0]) {
+                field.addClass('active');
+            }
+            field = field[0]
+        });
+        $(document.body).on('mouseup', function(e) {
+            if(field)
+                $(field).removeClass('active');
+        });        
+    }
 
 
     // ==============================
@@ -1105,6 +1149,10 @@ define([
                     $('<link rel="stylesheet" type="text/css"></link>').attr('href', url).appendTo(head);
             }
         });
+    };
+    
+    gui.preventDefault = function(e) {
+        e.preventDefault();
     };
 
 

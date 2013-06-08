@@ -379,11 +379,22 @@ pre .xml .cdata {
   background-color: #fdfdfd;
   color: #555;
   text-shadow: white 0px 1px; }
-  .gui-btn:not(.btn-disabled):active {
+  .gui-btn:not(.btn-disabled):active, .gui-btn:not(.btn-disabled).active {
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e4e4e4), color-stop(1, #c8c8c8));
+    background: -ms-linear-gradient(top, #c8c8c8 0%, #e4e4e4 100%);
+    background: -moz-linear-gradient(top, #c8c8c8 0%, #e4e4e4 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#c8c8c8', endColorstr='#e4e4e4') chroma(color=black);
+    background-color: #c8c8c8;
     box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
     -moz-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
     -webkit-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
     -ms-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4); }
+  .gui-ie7 .gui-btn.active {
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e4e4e4), color-stop(1, #c8c8c8));
+    background: -ms-linear-gradient(top, #c8c8c8 0%, #e4e4e4 100%);
+    background: -moz-linear-gradient(top, #c8c8c8 0%, #e4e4e4 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#c8c8c8', endColorstr='#e4e4e4') chroma(color=black);
+    background-color: #c8c8c8; }
   .gui-btn:focus {
     box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     -moz-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
@@ -410,11 +421,22 @@ pre .xml .cdata {
     background-color: #638cf5;
     color: #fff;
     text-shadow: black 0px -1px; }
-    .gui-btn.btn-primary:not(.btn-disabled):active {
+    .gui-btn.btn-primary:not(.btn-disabled):active, .gui-btn.btn-primary:not(.btn-disabled).active {
+      background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #3369f2), color-stop(1, #0c4bd8));
+      background: -ms-linear-gradient(top, #0c4bd8 0%, #3369f2 100%);
+      background: -moz-linear-gradient(top, #0c4bd8 0%, #3369f2 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0c4bd8', endColorstr='#3369f2') chroma(color=black);
+      background-color: #0c4bd8;
       box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
       -moz-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
       -webkit-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
       -ms-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4); }
+    .gui-ie7 .gui-btn.btn-primary.active {
+      background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #3369f2), color-stop(1, #0c4bd8));
+      background: -ms-linear-gradient(top, #0c4bd8 0%, #3369f2 100%);
+      background: -moz-linear-gradient(top, #0c4bd8 0%, #3369f2 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0c4bd8', endColorstr='#3369f2') chroma(color=black);
+      background-color: #0c4bd8; }
     .gui-btn.btn-primary:focus {
       border-color: #16409F; }
   .gui-disabled .gui-btn, .gui-btn.gui-disabled {
@@ -429,11 +451,22 @@ pre .xml .cdata {
     text-shadow: #999999 0px -1px;
     border: 1px solid #9e9e9e;
     color: #fff; }
-    .gui-disabled .gui-btn:not(.btn-disabled):active, .gui-btn.gui-disabled:not(.btn-disabled):active {
+    .gui-disabled .gui-btn:not(.btn-disabled):active, .gui-disabled .gui-btn:not(.btn-disabled).active, .gui-btn.gui-disabled:not(.btn-disabled):active, .gui-btn.gui-disabled:not(.btn-disabled).active {
+      background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #a2a2a2), color-stop(1, #a2a2a2));
+      background: -ms-linear-gradient(top, #a2a2a2 0%, #a2a2a2 100%);
+      background: -moz-linear-gradient(top, #a2a2a2 0%, #a2a2a2 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#a2a2a2', endColorstr='#a2a2a2') chroma(color=black);
+      background-color: #a2a2a2;
       box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
       -moz-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
       -webkit-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
       -ms-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4); }
+    .gui-ie7 .gui-disabled .gui-btn.active, .gui-ie7 .gui-btn.gui-disabled.active {
+      background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #a2a2a2), color-stop(1, #a2a2a2));
+      background: -ms-linear-gradient(top, #a2a2a2 0%, #a2a2a2 100%);
+      background: -moz-linear-gradient(top, #a2a2a2 0%, #a2a2a2 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#a2a2a2', endColorstr='#a2a2a2') chroma(color=black);
+      background-color: #a2a2a2; }
 
 .gui-editor {
   position: relative;
@@ -636,7 +669,7 @@ pre .xml .cdata {
     .gui-disabled .gui-text:focus, .gui-disabled .gui-password:focus, .gui-disabled .gui-textarea:focus, .gui-disabled .gui-text.focus, .gui-disabled .focus.gui-password, .gui-disabled .focus.gui-textarea, .gui-text.gui-disabled:focus, .gui-disabled.gui-password:focus, .gui-disabled.gui-textarea:focus, .gui-text.gui-disabled.focus, .gui-disabled.focus.gui-password, .gui-disabled.focus.gui-textarea {
       border: 1px solid #cccccc !important;
       box-shadow: none; }
-  .ie7 .gui-text, .ie7 .gui-password, .ie7 .gui-textarea {
+  .gui-ie7 .gui-text, .gui-ie7 .gui-password, .gui-ie7 .gui-textarea {
     height: 19px; }
 
 .gui-password {
@@ -775,7 +808,7 @@ pre .xml .cdata {
     -webkit-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     -ms-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
     outline: none; }
-  .ie7 .gui-checkbox, .ie7 .gui-radio {
+  .gui-ie7 .gui-checkbox, .gui-ie7 .gui-radio {
     zoom: 1;
     *display: inline; }
   .gui-checkbox:before, .gui-radio:before {
@@ -800,12 +833,12 @@ pre .xml .cdata {
     background-color: white; }
     .gui-checkbox:before i, .gui-radio:before i {
       display: none; }
-    .ie7 .gui-checkbox:before i, .ie7 .gui-radio:before i {
+    .gui-ie7 .gui-checkbox:before i, .gui-ie7 .gui-radio:before i {
       font-style: normal;
       display: inline; }
     .gui-checkbox:before:before, .gui-radio:before:before {
       content: "\00a0"; }
-    .ie7 .gui-checkbox:before, .ie7 .gui-radio:before {
+    .gui-ie7 .gui-checkbox:before, .gui-ie7 .gui-radio:before {
       zoom: 1;
       *display: inline; }
     .ie9 .gui-checkbox:before, .ie9 .gui-radio:before {
@@ -829,11 +862,43 @@ pre .xml .cdata {
     .gui-disabled .gui-checkbox:focus:before, .gui-disabled .gui-radio:focus:before, .gui-checkbox.gui-disabled:focus:before, .gui-disabled.gui-radio:focus:before {
       border: 1px solid #cccccc !important;
       box-shadow: none; }
-  .ie7 .gui-checkbox i, .ie7 .gui-radio i {
+    .gui-ie7 .gui-disabled .gui-checkbox, .gui-ie7 .gui-disabled .gui-radio, .gui-ie7 .gui-checkbox.gui-disabled, .gui-ie7 .gui-disabled.gui-radio {
+      color: #aaa; }
+      .gui-ie7 .gui-disabled .gui-checkbox i, .gui-ie7 .gui-disabled .gui-radio i, .gui-ie7 .gui-checkbox.gui-disabled i, .gui-ie7 .gui-disabled.gui-radio i {
+        background-position: -68px 0px; }
+      .gui-ie7 .gui-disabled .gui-checkbox.gui-checked i, .gui-ie7 .gui-disabled .gui-checked.gui-radio i, .gui-ie7 .gui-checkbox.gui-disabled.gui-checked i, .gui-ie7 .gui-disabled.gui-checked.gui-radio i {
+        background-position: -85px 0px; }
+  .gui-checkbox > i, .gui-radio > i {
     display: none; }
-  .ie7 .gui-checkbox.gui-checked i, .ie7 .gui-checked.gui-radio i {
-    display: inline;
-    color: #111; }
+  .gui-ie7 .gui-checkbox, .gui-ie7 .gui-radio {
+    position: relative;
+    padding-left: 22px;
+    text-decoration: none;
+    color: #555; }
+    .gui-ie7 .gui-checkbox i, .gui-ie7 .gui-radio i {
+      display: block;
+      position: absolute;
+      width: 17px;
+      height: 17px;
+      left: 0px;
+      top: 0px;
+      background-image: url(../img/form.png);
+      background-repeat: no-repeat;
+      cursor: default;
+      background-position: 0px 0px; }
+    .gui-ie7 .gui-checkbox.active i, .gui-ie7 .active.gui-radio i {
+      background-position: -34px 0px; }
+    .gui-ie7 .gui-checkbox.gui-checked i, .gui-ie7 .gui-checked.gui-radio i {
+      background-position: -17px 0px; }
+    .gui-ie7 .gui-checkbox.gui-checked.active i, .gui-ie7 .gui-checked.active.gui-radio i {
+      background-position: -51px 0px; }
+    .gui-ie7 .gui-checkbox.focus i, .gui-ie7 .focus.gui-radio i {
+      border-color: #0e9ed3 !important;
+      box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+      -moz-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+      -webkit-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+      -ms-box-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+      outline: none; }
 
 .gui-radio {
   padding-left: 25px;
@@ -850,8 +915,18 @@ pre .xml .cdata {
     line-height: 15px; }
   .gui-radio.gui-checked:before {
     content: "\f111"; }
-  .ie7 .gui-radio, .ie8 .gui-radio {
-    padding-left: 0px; }
+  .gui-ie7 .gui-disabled .gui-radio i, .gui-ie7 .gui-radio.gui-disabled i {
+    background-position: -170px 0px; }
+  .gui-ie7 .gui-disabled .gui-radio.gui-checked i, .gui-ie7 .gui-radio.gui-disabled.gui-checked i {
+    background-position: -187px 0px; }
+  .gui-ie7 .gui-radio i {
+    background-position: -102px 0px; }
+  .gui-ie7 .gui-radio.active i {
+    background-position: -136px 0px; }
+  .gui-ie7 .gui-radio.gui-checked i {
+    background-position: -119px 0px; }
+  .gui-ie7 .gui-radio.gui-checked.active i {
+    background-position: -153px 0px; }
 
 /* ========= */
 /* = Combo = */
@@ -1001,7 +1076,7 @@ pre .xml .cdata {
     background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #cccccc), color-stop(1, #adadad));
     background: -ms-linear-gradient(top, #adadad 0%, #cccccc 100%);
     background: -moz-linear-gradient(top, #adadad 0%, #cccccc 100%); }
-    .ie7 .gui-slider .range-min, .ie8 .gui-slider .range-min {
+    .gui-ie7 .gui-slider .range-min, .ie8 .gui-slider .range-min {
       filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#adadad', endColorstr='#cccccc') chroma(color=black);
       background-color: #adadad; }
   .gui-slider .handle {
@@ -1018,7 +1093,7 @@ pre .xml .cdata {
     position: absolute;
     height: 20px;
     border: 1px solid #bcbcbc; }
-    .ie7 .gui-slider .handle, .ie8 .gui-slider .handle {
+    .gui-ie7 .gui-slider .handle, .ie8 .gui-slider .handle {
       filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='#e0e0e0') chroma(color=black);
       background-color: white; }
     .gui-slider .handle div {
@@ -1084,7 +1159,7 @@ pre .xml .cdata {
   line-height: 20px;
   position: relative;
   padding-right: 0px; }
-  .ie7 .token-direction, .ie7 .columnfield li, .columnfield .ie7 li {
+  .gui-ie7 .token-direction, .gui-ie7 .columnfield li, .columnfield .gui-ie7 li {
     zoom: 1;
     *display: inline;
     padding: 1px 10px 3px 10px; }
@@ -1093,7 +1168,7 @@ pre .xml .cdata {
     border-right: 1px solid #94b5d2;
     padding-right: 8px;
     height: 20px; }
-    .ie7 .token-direction span, .ie7 .columnfield li span, .columnfield .ie7 li span {
+    .gui-ie7 .token-direction span, .gui-ie7 .columnfield li span, .columnfield .gui-ie7 li span {
       zoom: 1;
       *display: inline; }
   .token-direction i, .columnfield li i {
@@ -1105,19 +1180,19 @@ pre .xml .cdata {
     font-size: 12px;
     text-align: center;
     cursor: pointer; }
-    .ie7 .token-direction i, .ie7 .columnfield li i, .columnfield .ie7 li i {
+    .gui-ie7 .token-direction i, .gui-ie7 .columnfield li i, .columnfield .gui-ie7 li i {
       zoom: 1;
       *display: inline; }
   .token-direction.asc .direction i, .columnfield li.asc .direction i {
     display: none; }
-  .ie7 .token-direction.asc .direction i, .ie7 .columnfield li.asc .direction i, .columnfield .ie7 li.asc .direction i {
+  .gui-ie7 .token-direction.asc .direction i, .gui-ie7 .columnfield li.asc .direction i, .columnfield .gui-ie7 li.asc .direction i {
     font-style: normal;
     display: inline; }
   .token-direction.asc .direction:before, .columnfield li.asc .direction:before {
     content: "\e120"; }
   .token-direction.desc .direction i, .columnfield li.desc .direction i {
     display: none; }
-  .ie7 .token-direction.desc .direction i, .ie7 .columnfield li.desc .direction i, .columnfield .ie7 li.desc .direction i {
+  .gui-ie7 .token-direction.desc .direction i, .gui-ie7 .columnfield li.desc .direction i, .columnfield .gui-ie7 li.desc .direction i {
     font-style: normal;
     display: inline; }
   .token-direction.desc .direction:before, .columnfield li.desc .direction:before {
@@ -1157,7 +1232,7 @@ pre .xml .cdata {
     background: -ms-linear-gradient(top, #638cf5 0%, #2464f3 100%);
     background: -moz-linear-gradient(top, #638cf5 0%, #2464f3 100%);
     border-color: #1e498c; }
-    .ie7 .columnfield:focus .selected, .ie8 .columnfield:focus .selected, .ie7 .columnfield.focus .selected, .ie8 .columnfield.focus .selected {
+    .gui-ie7 .columnfield:focus .selected, .ie8 .columnfield:focus .selected, .gui-ie7 .columnfield.focus .selected, .ie8 .columnfield.focus .selected {
       filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#638cf5', endColorstr='#2464f3') chroma(color=black);
       background-color: #638cf5; }
   .columnfield ul {
@@ -1209,11 +1284,22 @@ pre .xml .cdata {
       text-align: center; }
       .columnfield .buttons button:before {
         content: ""; }
-      .columnfield .buttons button:not(.btn-disabled):active {
+      .columnfield .buttons button:not(.btn-disabled):active, .columnfield .buttons button:not(.btn-disabled).active {
+        background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e6e6e6), color-stop(1, #c8c8c8));
+        background: -ms-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
+        background: -moz-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#c8c8c8', endColorstr='#e6e6e6') chroma(color=black);
+        background-color: #c8c8c8;
         box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
         -moz-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
         -webkit-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4);
         -ms-box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.4); }
+      .gui-ie7 .columnfield .buttons button.active {
+        background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #e6e6e6), color-stop(1, #c8c8c8));
+        background: -ms-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
+        background: -moz-linear-gradient(top, #c8c8c8 0%, #e6e6e6 100%);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#c8c8c8', endColorstr='#e6e6e6') chroma(color=black);
+        background-color: #c8c8c8; }
       .columnfield .buttons button.add:before {
         content: "\e102"; }
       .columnfield .buttons button.remove:before {
@@ -1328,7 +1414,7 @@ pre .xml .cdata {
     background: -ms-linear-gradient(top, #638cf5 0%, #2464f3 100%);
     background: -moz-linear-gradient(top, #638cf5 0%, #2464f3 100%);
     border-color: #1e498c; }
-    .ie7 .gui-menu:focus .selected, .ie8 .gui-menu:focus .selected, .ie7 .gui-menu.focus .selected, .ie8 .gui-menu.focus .selected {
+    .gui-ie7 .gui-menu:focus .selected, .ie8 .gui-menu:focus .selected, .gui-ie7 .gui-menu.focus .selected, .ie8 .gui-menu.focus .selected {
       filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#638cf5', endColorstr='#2464f3') chroma(color=black);
       background-color: #638cf5; }
   .gui-menu > ul {
@@ -1469,7 +1555,7 @@ pre .xml .cdata {
     background: -ms-linear-gradient(top, #638cf5 0%, #2464f3 100%);
     background: -moz-linear-gradient(top, #638cf5 0%, #2464f3 100%);
     border-color: #1e498c; }
-    .ie7 .gui-datepicker:focus .selected, .ie8 .gui-datepicker:focus .selected, .ie7 .gui-datepicker.focus .selected, .ie8 .gui-datepicker.focus .selected {
+    .gui-ie7 .gui-datepicker:focus .selected, .ie8 .gui-datepicker:focus .selected, .gui-ie7 .gui-datepicker.focus .selected, .ie8 .gui-datepicker.focus .selected {
       filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#638cf5', endColorstr='#2464f3') chroma(color=black);
       background-color: #638cf5; }
   .gui-datepicker:focus {
@@ -1486,7 +1572,7 @@ pre .xml .cdata {
     background: -ms-linear-gradient(top, #638cf5 0%, #2464f3 100%);
     background: -moz-linear-gradient(top, #638cf5 0%, #2464f3 100%);
     border-color: #1e498c; }
-    .ie7 .gui-datepicker .gui-calendar:focus .selected, .ie8 .gui-datepicker .gui-calendar:focus .selected, .ie7 .gui-datepicker .gui-calendar.focus .selected, .ie8 .gui-datepicker .gui-calendar.focus .selected {
+    .gui-ie7 .gui-datepicker .gui-calendar:focus .selected, .ie8 .gui-datepicker .gui-calendar:focus .selected, .gui-ie7 .gui-datepicker .gui-calendar.focus .selected, .ie8 .gui-datepicker .gui-calendar.focus .selected {
       filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#638cf5', endColorstr='#2464f3') chroma(color=black);
       background-color: #638cf5; }
   .gui-datepicker .gui-calendar .day.selected .date {
@@ -1726,7 +1812,7 @@ pre .xml .cdata {
   border-radius: 10px;
   cursor: default;
   margin-bottom: 4px; }
-  .ie7 .gui-token {
+  .gui-ie7 .gui-token {
     zoom: 1;
     *display: inline;
     padding: 1px 10px 3px 10px; }
