@@ -10,6 +10,7 @@ define([
 
     var tmpOptions = [
         {id: 'title', text: 'Title'},
+        {id: 'amount', text: 'Amount'},        
         {id: 'created_at', text: 'Created at'},
     ];
     
@@ -24,7 +25,15 @@ define([
         });        
     }
     
+    /*
+    A Constraint is a model with traits and a set of options
+    for its precidate-combo.
     
+    It is used as the underlying model for the row views 
+    (as: myrowview.form.model).
+    
+    A Constraint can be validated.
+    */
     var Constraint = Backbone.Model.extend({
         parse: function(json) {
             return json;
