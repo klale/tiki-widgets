@@ -417,6 +417,8 @@ define([
 
 
     function tabChainTabKeyDown(e) {
+        if(e.altKey || e.ctrlKey || e.metaKey)
+            return;
         var set = $(e.currentTarget).find('*:tabable'),
             index = set.index(e.target),
             next = set[index + (e.shiftKey ? -1 : 1)];        
