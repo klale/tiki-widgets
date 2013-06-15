@@ -139,7 +139,10 @@ define([
         events: {
             'mouseover li': 'onMouseOver',
             'blur': 'onBlur',
-            'click li.selectable': 'onSelectableClick' 
+            'click li.selectable': 'onSelectableClick',
+            'keydown': 'onKeyDown',
+            'keyup': 'onKeyUp',
+            'mouseup': 'onMouseUp'
         },
         hotkeys: {
             'keydown right': 'onRightKeyDown',
@@ -149,6 +152,7 @@ define([
         _isroot: true,
         initialize: function(config) {
             config = config || {};
+            _.bindAll(this, 'onShowTimeout', 'onKeyUpTimeout');
             this._views = {};
             this.overlay = config.overlay;
             if(config.model)
@@ -168,12 +172,14 @@ define([
                 selectables: 'li.selectable',
                 collection: options,
                 chooseOnClick: true,
+                chooseOnMouseUp: true,                
                 chooseOnDblClick: false
             });
             this.selectable.on('choose', this.onSelectableChoose, this);
             this.selectable.on('select', this.onSelectableSelect, this);
             this.selectable.on('unselect', this.onSelectableUnselect, this);
-
+            this.selectable.on('beforechoose', this.onBeforeChoose, this);
+            this.$el.scrollMeOnly();
             if($.browser.ltie8) {
                 this.$el.iefocus();
                 this.el.hideFocus = true;
@@ -232,6 +238,9 @@ define([
                 alignTo: false,
                 left: false,
                 top: false});
+               
+            var availHeight = $(this.el.ownerDocument.documentElement).height() - 10; // ~10px dropshadow
+            this.$el.css('max-height', availHeight);
                         
             if(opt.hideOther && Menu.active) 
                 Menu.active.hide();
@@ -251,6 +260,8 @@ define([
                 if(opt.focus)
                     this.$el.focus();                
             }
+            this._okMouseUp = false;
+            window.setTimeout(this.onShowTimeout, 350);            
             this.trigger('show', this);
             return this;
         },
@@ -286,10 +297,10 @@ define([
                 this._hideSubmenu(model);
         },        
         onSelectableChoose: function(e) {
-            this._blinking = true;
+            this._lock = true;
             e.selected.blink(_.bind(function() {
                 this._hideAll();
-                this._blinking = false;
+                this._lock = false;
                 this.trigger('select', e);                
             }, this));            
         },
@@ -303,8 +314,8 @@ define([
                 e.model.set('expanded', false);
         },        
         onMouseOver: function(e) {
-            // todo: detach mouseover listener instead of _blinking property
-            if(this._blinking || this.$el.is(':animated'))
+            // todo: detach mouseover listener instead of _lock property
+            if(this._lock || this.$el.is(':animated'))
                 return;
                 
             var target = $(e.currentTarget);
@@ -344,6 +355,26 @@ define([
         },
         onESCKeyDown: function(e) {
             this._hideAll();
+        },
+        onKeyDown: function(e) {
+            this._okMouseUp = true;
+            if(gui.isArrowKey(e))
+                this._lock = true;
+        },
+        onKeyUp: function() {
+            window.setTimeout(this.onKeyUpTimeout, 100);
+        },
+        onMouseUp: function(e) {
+            this._okMouseUp = true;
+        },
+        onBeforeChoose: function(e) {
+            e.cancel = !this._okMouseUp;
+        },
+        onShowTimeout: function() {
+            this._okMouseUp = true;
+        },
+        onKeyUpTimeout: function() {
+            this._lock = false;
         }
     });
 

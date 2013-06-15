@@ -1402,9 +1402,10 @@ pre .xml .cdata {
   border-radius: 3px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
   z-index: 500;
-  overflow: visible;
   background-color: #fff;
-  outline: none; }
+  outline: none;
+  overflow: hidden;
+  overflow-y: auto; }
   .gui-menu .selected {
     background-color: #7c7c7c;
     color: #fff;

@@ -26,9 +26,13 @@
     border-radius: 3px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);    
     z-index: 500;
-    overflow: visible;
     background-color: #fff;    
     outline: none;
+
+    // IE8 bug when using max-height with overflow:auto.
+    // A workaround is to use overflow-y instead.
+    overflow: hidden;
+    overflow-y: auto;    
     
     @include selectables();
     

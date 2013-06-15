@@ -151,7 +151,7 @@ define([
             'keydown meta+a': 'onMetaAKeyDown'
         },
         initialize: function(config) {
-            _.bindAll(this, 'onSelectableMouseDown', 'onSelectableDblClick', 'onSelectableKeyDown')
+            _.bindAll(this, 'onSelectableMouseDown', 'chooseSelected', 'onSelectableKeyDown')
             this.selectables = config.selectables;
             this.collection = config.collection; // optional
 
@@ -160,9 +160,11 @@ define([
             
             // Todo: Replace these silly arguments with the out-commented code below?
             if(config.chooseOnDblClick)
-                this.$el.on('dblclick', config.selectables, this.onSelectableDblClick);
+                this.$el.on('dblclick', config.selectables, this.chooseSelected);
             if(config.chooseOnClick)
-                this.$el.on('click', config.selectables, this.onSelectableDblClick);            
+                this.$el.on('click', config.selectables, this.chooseSelected);
+            if(config.chooseOnMouseUp)
+                this.$el.on('mouseup', config.selectables, this.chooseSelected);
             
             // this.triggerChooseOn = config.triggerChooseOn || ['keydown enter', 'dblclick li'];
             // _.each(this.triggerChooseOn, function(evtstr) {
@@ -182,8 +184,8 @@ define([
 
         off: function() {
             this.$el.off('mousedown', this.selectables, this.onSelectableMouseDown);
-            this.$el.off('dblclick', this.selectables, this.onSelectableDblClick);
-            this.$el.off('click', this.selectables, this.onSelectableDblClick);
+            this.$el.off('dblclick', this.selectables, this.chooseSelected);
+            this.$el.off('click', this.selectables, this.chooseSelected);
             this.$el.off('keydown', this.onSelectableKeyDown);            
         },
         onMouseDown: function(e) {
@@ -191,6 +193,7 @@ define([
                 this.unselectAll();
             }
         },
+        
         onMetaAKeyDown: function(e) {
             this.selectAll();
             e.preventDefault();
@@ -220,7 +223,11 @@ define([
                 // this.trigger('choose', {selected: el});
             }
         },
-        onSelectableDblClick: function(e) {
+        chooseSelected: function(e) {
+            this.trigger('beforechoose', e);
+            if(e.cancel)
+                return;
+            
             var el = $(e.currentTarget),
                 e = {selected: el};
             if(this.collection)
@@ -343,30 +350,19 @@ define([
             else if(gui.isArrowKey(e)) {
                 e.preventDefault();
                 if(!this.$('.selected').length) {
-                    this.selectOne()
-                    return
-                }
-                
+                    this.selectOne();
+                    return;
+                }                
                 var head = this.$('.head'),
                     tail = this.$('.tail'),
                     prev = head.prevAll(this.selectables+':visible:first'),
                     next = head.nextAll(this.selectables+':visible:first');
 
-                // within visible viewport? next, down and outside?
-                if(e.which == gui.keys.DOWN)
-                    if(next[0]) {
-                        var height = next.outerHeight(),
-                            bottom = next[0].offsetTop+height,
-                            diff = bottom - this.$el.outerHeight();
-                        if(bottom > this.$el.outerHeight()) {
-                            this.$el.scrollTop(diff+8);
-                        }
-                    }
-
-                // next[0].scrollIntoView(); //e.which == gui.keys.UP alignWithTop
-                // next.css('border', '1px solid blue');
-                e.preventDefault();
-                e.stopPropagation()
+                // within visible viewport?
+                if(e.which == gui.keys.UP)
+                    prev.scrollIntoView(true, this.el);
+                else if(e.which == gui.keys.DOWN)
+                    next.scrollIntoView(false, this.el);
             
                 if(!e.shiftKey) {
                     if(e.which == gui.keys.DOWN && next[0]) 
@@ -452,12 +448,12 @@ define([
             this.drag.spaceholder.remove();            
         },
 
-        
         // Drag events
         onDragDown: function(e, drag) {
             drag.distance(5);
+            drag.mouseOffset = gui.mouseOffset(e, e.currentTarget);
             e.preventDefault();
-        },
+        },    
         onDragInit: function(e, drag) {
             if(this.collection)
                 drag.model = this.collection.at(drag.element.index())
@@ -467,16 +463,12 @@ define([
             drag.spaceholder = drag.element.clone();
             drag.spaceholder.addClass('gui-spaceholder');
             drag.orgContainer = drag.element.parent();
-
-            var x = e.offsetX, 
-                y = e.offsetY; // important to access offsetX/Y props here
             
             drag.ghostEl = drag.element.clone().addClass('gui-ghost').appendTo(document.body)
             drag.ghostEl.css({position: 'absolute'})
             drag.index = drag.element.index();            
             drag.element.detach()
-            drag.representative(drag.ghostEl, x, y)
-
+            drag.representative(drag.ghostEl, drag.mouseOffset.left, drag.mouseOffset.top)
             drag.name = 'gui-sort';
             drag.sortmode = 'horizontal';
 
@@ -485,7 +477,6 @@ define([
             $(drag.activeElement).on('keydown', null, 'esc', this.abort)
 
             this.trigger('draginit', e, drag)
-            
         },
         
         // Drop events
