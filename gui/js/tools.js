@@ -348,7 +348,9 @@ define([
                 e.preventDefault();
             }
             else if(gui.isArrowKey(e)) {
-                e.preventDefault();
+                if(!e.ctrlKey && !e.metaKey && !e.altKey)
+                    e.preventDefault();
+                
                 if(!this.$('.selected').length) {
                     this.selectOne();
                     return;
