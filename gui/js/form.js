@@ -1309,6 +1309,7 @@ define([
                 this.datepicker.alignTo(this.$('button.calendar'), {my: 'left top', at: 'left bottom'});
                 this.datepicker.$el.on('keydown', _.bind(this.onDatePickerKeyDown, this));
                 this.datepicker.$el.on('focusleave', _.bind(this.hideDatePicker, this));
+                this.datepicker.$el.addClass('flying');
             }
             return this.datepicker;
         },
