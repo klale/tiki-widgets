@@ -7,6 +7,7 @@ define([
 ], function($, _, Backbone) {
     
 
+
     
     // =============
     // = Namespace =
@@ -35,6 +36,20 @@ define([
         16: 'shift',
         17: 'ctrl',
         18: 'alt'};
+
+
+
+
+
+
+    $.browser.ltie8 = $.browser.msie && parseInt($.browser.version) < 8;
+    $.browser.ltie9 = $.browser.msie && parseInt($.browser.version) < 9;
+    $.browser.ltie10 = $.browser.msie && parseInt($.browser.version) < 10;
+
+    if($.browser.ltie8) {
+        $(document.body).addClass('gui-ie7');
+    }
+
 
 
     // ================
@@ -141,6 +156,61 @@ define([
     		// the element and all of its ancestors must be visible
     		visible( element );
     }
+
+
+    /* Normalize mouse wheel through a hand-crafted "wheel" event */
+    (function () {
+        var oldEvents = ['mousewheel', 'DomMouseScroll', 'MozMousePixelScroll'],
+            allEvents =  ['wheel'].concat(oldEvents),
+            hasWheel = "onwheel" in document.createElement("div"),
+            bindEvents = hasWheel ? ['wheel'] : oldEvents;
+    
+        if($.event.fixHooks)
+            for(var i=0, name; name = allEvents[i]; i++)
+                $.event.fixHooks[name] = $.event.mouseHooks;
+    
+        $.event.special.wheel = {
+            setup: function() {            
+                if(this.addEventListener) 
+                    for(var i=0,name; name=bindEvents[i]; i++)
+                        this.addEventListener(name, handler, false);
+                else
+                    this.onmousewheel = handler;
+            },
+            teardown: function() {
+                if(this.addEventListener) 
+                    for(var i=0,name; name=bindEvents[i]; i++)
+                        this.addEventListener(name, handler, false);
+                else
+                    this.onmousewheel = handler;
+            }
+        };
+    
+        function handler(e) {
+            var orgEv = e || window.event,
+                e = $.event.fix(orgEv);
+            e.type = "wheel";    
+            e.deltaMode = orgEv.type == "MozMousePixelScroll" ? 0 : 1;
+    
+            if(hasWheel) { // Moz
+                e.deltaX = orgEv.deltaX;
+                e.deltaY = orgEv.deltaY;
+                // Speed up if not inertial scroll
+                var s = e.deltaX+''+e.deltaY;
+                if(s.indexOf('.') !== -1) {
+                    e.deltaX *= 10;
+                    e.deltaY *= 10;
+                }
+            }
+            else {
+                e.deltaY = - 1/4 * orgEv.wheelDelta; // IE + webkit
+                e.deltaX = orgEv.wheelDeltaX ? - 1/40 * orgEv.wheelDeltaX : 0; // webkit
+            }
+            return ($.event.dispatch || $.event.handle).call(this, e);
+        }
+    })();
+
+
     
     
     // Todo: don't fiddle with the global jquery
@@ -174,10 +244,10 @@ define([
                         this.focus(); 
                     }, this), 1);
                     this.focus();
-                    e.stopPropagation();
+                    // e.stopPropagation();
                 });
                 if($.browser.ltie8) {
-                    this.hideFocus = true;                                    
+                    this.hideFocus = true;
                     $(this).bind('focus', function(e) { $(e.target).addClass('focus'); });
                     $(this).bind('blur', function(e) { $(e.target).removeClass('focus'); });
                 }
@@ -206,9 +276,9 @@ define([
                 el = this;
             $(el).toggleClass('selected');
             var timer = setInterval(function() {
-                $(el).toggleClass('selected');
+                $(el).toggleClass('selected', (count+1) % 2 == 0);
                 count++;
-                if(count == 2) {
+                if(count == 3) {
                     clearInterval(timer);
                     callback();
                 }
@@ -345,38 +415,31 @@ define([
         window.scrollTo(x, y);
     };
     
-    // $.fn.scrollMeOnly = function() {
-    //     this.on('mousewheel DOMMouseScroll', function(e) {
-    //         var scrollTo = null;
-    //         if(e.type == 'mousewheel')
-    //             scrollTo = (e.originalEvent.wheelDelta * -1);
-    //         else if(e.type == 'DOMMouseScroll')
-    //             scrollTo = 40 * e.originalEvent.detail;
-    //         
-    //         if(scrollTo) {
-    //             e.preventDefault();
-    //             $(window).scrollTop(scrollTo + $(window).scrollTop());
-    //         }
-    //     });
-    // };
-
     $.fn.scrollMeOnly = function() {
-        $(this).bind('mousewheel DOMMouseScroll', function(e) {
-            // e.stopPropagation();
-               // e.preventDefault();
-               // e.cancelBubble = false;
-            var t = e.target;
-            var reachedBottom = (t.scrollTop + $(t).height()) >= e.target.scrollHeight - 5;
-            var isScrollingDown = e.wheelDelta < 0;
-            // console.log('Scroll top: ', e.target.scrollTop, e.target.scrollHeight, $(e.target).height());
-
-            if(reachedBottom && isScrollingDown) {
-                e.preventDefault();
-                return false;                    
-            }
+        this.on('wheel', function(e) {
+            e.preventDefault();
+            e.currentTarget.scrollTop += e.deltaY;
         });
+        return this;
     };
+    
+    $.fn.scrollIntoView = function(alignWithTop, scrollable) {
+        var el = scrollable || this.offsetParent,
+            item = this[0],
+            scrollTop = el.scrollTop;
+        if(!item) 
+            return;
 
+        if(alignWithTop) {
+            if(item.offsetTop < scrollTop)
+                el.scrollTop = item.offsetTop;
+        }
+        else {
+            var height = $(this).outerHeight();
+            if(item.offsetTop + height > el.clientHeight + scrollTop)
+                el.scrollTop = item.offsetTop - el.clientHeight + height;
+        }
+    };
 
     $.fn.box = function() {
         return {
@@ -399,6 +462,23 @@ define([
                 });
         });
     };
+
+
+    function tabChainTabKeyDown(e) {
+        if(e.altKey || e.ctrlKey || e.metaKey)
+            return;
+        var set = $(e.currentTarget).find('*:tabable'),
+            index = set.index(e.target),
+            next = set[index + (e.shiftKey ? -1 : 1)];        
+        (next || set[e.shiftKey ? set.length-1 : 0]).focus();
+        e.preventDefault();
+    }
+
+    $.fn.tabChain = function(options) {
+        this.each(function() {
+            $(this).on('keydown tab', null, tabChainTabKeyDown); 
+        });        
+    }
 
 
     /*
@@ -445,10 +525,24 @@ define([
 
     $.fn.reverse = [].reverse;
 
-    $.browser.ltie8 = $.browser.msie && parseInt($.browser.version) < 8;
-    $.browser.ltie9 = $.browser.msie && parseInt($.browser.version) < 9;
-    $.browser.ltie10 = $.browser.msie && parseInt($.browser.version) < 10;
 
+
+
+
+    if($.browser.ltie8) {
+        var field = null;
+        $(document).on('mousedown', function(e) {
+            field = $(e.target).closest('.gui-radio, .gui-checkbox, .gui-btn');
+            if(field[0] && !field.closest('.gui-disabled')[0]) {
+                field.addClass('active');
+            }
+            field = field[0]
+        });
+        $(document.body).on('mouseup', function(e) {
+            if(field)
+                $(field).removeClass('active');
+        });        
+    }
 
 
     // ==============================
@@ -493,7 +587,26 @@ define([
         }),
     	focusable: function(el) {
     		return focusable(el, !isNaN($.attr(el, "tabindex")));
-    	}
+    	},
+        scrollable: function(el) {
+            var $el = $(el),
+                scroll = {'scroll': true, 'auto': true},
+                of = $el.css('overflow') in scroll,
+                ofX = $el.css('overflow-x') in scroll,
+                ofY = $el.css('overflow-y') in scroll;
+                
+            // HTML can scroll with overflow:visible
+            if(el.tagName == 'HTML') {
+                of = $el.css('overflow') != 'hidden';
+                ofX = $el.css('overflow-x') != 'hidden';
+                ofY = $el.css('overflow-y') != 'hidden';
+            }
+            if(!of && !ofX && !ofY) 
+                return false;
+            return (el.clientHeight < el.scrollHeight && (of || ofY)) || (el.clientWidth < el.scrollWidth && (of || ofX));
+        }        
+
+
     });
 
     $.fn.ieshadow = function() {
@@ -1056,14 +1169,19 @@ define([
         };  
     };
 
-    gui.isArrowKey = function(e) {
+    gui.isArrowOnlyKey = function(e) {
         if(e.shiftKey || e.altKey || e.metaKey)
             return false;
+        return gui.isArrowKey(e)
+    };
+    gui.isArrowKey = function(e) {
         var keys = gui.keys,
             key = e.which,
             arrows = [keys.LEFT, keys.RIGHT, keys.UP, keys.DOWN];    
         return _.indexOf(arrows, e.which) !== -1;
     };
+
+
 
     gui.parseQueryString = function(url) {
         var vars = {};
@@ -1129,6 +1247,18 @@ define([
                     $('<link rel="stylesheet" type="text/css"></link>').attr('href', url).appendTo(head);
             }
         });
+    };
+    
+    gui.preventDefault = function(e) {
+        e.preventDefault();
+    };
+
+    gui.mouseOffset = function(e, el) { 
+        var offset = $(el || e.target.offsetParent).offset(); 
+        return {
+            left: e.pageX - offset.left,
+            top: e.pageY - offset.top
+        };
     };
 
 

@@ -1088,7 +1088,9 @@ define([
     var Checkbox = Backbone.View.extend({
         className: 'gui-checkbox',
         events: {
-            'click': 'onClick'
+            'click': 'onClick',
+            'selectstart': 'onSelectStart',
+            'mousedown': 'onMouseDown'
         },
         hotkeys: {
             'keydown space': 'onSpaceKeyDown',
@@ -1098,24 +1100,23 @@ define([
             tabindex: 0
         },
         defaultmodel: BoolModel,
-        _nativeType: 'checkbox',
     
         initialize: function(config)  {
             this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config);
             this.listenTo(this.model, 'change', this.render, this);
             // this.$el.attr(this.attributes || {}).addClass(this.className);
+            if($.browser.ltie8)              
+                this.$el.iefocus();
         },
         render: function() {
             this.$el.toggleClass('gui-checked', this.model.get('value'));
-            
-            if($.browser.ltie9) {
-                var checked = this.model.get('value') ? 'checked': '';
-                this.$el.html('<input type="'+this._nativeType+'" unselectable="on" tabindex="-1" '+checked+'/>'+(this.model.get('text') || ''));
-            }
-            else
-                this.$el.html(this.model.get('text') || '');
+            this.$el.html(this.model.get('text') || '');
             this.$el.attr('name', this.model.get('name'));
-            
+            this.el.hideFocus = true;
+            if($.browser.ltie8) {
+                this.$el.prepend('<i></i>');
+                this.$el.on('selectstart', base.preventDefault);                
+            }            
             return this;
         },
         onClick: function(e) {             
@@ -1131,6 +1132,14 @@ define([
         onSpaceKeyDown: function(e) {
             this.$el.addClass('active');
             e.preventDefault();
+        },
+        onSelectStart: function(e) {
+            e.preventDefault();
+        },
+        onMouseDown: function(e) {
+            if(!this.$el.closest('.gui-disabled')[0]) {
+                this.$el.addClass('active');
+            }
         }
     });
 
@@ -1183,13 +1192,14 @@ define([
 
     var Radio = Checkbox.extend({
         className: 'gui-radio',
-        _nativeType: 'radio',
         initialize: function(config)  {
             this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config);
             this.listenTo(this.model, 'change', this.render, this);
 
             this.$el.html('<i>&middot;</i>');
             this.$el.attr(this.attributes || {}).addClass(this.className);
+            if($.browser.ltie8)              
+                this.$el.iefocus();            
         },
         onClick: function(e) {             
             e.preventDefault();
@@ -1271,14 +1281,12 @@ define([
             this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config, {parse:true});
             // Pass this.model into the textfield
             this.textfield = new Text({model: this.model});
-
             this.listenTo(this.textfield, 'fieldblur', this.onTextFieldBlur, this),
-            this.$el.append('<button class="calendar" tabindex="-1"></button>');
-            this.$el.append(this.textfield.el);            
             this.listenTo(this.model, 'change', this.onModelChange, this);
         },
         render: function() {
-            this.textfield.render();
+            this.$el.empty().append('<button class="calendar" tabindex="-1"></button>');
+            this.$el.append(this.textfield.render().el);
             this.$el.toggleClass('gui-disabled', !this.model.get('enabled'));
             this.$el.toggleClass('invalid', !!this.model.validationError);
             return this;
@@ -1301,6 +1309,7 @@ define([
                 this.datepicker.alignTo(this.$('button.calendar'), {my: 'left top', at: 'left bottom'});
                 this.datepicker.$el.on('keydown', _.bind(this.onDatePickerKeyDown, this));
                 this.datepicker.$el.on('focusleave', _.bind(this.hideDatePicker, this));
+                this.datepicker.$el.addClass('flying');
             }
             return this.datepicker;
         },

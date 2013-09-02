@@ -67,6 +67,9 @@ define([
         render: function() {
             this.$el.html(this._template({title: this.title}));
 
+            if($.browser.ltie8) {
+                this.$('>footer button').iefocus();
+            }
             if($.browser.ltie9)
                 this.$el.ieshadow();
             if($.browser.ltie10)
@@ -114,9 +117,9 @@ define([
             this.bringToTop();
         },
         onHeaderDragDown: function(e, drag) {
-            var offset = $(e.currentTarget.offsetParent).offset(); 
-            drag.offsetx = e.pageX - offset.left;
-            drag.offsety = e.pageY - offset.top;
+            var offset = gui.mouseOffset(e);
+            drag.offsetx = offset.left;
+            drag.offsety = offset.top;
         },
         onHeaderDragInit: function(e, drag) {
             drag.only();

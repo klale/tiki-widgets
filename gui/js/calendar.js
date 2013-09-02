@@ -56,8 +56,8 @@ exp.MonthCalendar = Backbone.View.extend({
     ),
     templateHeader: _.template(''+
         '<div class="monthname"><%= monthname %>, <%= year %></div>'+
-        '<div class="prevmonth"></div>'+
-        '<div class="nextmonth"></div>'        
+        '<div class="prevmonth">&#xf060;</div>'+
+        '<div class="nextmonth">&#xf061;</div>'        
     ),
     templateDay: _.template(''+
         '<td class="<%= cls %>" data-ymd="<%= ymd %>">'+
@@ -116,7 +116,7 @@ exp.MonthCalendar = Backbone.View.extend({
         }));
     
         // Add the weekday names
-        var tr = table.find('thead').append('<tr class="weekdays"></tr>');                
+        var tr = $('<tr class="weekdays"></tr>').appendTo(table.find('thead'));                
         for(var i=0,days=[1,2,3,4,5,6,0]; i<days.length; i++) {
             tr.append($('<th>'+moment.weekdaysShort[days[i]]+'</th>'));
         }

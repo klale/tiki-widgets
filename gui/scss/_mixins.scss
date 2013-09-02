@@ -9,7 +9,7 @@ $selected_grad_focused: #638CF5 #2464F3;
 
 @mixin inline-block() {
     display: inline-block;
-    .ie7 & {
+    .gui-ie7 & {
         zoom: 1;
         *display: inline;
     }
@@ -60,7 +60,7 @@ $selected_grad_focused: #638CF5 #2464F3;
     i { 
         display: none; 
     }
-    .ie7 & i {
+    .gui-ie7 & i {
         font-style: normal;
         display: inline;
     }
@@ -197,7 +197,7 @@ $selected_grad_focused: #638CF5 #2464F3;
         $start 0%,
         $stop 100%);
     
-    .ie7 &, .ie8 & {
+    .gui-ie7 &, .ie8 & {
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{$start}', endColorstr='#{$stop}') chroma(color=#000000);                                   
         background-color: $start;
     }
@@ -315,9 +315,15 @@ $selected_grad_focused: #638CF5 #2464F3;
         color: #555;
         text-shadow: lighten($end, 70%) 0px 1px;        
     }
-    &:not(.btn-disabled):active {
-//        @include gradient(darken($end, 10%), darken($start, 10%));
+    &:not(.btn-disabled):active,
+    &:not(.btn-disabled).active {
+        @include gradient(darken($end, 10%), darken($start, 10%));
         @include box-shadow(inset 0px 2px 6px rgba(0, 0, 0, 0.4));        
+    }
+    .gui-ie7 & {
+        &.active {
+            @include gradient(darken($end, 10%), darken($start, 10%));                  
+        }
     }
 }
 
@@ -419,7 +425,7 @@ $selected_grad_focused: #638CF5 #2464F3;
     cursor: default;
     margin-bottom: 4px;
 
-    .ie7 & {
+    .gui-ie7 & {
         zoom: 1;
         *display: inline;
         padding: 1px 10px 3px 10px;

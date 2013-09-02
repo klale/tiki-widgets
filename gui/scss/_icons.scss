@@ -27,8 +27,8 @@ Instead of a list of all class selectors,
 you can use the generic selector below, but it's slower:
 [class*="icon-"]:before {
 */
-.icon, .icon-download:before, .icon-lock:before, .icon-unlocked:before, .icon-home:before, .icon-user:before, .icon-users:before, .icon-user-2:before, .icon-spinner:before, .icon-cog:before, .icon-pie:before, .icon-stats:before, .icon-bars:before, .icon-bars-2:before, .icon-clock:before, .icon-folder:before, .icon-folder-open:before, .icon-tag:before, .icon-tags:before, .icon-link:before, .icon-eye:before, .icon-flickr:before, .icon-table:before, .icon-minus:before, .icon-plus:before, .icon-play:before, .icon-info:before, .icon-warning:before, .icon-signup:before, .icon-bookmark:before, .icon-bookmarks:before, .icon-calendar:before, .icon-new-tab:before, .icon-console:before, .icon-filter:before, .icon-arrow-up:before, .icon-arrow-down:before, .icon-close:before, .icon-checkmark:before, .icon-enter:before, .icon-exit:before, .icon-flag:before, .icon-attachment:before, .icon-cancel-circle:before, .icon-checkmark-circle:before, .icon-loop:before {
-	font-family: 'icons';
+.icon, .icon-download, .icon-lock, .icon-unlocked, .icon-home, .icon-user, .icon-users, .icon-user-2, .icon-spinner, .icon-cog, .icon-pie, .icon-stats, .icon-bars, .icon-bars-2, .icon-clock, .icon-folder, .icon-folder-open, .icon-tag, .icon-tags, .icon-link, .icon-eye, .icon-flickr, .icon-table, .icon-minus, .icon-plus, .icon-play, .icon-info, .icon-warning, .icon-signup, .icon-bookmark, .icon-bookmarks, .icon-calendar, .icon-new-tab, .icon-console, .icon-filter, .icon-arrow-up, .icon-arrow-down, .icon-close, .icon-enter, .icon-exit, .icon-flag, .icon-attachment, .icon-cancel-circle, .icon-checkmark-circle, .icon-loop, .icon-checkmark, .icon-alarm, .icon-undo, .icon-filter-2, .icon-tree, .icon-remove, .icon-circle, .icon-chevron-left, .icon-chevron-right, .icon-chevron-up, .icon-chevron-down, .icon-sort, .icon-arrow-left, .icon-arrow-right, .icon-arrow-up-2, .icon-arrow-down-2 {
+	font-family: 'icomoon';
 	speak: none;
 	font-style: normal;
 	font-weight: normal;
@@ -148,9 +148,6 @@ you can use the generic selector below, but it's slower:
 .icon-close:before {
 	content: "\e0fd";
 }
-.icon-checkmark:before {
-	content: "\e0fe";
-}
 .icon-enter:before {
 	content: "\e103";
 }
@@ -172,5 +169,51 @@ you can use the generic selector below, but it's slower:
 .icon-loop:before {
 	content: "\e11d";
 }
-
-
+.icon-checkmark:before {
+	content: "\e0fe";
+}
+.icon-alarm:before {
+	content: "\e001";
+}
+.icon-undo:before {
+	content: "\e002";
+}
+.icon-filter-2:before {
+	content: "\e003";
+}
+.icon-tree:before {
+	content: "\e004";
+}
+.icon-remove:before {
+	content: "\e005";
+}
+.icon-circle:before {
+	content: "\f111";
+}
+.icon-chevron-left:before {
+	content: "\f053";
+}
+.icon-chevron-right:before {
+	content: "\f054";
+}
+.icon-chevron-up:before {
+	content: "\f077";
+}
+.icon-chevron-down:before {
+	content: "\f078";
+}
+.icon-sort:before {
+	content: "\f0dc";
+}
+.icon-arrow-left:before {
+	content: "\f060";
+}
+.icon-arrow-right:before {
+	content: "\f061";
+}
+.icon-arrow-up-2:before {
+	content: "\f062";
+}
+.icon-arrow-down-2:before {
+	content: "\f063";
+}
