@@ -1138,6 +1138,24 @@ define([
     
     };
 
+    gui.makePreText = function(plaintext) {
+        var html,
+            plaintext = plaintext.trim();
+        
+        if($.browser.webkit || $.browser.chrome) {
+            // Wrap each textline inside <div>line</div>
+            html = plaintext.split('\n').map(function(item) { return '<div>'+(item || '&nbsp;')+'</div>'; }).join('');
+        }
+        else if($.browser.msie) {
+            html = plaintext.split('\n').map(function(item) { return '<p>'+item+'</p>'; }).join('');
+        }
+        else {
+            html = plaintext.replace('/\n/g', '<br>');
+        }
+        return html
+        
+    }
+
     $.fn.getOffsetPadding = function() {
         var el = this[0],
             x = 0,
