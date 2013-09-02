@@ -936,24 +936,18 @@ define([
             contentEditable: true
         },
         mixins: [base.ChildView],
-    
-        interpret: function(htmlvalue) {
-            // Downgrade. Convert the html to plain text with newlines        
-            var el = $('<div></div>').append(htmlvalue);        
-            // Webkit produces:
-            //     foo
-            //     <div>bar</div>
-            //     <div>fep</div>
-            // Wrap the first textnode in a div as well.
-            if($.browser.chrome || $.browser.webkit) {
-                var contents = el.contents();
-                if(contents.length && contents[0].nodeType == 3) {
-                    $(contents[0]).replaceWith('<div>'+contents[0].nodeValue+'</div>');
-                }
-            }
-            var text = el.getPreText(); 
-            return text;
+
+        render: function() {
+            var renderer = this.model.get('renderer'),
+                name = this.model.get('name'),
+                html = renderer ? renderer(this) : this.model.getFormattedValue();
+
+            this.$el.attr('name', name).html(base.makePreText(html));
+            this.$el.toggleClass('invalid', !!this.model.validationError);
+            this.$el.toggleClass('gui-disabled', !this.model.get('enabled'));
+            return this;
         },
+    
         wrapElement: function(el) {
             this._orig_el = this.el;
             this._orig_attr = $(el).getAllAttributes();
@@ -970,6 +964,32 @@ define([
             if(this.$el.is('.empty'))
                 this.$el.removeClass('empty').html('');
         },
+        onBlur: function(e) {
+            var el = $('<div></div>').append(this.$el.html());        
+            // Webkit produces:
+            //     foo
+            //     <div>bar</div>
+            //     <div>fep</div>
+            // Wrap the first textnode in a div as well.
+            if($.browser.chrome || $.browser.webkit) {
+                var contents = el.contents();
+                if(contents.length && contents[0].nodeType == 3) {
+                    $(contents[0]).replaceWith('<div>'+contents[0].nodeValue+'</div>');
+                }
+            }
+            
+            var text = el.getPreText(),
+                wasInvalid = !!this.model.validationError;
+
+            this.model.set({'value': text}, {validate: true});
+            if(wasInvalid && !this.model.validationError)
+                // there is a small change the new value above is the same as
+                // before making it invalid, not triggering change -> render.
+                this.render();
+
+
+            this.trigger('fieldblur');
+        },        
         onReturnKeyDown: function(e) {
             e.stopPropagation();
         }
