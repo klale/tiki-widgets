@@ -395,7 +395,7 @@ define([
             'keydown': 'onKeyDown',
             'mouseup': 'saveRange'
         },
-        mixins: [form.Field, tools.InterceptPaste],
+        mixins: [tools.InterceptPaste],
     
         onMouseDown: function(e) {
             e.stopPropagation();
@@ -555,7 +555,7 @@ define([
             'dragstart': 'onDragStart',
             'drop': 'onDrop'
         },
-        mixins: [form.Field, tools.InterceptPaste],
+        mixins: [tools.InterceptPaste],
 
 
         onDragStart: function(e) {        
@@ -620,7 +620,6 @@ define([
                 // this.html = $(config.el).html();
                 config.value = $(config.el).html().trim();
             }
-            form.Field.initialize.call(this, config);
             tools.InterceptPaste.initialize.call(this);
             
             // A dict of dicts of file metadata used by FileViews if any.
