@@ -174,7 +174,6 @@ $selected_grad_focused: #638CF5 #2464F3;
         top,
         $start 0%,
         $stop 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{$start}', endColorstr='#{$stop}') chroma(color=#000000);                                   
     background-color: $start;    
 }
 
@@ -198,7 +197,6 @@ $selected_grad_focused: #638CF5 #2464F3;
         $stop 100%);
     
     .gui-ie7 &, .ie8 & {
-        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{$start}', endColorstr='#{$stop}') chroma(color=#000000);                                   
         background-color: $start;
     }
 }
