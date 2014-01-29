@@ -189,7 +189,7 @@ define([
             'keydown': '_onKeyDown',
             'click .buttons .close': 'close',         
         },
-        mixins: [base.ChildView],
+        merge: ['events'],
     
         initialize: function(config) {
             win.Window.prototype.initialize.call(this, config);
@@ -510,19 +510,19 @@ define([
         className: 'gui-editor',
         typeName: 'editor',
         template: _.template(''+
-            '<div class="toolbar">'+
-                '<ul>'+
-                    '<li><button class="section">Section</button></li>' +
-                    '<li><button class="p">P</button></li>' +
-                    '<li><button class="b">B</button></li>' +                
-                    '<li><button class="a">A</button></li>' +                
-                    '<li><button class="h1">H1</button></li>' +
-                    '<li><button class="h2">H2</button></li>' +
-                    '<li><button class="h3">H3</button></li>' +                
-                    '<li><button class="ul">UL</button></li>' +
-                    '<li><select class="code"></select></li>' +
-                    '<li><button class="viewsource">View source</button></li>' +
-                '</ul>'+
+            '<div class="btn-toolbar">'+
+                '<div class="btn-group">'+
+                    '<button class="btn btn-default btn-section">Section</button>' +
+                    '<button class="btn btn-default btn-p">P</button>' +
+                    '<button class="btn btn-default btn-b">B</button>' +                
+                    '<button class="btn btn-default btn-a">A</button>' +                
+                    '<button class="btn btn-default btn-h1">H1</button>' +
+                    '<button class="btn btn-default btn-h2">H2</button>' +
+                    '<button class="btn btn-default btn-h3">H3</button>' +                
+                    '<button class="btn btn-default btn-ul">UL</button>' +
+                    '<div class="btn-group"><select class="code"></select></div>' +
+                    '<button class="btn btn-default btn-viewsource">View source</button>' +
+                '</div>'+
             '</div>'+
             '<div class="clear">'+
                 '<div class="right">'+
@@ -537,16 +537,16 @@ define([
             'tabindex': 0,
         },
         events: {
-            'click .toolbar .section': 'onToolbarSectionClick',
-            'click .toolbar .p': 'onToolbarPClick',
-            'click .toolbar .b': 'onToolbarBClick',
-            'click .toolbar .a': 'onToolbarAClick',                
-            'change .toolbar .code': 'onToolbarCodeChange',        
-            'click .toolbar .h1': 'onToolbarH1Click',
-            'click .toolbar .h2': 'onToolbarH2Click',        
-            'click .toolbar .h3': 'onToolbarH3Click',                
-            'click .toolbar .ul': 'onToolbarULClick',
-            'click .toolbar .viewsource': 'onToolbarViewSourceClick',
+            'click .btn-section': 'onToolbarSectionClick',
+            'click .btn-p': 'onToolbarPClick',
+            'click .btn-b': 'onToolbarBClick',
+            'click .btn-a': 'onToolbarAClick',                
+            'change .code': 'onToolbarCodeChange',        
+            'click .btn-h1': 'onToolbarH1Click',
+            'click .btn-h2': 'onToolbarH2Click',        
+            'click .btn-h3': 'onToolbarH3Click',                
+            'click .btn-ul': 'onToolbarULClick',
+            'click .btn-viewsource': 'onToolbarViewSourceClick',
             'mousedown .pane': 'onMouseDown',
             'mouseup .pane': 'onMouseUp',
             'mousemove .pane': 'onMouseMove',
@@ -624,14 +624,16 @@ define([
             
             // A dict of dicts of file metadata used by FileViews if any.
             this.files = config.files;
+            this.value = config.value;
 
             this.on('paste', this.onPaste, this);
         },
         render: function() {
             this.$el.html(this.template());
+            console.log('VALUE: ', this.value)
             this.$('.pane').html(this.value);
 
-            new tools.Float({el: this.$('.toolbar')});
+            new tools.Float({el: this.$('.btn-toolbar')});
         
             // Populate code combo
             var langs = ['bash', 'xml', 'python', 'sql', 'javascript'],

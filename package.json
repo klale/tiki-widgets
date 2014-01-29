@@ -1,0 +1,16 @@
+{
+    "name": "gui",
+    "description": "A collection of GUI widgets built on top of Backbone.",
+    "keywords": [],
+    "dependencies": {
+        "underscore": ">=1.4.3",
+        "backbone": ">=0.5.3"
+    },
+    "devDependencies": {
+    },
+   "scripts": {
+    },
+    "main": "",
+    "version": "0.1.0",
+    "license": "MIT"
+}

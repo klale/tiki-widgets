@@ -1,11 +1,18 @@
-@import "_mixins.scss";
-@import "_icons.scss";
-@import "_highlight.scss";
-@import "_buttons.scss";
-@import "_editor.scss";
-@import "_form.scss";
-@import "_tools.scss";
-@import "_win.scss";
+@import "mixins";
+@import "icons";
+@import "highlight";
+@import "buttons";
+@import "editor";
+@import "form";
+@import "tools";
+@import "win";
+
+
+
+
+
+
+
 
 
 
@@ -16,30 +23,30 @@
 .gui-menu {
     display: block;
     min-width: 100px;
-    position: absolute; 
+    position: absolute;
     color: #444;
-    font-size: 11px;
     text-align: left;
-    min-width: 150px;    
+    min-width: 150px;
     padding: 3px 0px;
     line-height: 13px;
     border-radius: 3px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);    
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     z-index: 500;
-    background-color: #fff;    
+    background-color: #fff;
     outline: none;
+
 
     // IE8 bug when using max-height with overflow:auto.
     // A workaround is to use overflow-y instead.
     overflow: hidden;
-    overflow-y: auto;    
-    
-    @include selectables();
-    
+    overflow-y: auto;
 
-    > ul { 
+    @include selectables();
+
+
+    > ul {
         margin: 0;
-        list-style-type: none;        
+        list-style-type: none;
         > li {
             @include user-select(none);
             cursor: default;
@@ -48,12 +55,12 @@
             padding: 4px 15px;
             color: #444;
             display: block;
-            text-decoration: none;        
+            text-decoration: none;
             position: relative;
-        
+
             &.disabled {
                 color: #aaa;
-            }        
+            }
             &.submenu > i {
                 display: block;
                 position: absolute;
@@ -127,9 +134,9 @@
         right: 5px;
     }
     td,tr.weekdays th {
-        border: 1px solid #ddd;        
-        white-space: nowrap;    
-        padding: 0;        
+        border: 1px solid #ddd;
+        white-space: nowrap;
+        padding: 0;
     }
     td {
 
@@ -147,9 +154,9 @@
                 text-align: right;
                 color: #999;
                 font-size: 11px;
-            }            
+            }
         }
-        
+
         &.gray > div {
             color: #aaa;
         }
@@ -176,32 +183,32 @@
 /* = DatePicker = */
 /* ============== */
 .gui-datepicker {
-    @include user-select(none);    
+    @include user-select(none);
     @include selectables();
     width: 250px;
 
     background-color: #fff;
     z-index: 1000;
     cursor: default;
-    
+
     &.flying {
-        // Todo: $.position thinks .gui-datepicker has position:static, causing it 
-        // to add postion:relative as an inline style.        
+        // Todo: $.position thinks .gui-datepicker has position:static, causing it
+        // to add postion:relative as an inline style.
         position: absolute !important;
         left: 0px;
-        top: 0px;        
-        @include box-shadow(0 2px 5px rgba(0,0,0,0.3));        
-        @include border-radius(3px);        
+        top: 0px;
+        @include box-shadow(0 2px 5px rgba(0,0,0,0.3));
+        @include border-radius(3px);
         .ds {
             display: block;
         }
     }
 
-    
+
     &:focus {
         outline: none;
     }
-    
+
     td.day > div {
         min-height: 20px;
         position: relative;
@@ -246,10 +253,14 @@
             display: inline-block;
             margin-left: 20px;
             box-sizing: border-box;
+            &[name=value2] {
+                display: none;
+            }
         }
         >*:first-child {
             margin-left: 0px;
         }
+
     }
     .gui-form > * {
 //        display: inline-block;
@@ -258,14 +269,15 @@
         overflow: hidden;
         float: left;
     }
-    
+
+
 
     margin-bottom: 20px;
     margin-top: 20px;
     .buttons {
         margin-top: 10px;
     }
-    .tools { 
+    .tools {
         display: inline-block;
         button {
             @include button();
@@ -280,7 +292,7 @@
             background: none;
             padding-left: 25px;
             position: relative;
-            
+
             &:before {
                 z-index: 1;
                 content: '';
@@ -307,7 +319,7 @@
     position: relative;
 
     &:focus tbody tr.selected td,
-    &:focus tbody tr td.selected {    
+    &:focus tbody tr td.selected {
         background-color: #3B77D5;
         color: #fff;
         a {
@@ -327,17 +339,17 @@
         outline: none;
 
         td {
-            border-top: 1px solid #fff;
+//            border-top: 1px solid #fff;
         }
 
-        thead {            
+        thead {
             th {
                 padding-right: 8px;
                 padding-bottom: 5px;
                 color: #777;
                 position: relative;
                 text-align: left;
-                
+
                 .resize {
                     float: right;
                     cursor: col-resize;
@@ -355,28 +367,28 @@
 
         }
         tbody {
-            tr.odd td { 
+            tr.odd td {
 //                background-color: #f4f4f4;
             }
             td > div {
                 padding: 2px 20px 2px 0;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                white-space: nowrap;                
+                white-space: nowrap;
             }
             tr:first-child td {
-                border-top: 1px solid #ccc;
+//                background-color: rgba(0,0,0,0.3);
             }
 //            tr.selected td {
 //                background: #A6A6A6;
 //                color: #fff;
 //            }
             tr:nth-child(2n) td {
-                background-color: #f5f5f5;
+                background-color: rgba(0,0,0,0.1);
             }
 
             tr.selected td,
-            tr td.selected {    
+            tr td.selected {
                 background-color: #B6B6B6;
                 color: #fff;
                 a {
@@ -387,7 +399,7 @@
                 }
             }
         }
-    }    
+    }
 }
 .gui-table-column-ghost {
     background-color: rgba(255,255,255,0.8);
@@ -429,38 +441,38 @@
     }
     .ds {
         position: absolute;
-        overflow: hidden;        
+        overflow: hidden;
     }
     /* Left, right */
     .ds_l,
-    .ds_r {   
-        top: 20px;    
-        bottom: 20px;    
-        width: 20px;     
+    .ds_r {
+        top: 20px;
+        bottom: 20px;
+        width: 20px;
         overflow: hidden;
-    }    
+    }
     .ds_l {
         left: -20px;
         background: url(../img/ds_vert.png) repeat-y;
     }
     .ds_r {
         right: -20px;
-        background: url(../img/ds_vert.png) repeat-y top right;    
+        background: url(../img/ds_vert.png) repeat-y top right;
     }
     /* Bottom */
     .ds_bl,
     .ds_br {
         width: 40px;
         height: 50px;
-        bottom: -30px;    
+        bottom: -30px;
     }
     .ds_bl {
         left: -20px;
-        background: url(../img/ds_corners.png) no-repeat bottom left;    
+        background: url(../img/ds_corners.png) no-repeat bottom left;
     }
     .ds_br {
         right: -20px;
-        background: url(../img/ds_corners.png) no-repeat bottom right;    
+        background: url(../img/ds_corners.png) no-repeat bottom right;
     }
     .ds_b {
         bottom: -30px;
@@ -478,11 +490,11 @@
     }
     .ds_tl {
         left: -20px;
-        background: url(../img/ds_corners.png) no-repeat top left;    
+        background: url(../img/ds_corners.png) no-repeat top left;
     }
     .ds_tr {
         right: -20px;
-        background: url(../img/ds_corners.png) no-repeat top right;    
+        background: url(../img/ds_corners.png) no-repeat top right;
     }
     .ds_t {
         left: 20px;

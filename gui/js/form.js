@@ -2,40 +2,17 @@ define([
     'jquery', 
     'underscore',
     'backbone',
-    'globalize/sv_se',
+    'globalize/globalize',
     'moment',
-    './base',
-    './calendar',
-    './menu',
-    './tools',    
-    'iframetransport'
-], function($, _, Backbone, Globalize, moment, base, calendar, menu, tools) {
+
+    'gui/base',
+    'gui/calendar',
+    'gui/menu',
+    'gui/tools',    
+    'gui/traits',        
+], function($, _, Backbone, Globalize, moment, base, calendar, menu, tools, traits) {
 
 
-    /*
-    HTML4
-    <input type="text">    
-    <input type="checkbox">	
-    <input type="radio">
-    <input type="password">
-    <input type="file">	
-    <input type="submit">	
-    <select>	
-    
-    HTML5
-    <input type="email">
-    <input type="url">
-    <input type="search">
-    <input type="color">
-    <input type="range" min="0" max="10" step="2" value="6">
-    
-    <input type="date">
-    <input type="datetime">
-    <input type="datetime-local">
-    <input type="month">
-    <input type="week">
-    <input type="time">    
-    */
 
 
 
@@ -44,34 +21,63 @@ define([
     Utility function for creating a Field instance from
     a DOM element.
     */
-    function createFromElement(klass, el) {
-        var attr = $(el).getAllAttributes();
-        $(el).attr(klass.prototype.attributes || {});
-        $(el).addClass(klass.prototype.className);
-        return new klass({
-            el: el,
-            name: attr.name,
-            value: attr.value,
-            required: attr.required
-        },{parse: true});
-    }
+    // function createFromElement(klass, el) {
+    //     var attr = $(el).getAllAttributes();
+    //     $(el).attr(klass.prototype.attributes || {});
+    //     $(el).addClass(klass.prototype.className);
+    //     return new klass({
+    //         el: el,
+    //         name: attr.name,
+    //         value: attr.value,
+    //         required: attr.required
+    //     },{parse: true});
+    // }
 
+
+    // =========
+    // = utils =
+    // =========
+    var attackElement = function(el) {
+        // Insert my element after the attacked element
+        var el = $(el)
+        this.$el.insertAfter(el);
+        // Detach the attacked element
+        el.detach();
+        
+        this._detachedEl = el;
+        this.$el.addClass(el[0].className)
+    };
+    var leaveElement = function() {
+        // restore this.el to what it looked like before
+        // attacking it.  
+        this._detachedEl.html(this.model.getValue());
+        this._detachedEl.insertBefore(this.el);
+        this.$el.detach();
+    };
 
 
 
     // ==========
     // = Models =
     // ==========
-    var FieldModel = Backbone.Model.extend({
+    var FieldModel = traits.Model.extend({
+        traits: {
+            type: new traits.String(),
+            enabled: new traits.Bool(),
+        },
         defaults: {
             type: null,
-            name: null,
             value: null,            
             enabled: true,
             format: ''
         },
+        merge: ['defaults', 'traits'],        
+        
         format: function(value) {
             return value;
+        },
+        getValue: function() {
+            return this.get('value')
         },
         getFormattedValue: function() {
             return this.format(this.get('value'));
@@ -82,113 +88,243 @@ define([
             elements of `el` */
             var attr = $(el).getAllAttributes();
             return new this({
+                id: attr.name,
                 type: attr.type,
-                name: attr.name,
-                value: attr.value,
+                value: attr.value || $(el).html(),
                 enabled: attr.enabled == 'false' ? false : true,
+                // Todo: move format up
                 format: attr.format
             });
         }
     });
     
-    var BoolModel = FieldModel.extend({
-        set_value: function(value, attrs) {
-            attrs['value'] = !!value;
+    var BoolModel = FieldModel.extend({      
+        traits: {
+            value: new traits.Bool()
         }
     });
-    
-    var StringModel = FieldModel.extend({
+
+    var StringModel = FieldModel.extend({      
+        traits: {
+            value: new traits.String()
+        }
     });
 
-
-    var NumberModel = FieldModel.extend({
-        validate: function(attrs, options) {
-            if(attrs.value === null)
-                return;
-            else if(_.isNaN(attrs.value))
-                return "Not a number";
+    var NumberModel = FieldModel.extend({      
+        traits: {
+            value: new traits.Number(),
+            format: new traits.String()
         },
+        defaults: {
+            format: 'n'
+        },
+        
         format: function(value) {
-            return Globalize.format(value || '', this.get('format'));
-        },
-        set_value: function(value, attrs) {
-            if(!value && value !== 0) 
-                attrs['value'] = null;
-            else if(_.isString(value) && value)
-                attrs['value'] = Globalize.parseFloat(value); // returns NaN on fail.
-            else
-                attrs['value'] = _.isNumber(value) ? value : NaN;
+            return Globalize.format(value || '', this.get('format'));            
         }
-    });    
+    });
+
+    
+    var DateModel = FieldModel.extend({
+        /* Does not know about time and time zones */
+        traits: {
+            value: new traits.Date(),
+            format: new traits.String()            
+        },
+        defaults: {
+            format: 'd'
+        },
+        
+        format: function(value) {
+            return Globalize.format(value || '', this.get('format'));            
+        },
+        getValue: function() {
+            var val = this.get('value');
+            if(val)
+                return this.traits.value.toJSON(this.get('value'));
+        }
+    });
 
     var DateTimeModel = FieldModel.extend({
-        defaults: function() {
-            // Apply a default date format
-            return _.extend({}, _.result(FieldModel.prototype, 'defaults'), {
-                format: 'd'
-            });
+        traits: {
+            value: new traits.DateTime(),
+            format: new traits.String()            
         },
-        validate: function(attrs, options) {
-            if('value' in attrs) {
-                var date = attrs.value;
-                if(date === null)
-                    return; // ok
-                else if(date === false) 
-                    return 'Not a date';                
-                else if(date instanceof window.Date)
-                    return date.valueOf() ? undefined : 'Not a date';
-                else
-                    return 'Not a date';    
-            }
-        },        
+        defaults: {
+            format: 'd'
+        },
+        
         format: function(value) {
-            return Globalize.format(value, this.get('format'));
-        },        
-        set_value: function(v, attrs) {     
-            if(!v)
-                attrs['value'] = null;
-            else {            
-                // try to parse it
-                var m = tools.interpretdate(v, this.get('value'));
-                attrs['value'] = m; // a window.Date or `false` 
-            }
+            return Globalize.format(value || '', this.get('format'));            
         },
-        parse: function(json) {
-            if(json.value) {
-                var m = tools.interpretdate(json.value);
-                if(m) json.value = m;
-            }
-            return json;
-        },
-        // Override to change the serialization format
-        toJSON: function() {
-            var json = _.clone(this.attributes);
-            if(json.value)
-                json.value = json.value.toISOString();
-            return json;
+        getValue: function() {
+            return this.traits.value.toJSON(this.get('value'));
         }
     });
 
 
+    var SelectionModel = FieldModel.extend({
+        /*
+        var sm = new SelectionModel({
+            name: 'favcolor',
+            options: [
+                {id: 'red', text: 'Red'},
+                {id: 'green', text: 'Green'}
+                {id: 'blue', text: 'Blue'}
+            ],
+            value: [{id: 'blue', text: 'Blue'}]
+        })
+
+        // Supports multiple formats for "options" and "value":
+        sm.set('value', [{id:'123'}, {id:'456'}])
+        sm.set('value', ['123', '456'])
+        sm.set('value', '123')
+        sm.set('value', [])
+        sm.set('value', new Collection(..))
+
+        // Play with options and value as you like
+        sm.set('options', [{id:'foo', text: 'Foo'}, ...])
+        sm.get('options').add({id: 'bar', text: 'Bar'})
+        sm.get('value').add('bar')
+        */
+        // traits: function() {
+        //     var options = new traits.Collection();
+        //     return {
+        //         options: options, 
+        //         value: new traits.Subset({source: 'options'})
+        //     };
+        // },
+        traits: {
+            options: new traits.Collection(),
+            value: new traits.Subset({source: 'options'})
+        },
+
+        getValue: function() {
+            var val = this.get('value');
+            if(val)
+                return val.pluck('id');
+        },
+    });
+
+
+
+    var TokenStringModel = FieldModel.extend({
+        traits: {
+            tokens: new traits.Collection(),
+            value: new traits.TokenString({source: 'tokens'})
+        },
+        getValue: function() {
+            return this.get('value')
+        }        
+
+    })
+
+
+    var SingleSelectionModel = FieldModel.extend({
+        /*    
+        var sm = new SingleSelectionModel({
+            id: 'favcolor',
+            options: [
+                {id: 'red', text: 'Red'},
+                {id: 'green', text: 'Green'},
+                {id: 'blue', text: 'Blue'}
+            ],
+            value: 'blue'
+        })
+        */
+        // traits: function() {
+        //     var options = new traits.Collection();
+        //     return {
+        //         options: options,
+        //         value: new traits.Subset({source: options})
+        //     }
+        // },
+        traits: {
+            options: new traits.Collection(),
+            value: new traits.Subset({source: 'options'})
+        },
+        getValue: function() {
+            var val = this.get('value');
+            if(val && val.models.length)
+                return val.models[0].id
+        }
+    },{
+        createFromElement: function(el) {
+            /* Construct a model from attributes and possibly child <br/>
+            elements of `el` */
+
+            var attr = $(el).getAllAttributes();
+            // console.log('IM HERE: ', eval(attr.options))            
+            var aa = new this({
+                id: attr.name,
+                options: attr.options ? eval(attr.options) : null,
+                type: attr.type,
+                // value: attr.value,
+                enabled: attr.enabled == 'false' ? false : true,
+                // Todo: move format up
+                // options: new Backbone.Collection(eval(attr.options)),
+                // format: attr.format
+            });
+            
+            // aa.get('options').reset(eval(attr.options))
+            // if(attr.value)
+            //     aa.set('value', attr.value)
+            // 
+            // 
+            // debugger
+            return aa
+        }
+    });
+    window.SingleSelectionModel = SingleSelectionModel
+
     var ModelModel = FieldModel.extend({
-        mixins: [base.ChildModel],
+        /*
+        Underlying model for a complex field.
+        Has the ususal properties like .name, .type, .enabled, etc
+        But its .value is not a scalar but is itself a model.
+
+        var CoolFieldModel = Backbone.Model.extend({});
+
+        var MyCoolField = Backbone.View.extend({
+            defaultmodel: form.ModelModel(CoolFieldModel)
+        });
+
+
+        // Create a ModelModel
+        var MyModelModel = ModelModel(CoolFieldModel)
+        var foo = new MyModelModel()
+        foo.set('value', {foo: 123, bar: 456});
+
+        */        
         constructor: function() {
-            if (this instanceof Backbone.Model)
+            if (this && this instanceof Backbone.Model) {
                 Backbone.Model.prototype.constructor.apply(this, arguments);            
-            else
+            }
+            else {
                 return ModelModel.extend({
-                    valuemodel: arguments[0]
+                    valuemodel: arguments[0] || Backbone.Model
                 });
+            }
         },
-        defaults: function() {
-            return {
-                value: new this.valuemodel(null, {parse:true})
-            };
-        },
+        // UPDATE: defaults is run in initcls before an instance is created
+        // (due to merge: ['defaults', ..] in FieldModel above)
+        // defaults: function() {
+        //     return {
+        //         value: new this.valuemodel(null, {parse:true})
+        //     };
+        // },
         validate: function(attrs, options) {  
             if(!(attrs.value instanceof this.valuemodel))
                 return "Value is not instance of "+this.valuemodel;
-        },              
+        },
+        getValue: function() {
+            /* Serialize to plain json */
+            return _.object(_.map(this.get('value').attributes, function(val, key) {
+                if(val.getValue) 
+                    val = val.getValue();
+                return [key, val];
+            }, this))
+        },
         set_value: function(v, attrs) {
             if(v instanceof this.valuemodel)
                 attrs['value'] = v;
@@ -209,178 +345,31 @@ define([
             return json;
         },
         toJSON: function() {
+            // console.log('this.attributes', json.value);
             var json = _.clone(this.attributes);
-            json.value = json.value.toJSON();
+
+            // json.value = json.value.toJSON();
             return json;
         }
         
     });
-
-
-
-    var SelectionModel = FieldModel.extend({
-        /*    
-        var sm = new SelectionModel({
-            name: 'favcolor',
-            options: [
-                {id: 'red', text: 'Red'},
-                {id: 'green', text: 'Green'}
-                {id: 'blue', text: 'Blue'}
-            ],
-            value: [{id: 'blue', text: 'Blue'}]
-        })
-
-        // Supports multiple formats for "value":
-        sm.set('value', [{id:'123'}, {id:'456'}])
-        sm.set('value', ['123', '456'])
-        sm.set('value', '123')
-        sm.set('value', [])
-        sm.set('value', new Collection(..))
-
-        // Set options later
-        sm.set('options', [{id:'foo', text: 'Foo'}, ...])
-
-        */
-        constructor: function(attributes, options) {
-            options = _.defs(options, {parse: true});
-            Backbone.Model.call(this, attributes, options);
-        },
-        defaults: function() {
-            var value = new Backbone.Collection();
-            value.on('all', this.onValueAll, this);
-            return {
-                options: new Backbone.Collection(),
-                value: value, // `value` is a subset of `options`
-                strict: false
-            };
-        },
-        validate: function(attrs, options) {
-            options = this.get('options');
-            if(!options.length)
-                return;
-
-            attrs.get('value').each(function(model) {
-                if(options.get(attrs.value) === undefined)
-                    return 'Invalid';                
-            });
-        },
-        set_value: function(v, attrs, options) {
-            if(v instanceof Backbone.Collection)
-                // replace the entire collection
-                attrs['value'] = v;
-            else {
-                // update the existing collection
-                this.get('value').set(this.parseValue(v));
-                _.pop(attrs, 'value');
-            }
-        },
-        set_options: function(val, attrs) {
-            if(val instanceof Backbone.Collection) {
-                // replace the entire collection
-                var options = val;
-                attrs['options'] = options;
-            }
-            else {
-                // update the existing collection
-                var options = this.get('options');
-                options.reset(_.arrayify(val));
-                val = _.arrayify(val);
-                _.pop(attrs, 'options');
-            }
-            // Silently update the value-collection to be
-            // a subset of the exact same model objects
-            var value = this.get('value');
-            if(value)
-            value.each(function(v) {
-                var model = options.get(v.id);
-                if(model && model.cid != v.cid) {
-                    value.remove(v, {silent: true});
-                    value.add(model, {silent: true});
-                }
-            });
-        },
-        parseValue: function(v, options) {
-            // Todo: this method needs another iteration
-            if(!v) return;
-            options = options || this.get('options');
-            var strict = this.get('strict');
-            if(strict && !options)
-                // Todo: trigger invalid here
-                console.log('Invalid enum (no options are set): ' + v + ' ');
-            return _.compact(_.map(_.arrayify(v), function(v) {
-                var id = (_.isObject(v) && v.id) ? v.id : v, 
-                    model = options ? options.get(id) : null;
-                    
-                if(model)
-                    return model;
-                if(strict) {
-                    // Todo: trigger invalid here
-                    console.log('Invalid enum: ' + v);
-                }
-                else {
-                    // any value is allowed, turn v into a model
-                    if(v instanceof Backbone.Model)
-                        return v;
-                    else if(_.isObject(v))
-                        return new Backbone.Model(v);
-                    else // assume scalar
-                        return new Backbone.Model({id: v, text: v});
-                }
-            }));
-        },
-        getopt: function(id) {
-            return this.get('options').get(id.id || id);
-        },
-        parse: function(json) {
-            // Upgrade options
-            if(json.options != null && !json.options.models) {
-                json.options = new Backbone.Collection(json.options);
-            }
-            // Upgrade value
-            if(json.value != null && !json.value.models) {
-                json.value = new Backbone.Collection(this.parseValue(json.value, json.options));
-                json.value.on('all', this.onValueAll, this);
-            }
-            return json;
-        },
-        toJSON: function() {
-            var json = _.clone(this.attributes);
-            json.options = this.get('options').map(function(o) { return o.toJSON(); });
-            json.value = this.get('value').map(function(o) { return o.toJSON(); });
-            return json;            
-        },
-        onValueAll: function(eventName) {
-            this.trigger('change:value', this);
-            this.trigger('change', this);
-        }
-    }, {
-        createFromElement: function(el) {
-            var attr = $(el).getAllAttributes();
-            var options = $(el).find('>*[value]').map(function(i, el) {
-                return {id: $(el).attr('value'), text: $(el).html()};
-            });
-            return new klass({
-                type: attr.type,
-                name: attr.name,
-                value: attr.value,
-                enabled: attr.enabled == 'false' ? false : true
-            });
-        }
-    });
-    
-    
     
 
-    // ===============
-    // = Collections =
-    // ===============
+
+    // ========
+    // = Form =
+    // ========
     var Fields = Backbone.Collection.extend({
         model: function(attrs, options) {
             var Model;
-            if(attrs.modeltype) 
+            if(attrs.modeltype) {
                 Model = modeltypes[attrs.modeltype];
-            else
+            }
+            else {
+                if(!viewtypes[attrs.type])
+                    throw new Error('"'+attrs.type+'" is not found in form.viewtypes.')
                 Model = viewtypes[attrs.type].prototype.defaultmodel;
+            }
             
             options = options || {};
             options.parse = true;
@@ -388,400 +377,82 @@ define([
         }
     });
     
-
-    // ==========
-    // = Mixins =
-    // ==========
-    var ErrorMessages = {
-        initialize: function(config) {
-            _.bindAll(this, 'onShowError', 'onHideError');
-            this.listenTo(this.form, {
-                'showerror': this.onShowError,
-                'hideerror': this.onHideError
-            });
-        },
-        onShowError: function(model, error) {
-            var view = this.views[model.cid];
-            var el = view.$el.parent().find('.error');
-            if(el.length) 
-                el.show().text(error.message);
-            else {
-                $('<div class="error"></div>').text(error.message).insertAfter(view.el);
-                view.$el.parent().addClass('invalid');
-            }
-        },
-        onHideError: function(model) {
-            var view = this.views[model.cid];
-            view.$el.parent().find('.error').fadeOutFast();
-            view.$el.parent().removeClass('invalid');
-        }    
-    };
-
     
-    // =========
-    // = Forms =
-    // =========
-    /*
-    // Declare a set of fields, to use in one or more
-    // form layouts.
-    var f = new Form({
-        fields: [
-            {type: 'text', name: 'foo'},
-            {type: 'text', name: 'bar'}
-        ],
-        model: {
-            foo: 'I am foo',
-            bar: 'I am bar
-        }
-    })
-    
-    // Put the form in a basic ul/li layout
-    var layout = new SimpleForm({
-        form: f,
-        metadata: {
-            'foo': {label: 'Foo'},
-            'bar': {label: 'Bar'},
-        }
-    })
-    
-    // Or create a form layout of your own..
-    var ExampleForm = Backbone.View.extend({
-        className: 'example-form',
 
-        initialize: function(config) {
-            this.form = config.form;
-            this.views = {};        
-        },
-        render: function() {
-            this.fields.each(function(field) {
-                this.addOne(field);
-            }, this);
-            return this;
-        },
-        addOne: function(model) {
-            var view = new viewtypes[model.get('type')]({model: model});
-            this.views[model.cid] = view;
-            this.model.set(model.get('name'), model.get('value'));
-            this.$el.append(view.render().el)
-        },
-        removeOne: function(model) {
-            this.views[model.cid].remove();
-        }
-    });
-
-    */
     var Form = Backbone.Model.extend({
+        /**
+        var f = new Form({
+            fields: [
+                {type: 'text', name: 'foo'},
+                {type: 'text', name: 'bar'}
+            ],
+            values: {
+                foo: 'I am foo',
+                bar: 'I am bar
+            }
+        })
+        */            
         initialize: function(config) {
-            _.bindAll(this, 'propagateToModel', 'propagateToFields', 
-                'onModelChange', 'onModelInvalid', 'onModelSync', 'onModelError');
+            _.bindAll(this, 'onFieldChange', 'onFieldInvalid', 'onValuesChange', 
+                     'onValuesInvalid');
             this.fields = new Fields(config.fields);
-            this.remoteValidate = config.remoteValidate;
-            
-            if(_.isObject(config.model) && config.model.attributes)
-                this.model = config.model;
-            else
-                this.model = new Backbone.Model(config.model);
-            
-            _.each(this.model.attributes, function(v,k) {
-                var fieldmodel = this.fields.findWhere({name: k});
+            this.values = base.modelify(config.values);
+                        
+            _.each(this.values.attributes, function(v,k) {
+                var fieldmodel = this.fields.get(k);
                 if(fieldmodel)
                     fieldmodel.set('value', v);
             }, this);
             
+            
             this.listenTo(this.fields, {
-                'change:value': this.propagateToModel,
+                'change:value': this.onFieldChange,
                 'invalid': this.onFieldInvalid});
 
-            this.listenTo(this.model, {
-                'change': this.propagateToFields,
-                'invalid': this.onModelInvalid,
-                'sync': this.onModelSync,
-                'error': this.onModelError});
-                        
-            if(this.remoteValidate)
-                this.listenTo(this.model, 'change', this.onModelChange);
+            this.listenTo(this.values, {
+                'change': this.onValuesChange,
+                'invalid': this.oValuesInvalid});
         },
-        remoteValidateOne: function(model) {
-            (attr = {})[model.get('name')] = model.toJSON().value;
-            this.model.save(null, {
-                attrs: attr, 
-                headers: {'X-Validate': 'single'}
-            });
-        },   
                 
-        // Use this to change the model of an existing form.
-        // Useful for a "row editing" form - a single form, and many models.
-        changeModel: function(model) {
-            // unbind any exising model before switching
-            if(this.model) {
-                this.model.off('change', this.propagateToFields);
-                this.model.off('invalid', this.onInvalid);
-                this.model.off('sync', this.onSync);
-                this.model.off('error', this.onError);      
-            }
-
-            // Update all fields with new values
-            this.fields.off('change', this.propagateToModel); // pause propagation to model
-            this.fields.each(function(field) {
-                var new_value = model.get(field.name);
-                field.model.set('value', new_value);
-            });
-            this.fields.on('change:value', this.propagateToModel); // resume propagation to model
-            
-            // Set the new model
-            this.model = model;
-            model.on('change', this.propagateToFields);
-            model.on('invalid', this.onInvalid);
-            model.on('sync', this.onSync);
-            model.on('error', this.onError);
-        },        
-        propagateToModel: function(field) {
+        onFieldChange: function(field) {
             // field changes propagate to the model using field.get('name') as key.
-            this.model.off('change', this.propagateToFields);
-            this.model.set(field.get('name'), field.get('value'));
-            this.model.on('change', this.propagateToFields);
+            this.values.off('change', this.onValuesChange);
+            // this.values.set(field.id, field.get('value'));
+            this.values.set(field.id, field.getValue());            
+            this.values.on('change', this.onValuesChange);
         },
-        propagateToFields: function(model) {
+        onValuesChange: function(model) {
             // model change triggers field.set('value', newvalue), which in turn
             // refreshes the view
-            this.fields.off('change:value', this.propagateToModel); // temporary stop propagation
+            this.fields.off('change:value', this.onFieldChange); // temporary stop propagation
+            this.values.off('change', this.onValuesChange);
             _.each(model.changedAttributes(), function(v, k) {
-                var field = this.fields.findWhere({name: k});
-                if(field) 
+                var field = this.fields.get(k);
+                if(field) {
                     field.set('value', v);
+                    this.values.set(k, field.getValue()) // {silent:true}
+                }
             }, this);
-            this.fields.on('change:value', this.propagateToModel); // resume
+            this.values.on('change', this.onValuesChange);
+            this.fields.on('change:value', this.onFieldChange); // resume
         },
         onFieldInvalid: function(model, error) {
             this.trigger('showerror', model, error);
         },
-        onModelChange: function() {
-            _.each(this.model.changedAttributes(), function(v,k) {
-                var model = this.fields.findWhere({name: k});
-                if(model)
-                    this.remoteValidateOne(model);
-            }, this);
-        },
-        onModelInvalid: function(model, error, resp) {
+        onValuesInvalid: function(model, error, resp) {
             _.each(error.errors || [], function(error) {
-                var model = this.fields.findWhere({name: error.name});
+                var model = this.fields.get(error.name);
                 this.trigger('showerror', model, error);
             }, this);
         },
-        onModelSync: function(model, respdata, c) {
-            // Hide all error messages if any
-            if(c.headers && c.headers['X-Validate'] == 'single') {
-                model = this.fields.findWhere({name: _.keys(c.attrs)[0]});
-                this.trigger('hideerror', model);
-            }
-            else {            
-                _.each(model.changedAttributes(), function(val, name) {
-                    var model = this.fields.findWhere({name: name});
-                    if(model)
-                        this.trigger('hideerror', model);
-                }, this);
-            }
-            
-            // inspect result for certain magic keywords
-            respdata = respdata || {};
-            if(respdata.redirect)
-                window.location.href = respdata.redirect;
-
-        },
-        onModelError: function(model, resp, options) {
-            if(resp.status == 422) {
-                resp = JSON.parse(resp.responseText);
-                model.trigger('invalid', model, resp, resp);        
-            }
-        },        
-        onSync: function() {
-        },
-        onInvalid: function() {
-        },
-        onError: function() {
-        }
     });
 
-
-
-
-    var SimpleForm = Backbone.View.extend({
-        /* A simple <ul> based form layout.
-        Example
-        -------
-        var myform = new SimpleForm({
-            model: new Backbone.Model(null, {
-                url: '/foo/bar'
-            }),
-            fields: [
-                {type: 'text', name: 'title'}
-                {type: 'textarea', name: 'description'}
-            ],
-            metadata: {
-                'title': {label: 'Title'},
-                'description': {label: 'Description'},  // todo: add support for `renderer`?
-            }    
-        });    
-        body.append(myform.render().el);
-        myform.model.save()
-        */
-        className: 'gui-simpleform',
-        template: _.template('<ul class="form"></ul>'),
-        mixins: [ErrorMessages],
-
-        initialize: function(config) {
-            this.form = config.form || new Form(config);
-            this.views = {};
-            this.metadata = config.metadata || {};
-            ErrorMessages.initialize.call(this, config);
-        },
-        render: function() {
-            this.$el.html(this.template());
-            this.form.fields.each(function(field) {
-                this.addOne(field);
-            }, this);
-            return this;
-        },
-        addOne: function(model) {
-            var view = new SimpleFormRow({
-                model: model,
-                metadata: this.metadata[model.get('name')] || {}
-            });
-            this.$('>ul').append(view.render().el);
-            this.views[model.cid] = view;
-            // this.model.set(model.get('name'), model.get('value'), {silent: true});            
-        },
-        removeOne: function(field) {
-            this.views[field.cid].remove();
-        }
-    });
-
-    var SimpleFormRow = Backbone.View.extend({
-        tagName: 'li',
-        template: _.template2(''+
-                '<div class="label">${obj.label}[[ if(obj.required) print("*") ]]</div>'+
-                '<div class="field"></div>'),
-
-        initialize: function(config) {
-            this.model = config.model;
-            this.metadata = config.metadata;
-        },
-        render: function() {
-            if(this._fieldview) this._fieldview.remove();
-            this.$el.html(this.template(this.metadata));
-            if(!this.metadata.label)
-                this.$('>.label').remove();
-
-            // ..and append the field subview    
-            this._fieldview = new viewtypes[this.model.get('type')]({model:this.model});
-            this.$('>.field').append(this._fieldview.render().el);
-            return this;
-        }
-    });
-
-
-
-
-    /*
-    Example
-    -------
-    // 1. Define a model
-    var User = Backbone.Model.extend({
-        defaults: {
-            name: 'John Appleseed',
-            address: ''
-        },
-        // Add some client-side validation
-        validate: function(args, options) {
-            var errors = [];
-            if(!args.address) 
-                errors.push({name: 'address', message: 'Enter your address'});
-            return errors.length ? errors : null;
-        },
-        urlRoot: '/user'
-    })
-
-    // 2. Create the CustomForm
-    var user = new User();
-    var myform = new form.CustomForm({
-        el: $('div.form'), 
-        model: user,
-    });
-    myform.render();
-
-    // 3. Add a click handler to the button
-    $('button.submit').click(function() {
-        user.save();
-    })
-
-    // 2. Create a CustomForm with existing fieldmodels
-    // Render a bunch of existing fieldmodels into
-    // the html layout of a CustomForm. You're creating the
-    // fieldmodels elsewhere, and simply referencing them
-    // in the template.
     
-    var myform = new form.CustomForm({
-        el: $('div.form'), 
-        model: user,
-        fields: [
-            {id: 'foo', type:'combo', options: [....]},
-            {id: 'bar', type: 'text'}
-        ]
-    });
-    */
-    var CustomForm = Backbone.View.extend({
-        mixins: [ErrorMessages],
+
     
-        initialize: function(config) {
-            this.views = {};
-
-            // Collect all fields            
-            if(!config.fields) {
-                config.fields = [];
-                this.$('*[name]').each(function() {
-                    var div = $(this),
-                        type = div.attr('type'),
-                        modeltype = div.attr('modeltype');
-                        Type = modeltype ? modeltype : viewtypes[type].prototype.defaultmodel;
-                        if(_.isString(Type))
-                            Type = modeltypes[Type];
-
-                    var field = Type.createFromElement(this);
-                    config.fields.push(field);
-                });            
-            }
-            
-            this.form = config.form || new Form(config)
-
-            
-            this.form.fields.each(function(model) {
-                var el = this.$('div[name="'+model.get('name')+'"]'),
-                    View = viewtypes[model.get('type')];
-                view = new View({el:el, model:model});
-                this.views[model.cid] = view;
-                view.$el.attr(view.attributes || {});
-                view.$el.addClass(view.className);
-                view.render().delegateEvents();
-            }, this);
-            
-            ErrorMessages.initialize.call(this, config);
-        },    
-        render: function() {
-            return this;
-        },
-        removeOne: function(field) {
-            this.views[field.cid].remove();
-        }      
-    });
-
-
-
-
-
-
-    // ==========
-    // = Fields =
-    // ==========
+    // =========
+    // = Views =
+    // =========
     var Text = Backbone.View.extend({
         className: 'gui-text',
         attributes: {
@@ -804,8 +475,6 @@ define([
             config = config || {};
             this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config);
             this.listenTo(this.model, 'change', this.render, this);
-            if($.browser.ltie8)
-                this.$el.iefocus(); 
             if($.browser.ltie9)
                 this.$el.on('mousedown', _.bind(this.onIEMouseDown, this));
         },
@@ -829,22 +498,10 @@ define([
             this.$el.moveCursorToEnd();
             this.$el.selectAll();
         },
-        wrapElement: function(el) {
-            // Attach this View on the given el
-            this._orig_el = this.el;
-            this._orig_attr = $(el).getAllAttributes();
-            this.setElement(el);
-            this.delegateEvents();
-            $(el).attr(this.attributes);
-            this.$el.removeClass('gui-text');
-        },
-        unwrapElement: function() {
-            // Detach this View from its currently wrapped element
-            this.$el.removeAttr('tabindex');
-            this.$el.removeAttr('contenteditable');
-        },
-        
-        
+        attackElement: attackElement,
+        leaveElement: leaveElement,
+
+                
         onFocus: function(e) {
             var keydown = base._keyDownEvent;
             if(keydown && keydown.which == base.keys.TAB) {
@@ -855,6 +512,7 @@ define([
             var text = this.$el.getPreText(),
                 wasInvalid = !!this.model.validationError;
 
+            console.log('BLUR: ', text)
             this.model.set({'value': text}, {validate: true});
             if(wasInvalid && !this.model.validationError)
                 // there is a small change the new value above is the same as
@@ -862,6 +520,7 @@ define([
                 this.render();
 
             this.trigger('fieldblur');
+            this.$el.trigger('fieldblur');
         },
         onReturnKeyDown: function(e) {        
             // Set value immediately when pressing Return, as the event
@@ -877,15 +536,18 @@ define([
             this.trigger('type', {e: e, character: String.fromCharCode(e.which)});
         },
         onRightKeyDown: function(e) {
-            var curr = $.Range.current(),
-                end = curr.end();
-            if(curr.range.collapsed && end.offset == end.container.length)
-                e.preventDefault(); // prevent page from scrolling right
+            // UPDATE: See onLeftKeyDown
+            // var curr = $.Range.current(),
+            //     end = curr.end();
+            // if(curr.range.collapsed && end.offset == end.container.length)
+            //     e.preventDefault(); // prevent page from scrolling right
         },
         onLeftKeyDown: function(e) {
-            var curr = $.Range.current();
-            if(curr.range.collapsed && curr.start().offset == 0)
-                e.preventDefault(); // prevent page from scrolling left
+            // UPDATE: this prevents the cursor from moving to the last char of 
+            // the previous row.
+            // var curr = $.Range.current();
+            // if(curr.range.collapsed && curr.start().offset == 0)
+            //     e.preventDefault(); // prevent page from scrolling left
         },
         onIEMouseDown: function(e) {
             if(this.$el.closest('.gui-disabled').length) {
@@ -897,34 +559,6 @@ define([
     });
 
 
-    var Hidden = Backbone.View.extend({
-        className: 'gui-hidden',
-        defaultmodel: StringModel,
-    
-        initialize: function(config) {
-            config = config || {};
-            this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config);
-        },
-        render: function() {
-            this.$el.attr('name', name);
-            return this;
-        },
-
-        // ===================
-        // = Field interface =
-        // ===================
-        focus: function() {
-        },
-        wrapElement: function(el) {
-        },
-        unwrapElement: function() {
-        }
-    });
-
-
-    var Password = Text.extend({
-        className: 'gui-password'
-    });
 
     var TextArea = Text.extend({
         className: 'gui-textarea',
@@ -935,31 +569,18 @@ define([
             tabindex: 0, 
             contentEditable: true
         },
-        mixins: [base.ChildView],
+        merge: ['hotkeys'],
 
         render: function() {
             var renderer = this.model.get('renderer'),
                 name = this.model.get('name'),
                 html = renderer ? renderer(this) : this.model.getFormattedValue();
 
-            this.$el.attr('name', name).html(base.makePreText(html));
+            this.$el.attr('name', name).html(base.makePreText(html || ''));
             this.$el.toggleClass('invalid', !!this.model.validationError);
             this.$el.toggleClass('gui-disabled', !this.model.get('enabled'));
             return this;
         },
-    
-        wrapElement: function(el) {
-            this._orig_el = this.el;
-            this._orig_attr = $(el).getAllAttributes();
-            this.setElement(el);
-            this.delegateEvents();
-            $(el).attr(this.attributes);
-            this.$el.removeClass('textarea');
-        },
-        unwrapElement: function() {
-            this.$el.removeAttr('tabindex');
-            this.$el.removeAttr('contenteditable');
-        },         
         onFocus: function(e) {
             if(this.$el.is('.empty'))
                 this.$el.removeClass('empty').html('');
@@ -980,129 +601,48 @@ define([
             
             var text = el.getPreText(),
                 wasInvalid = !!this.model.validationError;
-
+            // Remove exactly 1 leading newline
+            text = text.replace(/\n/, '')
+            console.log('TEXT: ', text)
             this.model.set({'value': text}, {validate: true});
             if(wasInvalid && !this.model.validationError)
                 // there is a small change the new value above is the same as
                 // before making it invalid, not triggering change -> render.
                 this.render();
-
-
             this.trigger('fieldblur');
+            this.$el.trigger('fieldblur');
         },        
+
+        attackElement: attackElement,
+        leaveElement: leaveElement,
+                
         onReturnKeyDown: function(e) {
             e.stopPropagation();
         }
     });
-
-
-
-
-    // =========
-    // = Combo =
-    // =========
-    /*
-    <div class="gui-combo">
-        <span>Some text</span>
-        <button></button>
-    </div>
     
-    */
-    var Combo = Backbone.View.extend({
-        className: 'gui-combo',
-        attributes: {
-            tabindex: 0
-        },
-        template: _.template(''+
-            '<span><%= text || "&nbsp;" %></span>'+
-            '<button tabindex="-1"></button>'
-        ),
-        events: {
-            'mousedown': 'onMouseDown',
-            'keydown': 'onKeyDown',
-            'blur': 'onBlur',
-            'focus': 'onFocus'
-        },
-        hotkeys: {
-            'keydown down': 'onDownKeyDown'
-        },
-        defaultmodel: SelectionModel,
+
+    var Hidden = Backbone.View.extend({
+        className: 'gui-hidden',
+        defaultmodel: StringModel,
     
-        initialize: function(config) {       
+        initialize: function(config) {
             config = config || {};
-            _.bindAll(this, 'onMenuChoose', 'onMenuHide');
-            this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config, {parse:true});
-            this.listenTo(this.model, 'change', this.render, this);
-
-            // Create the dropdown menu
-            // TODO: could we avoid serializing the Collection here? Or is that wrong?
-            this.menu = new menu.Menu({
-                options: this.model.get('options').map(function(o) {
-                    // return {id: o.id, text: o.get('text')};
-                    if(_.isObject(o))
-                        return _.clone(o.attributes);
-                    return o;
-                })
-            });
-            this.menu.selectable.on('choose', this.onMenuChoose);
-            this.menu.on('hide', this.onMenuHide);
-            this.menu.render();
-        },        
+            this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config);
+        },
         render: function() {
-            var first = this.model.get('value').at(0);
-            var text = first ? this.model.getopt(first.id).get('text') : '';
-            this.$el.attr('name', this.model.get('name'));
-            this.$el.html(this.template({text: text}));
-        
-            if($.browser.ltie9) {
-                this.$el.iefocus();
-                this.$('*').add(this.el).attr('unselectable', 'on');
-            }
+            this.$el.attr('name', name);
             return this;
         },
-        focus: function() {
-            this.$el.focus();
+        attackElement: function(el) {
+            $(el).attr(this.attributes || {});
+            $(el).addClass(this.className);
+            this.setElement(el);
         },
-        showMenu: function() {
-            if(this.menu.$el.is(':visible'))
-                return;
-            var body = $(this.el.ownerDocument.body),
-                w = $(this.el).outerWidth();
-            this.menu.$el.appendTo(body).css('min-width', w);
-            this.menu.show().alignTo(this.el);
-        },
-        onMouseDown: function(e) {
-            if(this.$el.closest('.gui-disabled').length) {
-                e.preventDefault(); // don't focus
-                return;
-            }
-            this.showMenu();
-            // this.menu.el.focus();
-            e.stopPropagation();
-            e.preventDefault();
-        },
-        onMenuChoose: function(e) {
-            var option = e.model;
-            var id = option.get('id');
-            this.model.get('value').set([this.model.getopt(id)]);
-        },
-        onMenuHide: function() {
-            this.focus();
-        },
-        onDownKeyDown: function(e) {
-            this.showMenu();
-            this.menu.el.focus();
-            e.preventDefault();
-        },
-        onBlur: function() {
-            setTimeout($.proxy(function() { 
-                var a = document.activeElement;
-                if(a !== this.el && a !== this.menu.el) {
-                    this.trigger('fieldblur', this);
-                }
-            },this), 1); // short delay for webkit
-        }    
+        leaveElement: function() {
+        }
     });
+
 
 
     var Checkbox = Backbone.View.extend({
@@ -1123,21 +663,25 @@ define([
     
         initialize: function(config)  {
             this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config);
-            this.listenTo(this.model, 'change', this.render, this);
-            // this.$el.attr(this.attributes || {}).addClass(this.className);
-            if($.browser.ltie8)              
-                this.$el.iefocus();
+            this.listenTo(this.model, 'change:value', this.onModelChange, this);
+            if(config.el) {
+                this.$el.attr(this.attributes || {});
+                this.$el.addClass(this.className);                
+            }
         },
         render: function() {
             this.$el.toggleClass('gui-checked', this.model.get('value'));
             this.$el.html(this.model.get('text') || '');
             this.$el.attr('name', this.model.get('name'));
-            this.el.hideFocus = true;
-            if($.browser.ltie8) {
-                this.$el.prepend('<i></i>');
-                this.$el.on('selectstart', base.preventDefault);                
-            }            
+            // this.el.hideFocus = true;
+            
+            console.log('render: ', this.el)
             return this;
+        },
+        attackElement: attackElement,
+        leaveElement: leaveElement,
+        onModelChange: function(model) {
+            this.$el.toggleClass('gui-checked', model.get('value'));            
         },
         onClick: function(e) {             
             e.preventDefault();
@@ -1163,8 +707,21 @@ define([
         }
     });
 
-
-
+    var Radio = Checkbox.extend({
+        className: 'gui-radio',
+        initialize: function(config)  {
+            this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config);
+            this.listenTo(this.model, 'change:value', this.onModelChange, this);
+            this.$el.attr(this.attributes || {}).addClass(this.className);
+        },
+        onClick: function(e) {             
+            e.preventDefault();
+            if(this.$el.closest('.gui-disabled')[0])
+                return;
+            this.model.set('value', true);
+            this.$el.removeClass('active');
+        }
+    });
 
 
     var CheckboxGroup = Backbone.View.extend({
@@ -1173,12 +730,14 @@ define([
         defaultmodel: SelectionModel,
     
         initialize: function(config)  {
-            _.bindAll(this, 'onCheckboxValueChange');
+            _.bindAll(this, 'onCheckboxValueChange', 'render');
             config = config || {};
             this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config, {parse:true});
 
             this.views = {};
-            this.listenTo(this.model, 'change', this.render, this);
+            this.listenTo(this.model, 'change', this.render);
+            this.listenTo(this.model.get('options'), 'all', this.render);
+            this.listenTo(this.model.get('value'), 'all', this.render);
         },
         render: function() {
             this.$el.empty().attr('name', this.model.get('name'));
@@ -1189,8 +748,8 @@ define([
         },
         addOne: function(model) {
             if(!this.views[model.cid]) {
-                this.views[model.cid] = new Checkbox({id: model.id, text: model.get('text')});
-                this.listenTo(this.views[model.cid].model, 'change:value', this.onCheckboxValueChange);
+                this.views[model.cid] = new Checkbox({model: model});
+                this.listenTo(model, 'change:value', this.onCheckboxValueChange);
             }
             var view = this.views[model.cid],    
                 isAdded = !!this.model.get('value').get(model.id);
@@ -1203,6 +762,8 @@ define([
         removeOne: function(model) {
             _.pop(this.views, model.cid).remove();
         },
+        attackElement: attackElement,
+        leaveElement: leaveElement,
         onCheckboxValueChange: function(model) {
             var checked = model.get('value');
             this.model.get('value')[checked ? 'add':'remove'](model);
@@ -1210,33 +771,13 @@ define([
     });
 
 
-    var Radio = Checkbox.extend({
-        className: 'gui-radio',
-        initialize: function(config)  {
-            this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config);
-            this.listenTo(this.model, 'change', this.render, this);
-
-            this.$el.html('<i>&middot;</i>');
-            this.$el.attr(this.attributes || {}).addClass(this.className);
-            if($.browser.ltie8)              
-                this.$el.iefocus();            
-        },
-        onClick: function(e) {             
-            e.preventDefault();
-            // if(this.$el.is(':inside(.gui-disabled)'))
-            if(this.$el.closest('.gui-disabled')[0])
-                return;
-            this.model.set('value', true);
-            this.$el.removeClass('active');
-        }
-    });
-
 
 
 
     var RadioGroup = Backbone.View.extend({
         tagName: 'ul',
         className: 'gui-radiogroup',
+        // Todo: Write a SingleSelectionModel
         defaultmodel: SelectionModel,
     
         initialize: function(config)  {
@@ -1256,8 +797,8 @@ define([
         },
         addOne: function(model) {
             if(!this.views[model.cid]) {
-                this.views[model.cid] = new Radio({id: model.id, text: model.get('text')});
-                this.listenTo(this.views[model.cid].model, 'change:value', this.onRadioValueChange);
+                this.views[model.cid] = new Radio({model: model});                
+                this.listenTo(model, 'change:value', this.onRadioValueChange);
             }
             var view = this.views[model.cid],    
                 isAdded = !!this.model.get('value').get(model.id);
@@ -1270,18 +811,191 @@ define([
         removeOne: function(model) {
             _.pop(this.views, model.cid).remove();
         },
-        onModelChange: function(model) {
-            // I WAS HERE
-            // var selected = this.model.get('value').at(0)
-        },
+        attackElement: attackElement,
+        leaveElement: leaveElement,
         onRadioValueChange: function(model) {
             var checked = model.get('value');
             if(checked) {
+                // Unselect current radio, if any
+                var curr = this.model.get('value').at(0)
+                if(curr)
+                    curr.set('value', false);
+                // Update the selection. Todo: finish the singleselectionmodel
                 this.model.get('value').set(model);
             }
         }
+    });    
+
+
+
+
+  
+
+    var Combo = Backbone.View.extend({
+        className: 'gui-combo',
+        attributes: {
+            tabindex: 0
+        },
+        template: _.template(''+
+            '<span><%= text || "&nbsp;" %></span>'+
+            '<button tabindex="-1"></button>'
+        ),
+        events: {
+            'mousedown': 'onMouseDown',
+            'keydown': 'onKeyDown',
+            'blur': 'onBlur',
+            'focus': 'onFocus'
+        },
+        hotkeys: {
+            'keydown down': 'onDownKeyDown'
+        },
+        defaultmodel: SingleSelectionModel,
+    
+        initialize: function(config) {       
+            config = config || {};
+            _.bindAll(this, 'onMenuChoose', 'onMenuHide');
+            this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config, {parse:true});
+            this.listenTo(this.model, 'change', this.render, this);
+            this.listenTo(this.model.get('value'), 'reset', this.render, this);
+            
+
+            // Create the dropdown menu
+            // TODO: could we avoid serializing the Collection here? Or is that wrong?
+            this.menu = new menu.Menu({
+                options: this.model.get('options').map(function(o) {
+                    // return {id: o.id, text: o.get('text')};
+                    if(_.isObject(o))
+                        return _.clone(o.attributes);
+                    return o;
+                })
+            });
+            this.menu.selectable.on('choose', this.onMenuChoose);
+            this.menu.on('hide', this.onMenuHide);
+            this.menu.render();
+        },        
+        render: function() {
+            this.$el.attr('name', this.model.get('name'));
+            
+            var first = this.model.get('value').at(0);
+            var text = first ? first.get('text') : '';            
+            this.$el.html(this.template({text: text}));
+        
+            if($.browser.ltie9) {
+                this.$('*').add(this.el).attr('unselectable', 'on');
+            }
+            return this;
+        },
+
+        focus: function() {
+            this.$el.focus();
+        },
+        showMenu: function() {
+            if(this.menu.$el.is(':visible'))
+                return;
+            var body = $(this.el.ownerDocument.body),
+                w = $(this.el).outerWidth();
+            this.menu.$el.appendTo(body).css('min-width', w);
+            this.menu.show().alignTo(this.el);
+        },
+        attackElement: attackElement,
+        leaveElement: leaveElement,
+        
+        onMouseDown: function(e) {
+            if(this.$el.closest('.gui-disabled').length) {
+                e.preventDefault(); // don't focus
+                return;
+            }
+            this.showMenu();
+            // this.menu.el.focus();
+            e.stopPropagation();
+            e.preventDefault();
+        },
+        onMenuChoose: function(e) {
+            // var option = e.model;
+            // var id = option.get('id');
+            this.model.get('value').reset([e.model]);
+            
+            // this.model.set({'value': text}, {validate: true});
+            this.model.trigger('change:value', this.model)
+        },
+        onMenuHide: function() {
+            this.focus();
+        },
+        onDownKeyDown: function(e) {
+            this.showMenu();
+            this.menu.el.focus();
+            e.preventDefault();
+        },
+        onBlur: function() {
+            setTimeout($.proxy(function() { 
+                var a = document.activeElement;
+                if(a !== this.el && a !== this.menu.el) {
+                    this.trigger('fieldblur', this);
+                    this.$el.trigger('fieldblur');
+                }
+            },this), 1); // short delay for webkit
+        }    
     });
 
+
+  
+    
+    var Subform = Backbone.View.extend({
+        /*
+        This is a Field wrapping an entire Quickform.
+        */
+        className: 'gui-subform',
+        
+        // Todo: Create SuboformModel extending ModelModel adding a "fields" trait. 
+        // Otherwise they are identical.
+        defaultmodel: ModelModel(),
+    
+        initialize: function(config) {
+            config = config || {};
+            this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config);
+            
+            this.listenTo(this.model, 'change:value', this.onChangeValue, this);
+
+            var quickform = new Quickform({
+                fields: this.model.get('fields'),
+                values: this.model.get('value')
+            });
+                        
+            this.quickform = quickform;     
+        },
+        render: function() {
+            // console.log('RENDER SUBFORM: ', this.model.get('value').attributes)
+            // this.
+            // this.quickform.form.set('values', this.model.get('values'))
+            // this.$el.attr('name', this.model.get('name'));
+            
+            // ..well, I want to create a Form where its <Form>.model is the exact same
+            // object as this.model.get('value')
+            // var subform = new Quickform(this.model.get('form'));
+            // this.form = subform;
+            this.$el.empty().append(this.quickform.render().el)
+            return this;
+        },
+        getValue: function() {
+            return this.model.get('value').attributes;
+        },        
+        onChangeValue: function() {
+            // The value of this subform changed, meaning it got a whole new set of
+            // values. (This is not an individual field change)
+            console.log('SUBFORM CHANGE!')
+            var values = this.model.get('value');
+            this.form.form.model.set(values.attributes);
+            this.form.render()
+        },
+        // ===================
+        // = Field interface =
+        // ===================
+        focus: function() {
+        },
+        attackElement: attackElement,
+        leaveElement: leaveElement,
+    });    
+  
 
     var Date = Backbone.View.extend({
         className: 'gui-date',
@@ -1294,7 +1008,7 @@ define([
             'keydown esc': 'onEscKeyDown',
             'keydown down': 'onDownKeyDown'
         },
-        defaultmodel: DateTimeModel,
+        defaultmodel: DateModel,
     
         initialize: function(config)  {
             config = config || {};
@@ -1307,6 +1021,7 @@ define([
         render: function() {
             this.$el.empty().append('<button class="calendar" tabindex="-1"></button>');
             this.$el.append(this.textfield.render().el);
+            this.textfield.delegateEvents();
             this.$el.toggleClass('gui-disabled', !this.model.get('enabled'));
             this.$el.toggleClass('invalid', !!this.model.validationError);
             return this;
@@ -1316,7 +1031,8 @@ define([
             this.render();
         },
         onTextFieldBlur: function() {
-            this.$el.toggleClass('invalid', !!this.model.validationError);                
+            this.$el.toggleClass('invalid', !!this.model.validationError);
+            // this.$el.trigger('fieldblur')
         },
         getDatePicker: function() {
             // Lazy-create a DatePicker 
@@ -1351,17 +1067,9 @@ define([
             this.textfield.focus();
             this.textfield.el.focus();
         },
-        wrapElement: function(el) {
-            // Store the orignal dumb el
-            this._orig_el = $(el).clone();
-            this.setElement(el);
-            this.render();
-            this.delegateEvents();
-            this.$el.attr(this.attributes);
-        },
-        unwrapElement: function() {
-            this.$el.replaceWith(this._orig_el);
-        },     
+        attackElement: attackElement,
+        leaveElement: leaveElement,        
+
         onEscKeyDown: function(e) {
             this.hideDatePicker();
         },
@@ -1385,7 +1093,7 @@ define([
                 this.hideDatePicker();
         }
     });
-
+  
 
 
     var DatePicker = Backbone.View.extend({
@@ -1398,7 +1106,7 @@ define([
         attributes: {
             tabindex: 0
         },
-        defaultmodel: DateTimeModel,
+        defaultmodel: DateModel,
     
         initialize: function(config)  {
             config = config || {};
@@ -1407,10 +1115,6 @@ define([
             this.calendar = new calendar.MonthCalendar({date: this.model.get('value')});
             this.$el.append(this.calendar.render().el);
             this.listenTo(this.model, 'change:value', this.onModelChange, this);
-            if($.browser.ltie9)
-                this.$el.ieshadow();
-            if($.browser.ltie8)
-                this.$el.iefocus();
         },
         render: function() {
             var date = moment(this.model.get('value'));
@@ -1420,6 +1124,8 @@ define([
             
             return this;
         },
+        attackElement: attackElement,
+        leaveElement: leaveElement,
         alignTo: function(el, options) {
             options = _.defs(options, {
                 my: 'left top',
@@ -1480,17 +1186,401 @@ define([
     });
 
 
+
+
+
+
+    
+
+    var TokenModel = Backbone.Model.extend({
+        /* NOTE: this is NOT a SINGLE token model 
+                
+        var tm = new TokenModel({
+            sources: [{
+                    id: 'accounts',
+                    triggerchar: '@',
+                    view: AccountToken,                 // <-- complete with html template and events
+                    collection: all_accounts
+                }]
+            ],
+            text: 'Helo i am a text ${id: '123', coll: 'projects', refid: '456', hours:1} with tokens '+
+                  'foo {id: '123', coll: 'projects', refid: '789', hours:1} bar bar'
+        });
+        
+        
+        */
+        _class: 'form.TokenModel',
+
+
+        initialize: function(attrs) {
+            // attrs is the complete config
+            this.attributes.text = attrs.text
+            
+            this.tokens = new Backbone.SubsetMulti([], {sources: attrs.sources})
+            
+            if(attrs.text)
+                this.set_text(attrs.text)
+        },
+        getModelsFromText: function(text) {
+            // Parse `text` and return an array of models for all found
+            // markers.
+            // "Bla bla ${JSON_STR} bla bla"
+            var out = []
+            
+            text.replace(/\$(\{[^\}]+\})/g, _.bind(function(matchFull, match, offset, subject) { 
+                // matchFull = "${<JSON_STR>}", match = "{<JSON_STR>}", offset = 30, subject = text
+                var json = JSON.parse(match)
+                var source = this.tokens.sources[json.source];
+                
+                var ref = source.collection.get(json.sourceId);
+                var token = new (source.Model || Backbone.Model)(json);
+                token.ref = ref;
+                out.push(token);
+            }, this));
+            
+            return out;
+        },
+        
+        // 
+        // set_sources: function(v, attrs, options, key) {
+        //     console.log('YEMAN: ', v)
+        //     // if attrs.text, then use that, else use this.get('text')
+        //     
+        //     attrs[sources] = v;
+        //     
+        // },
+        set_text: function(text, attrs, options, key) {
+            // When setting a completely new text, empty
+            // `this.tokens`, and populate it again by parsing the new text.
+            if(!this.tokens) {
+                // initital, don't do anything yet, its handled in this.initialize in a moment
+                attrs['text'] = text;  // <-- it think this is redundant
+            }
+            else {
+                
+                // this.set('text', 'foo bar ...') is called later, long after initialization
+                // We must parse text and reset this.tokens.
+                var newTokenModels = this.getModelsFromText(text)
+                this.tokens.reset(newTokenModels);
+
+            }
+        }
+    })
+    
+    var TokenTextAreaModel = FieldModel.extend({
+        initialize: function(attrs) {
+            this.tokenModel = new TokenModel({
+                sources: attrs.sources,
+                text: attrs.value
+            })
+            this.listenTo(this.tokenModel, 'change:text', this.onTextChange, this);
+
+            this.triggerchars = _.object(_.map(attrs.sources || [], function(source) {
+                return [source.triggerchar, source]
+            }))
+        },
+        toString: function() {
+            return 'TokenTextAreaModel';
+        },        
+        set_value: function(v, attrs, options, key) {
+            // The text string is changing
+            if(this.tokenModel) {
+                // this is after initialize
+                this.tokenModel.set('text', v)
+            }
+            
+        },
+        onTextChange: function(e) {
+            this.trigger('change:text', e)
+        },
+        getValue: function() {
+            console.log('getValue', this.tokenModel.tokens.map(function(token) {
+                return token.toJSON()
+            }));
+            return this.tokenModel.get('text')
+        },
+        getTokens: function() {
+            return this.tokenModel.tokens;
+        }
+
+
+    })
+    
+    
+    
+    var TokenTextArea = Backbone.View.extend({
+        className: 'gui-textarea gui-tokentextarea',
+        attributes: {
+            tabindex: 0, 
+            contentEditable: true
+        },
+        events: {
+            'keypress': 'onKeyPress',
+            'focus': 'onFocus',
+            'blur': 'onBlur',
+
+            'keydown': 'onKeyDown'
+        },
+        hotkeys: {
+            'keyup backspace': 'onBackspace'
+        },
+        // hotkeys: {
+        //     'keydown return': 'onReturnKeyDown',
+        //     'keydown left': 'onLeftKeyDown',
+        //     'keydown right': 'onRightKeyDown'
+        // },
+        defaultmodel: TokenTextAreaModel,
+        mixins: [tools.InterceptPaste],
+
+
+        onBackspace: function(e) {
+            var currstart = $.Range.current().start()
+            // range.end(currstart)
+            // range.start()
+
+            if(this.started) {
+                if(this.start == currstart.offset) {
+                    this.started = false
+                    console.log('OFF!')
+                }
+                else {
+                    window.setTimeout(_.bind(function() {
+                        console.log('text', this.$el.text().substring(this.start, currstart.offset-1))                    
+                    }, this), 1)
+                }
+            }
+                        
+            // Backspace deletes an entire token element.
+            var sel = window.getSelection();
+            if(sel.anchorOffset == 0) {
+                var tokenEl = $(sel.anchorNode).prev(),
+                    tokens = this.model.get('value').get('tokens'), // the collection
+                    tokenModel = tokens.get(tokenEl.attr('id'));
+                
+                tokens.remove(tokenModel);
+            }
+            console.log('BAAAAA:', sel.anchorNode.parentElement, 'foo: ', sel.anchorNode, sel.anchorOffset)
+            if(sel.anchorNode.parentElement.tagName == 'STRONG') {
+                console.log('FOO')
+            }
+            
+        },
+
+    
+        _onPaste: function(e) {
+            var data = e.data.replace(/kalle/g, 'hassan');
+            var plaintext = $('<div></div>').html(e.data).text();
+            WysiHat.Commands.insertHTML(data);            
+        },
+    
+        initialize: function(config) {
+            config = config || {};
+            this.model = config.model || new (_.pop(config, 'modeltype') || this.defaultmodel)(config);
+            this.listenTo(this.model, 'change:value', this.render, this);
+
+            this.views = {}
+
+            this.selectable = new tools.Selectable({
+                el: this.el,              // common ancestor for the selectables
+                selectables: '.knight',        // a selector expression
+                keynav:false
+            });
+
+            
+            if($.browser.ltie9)
+                this.$el.on('mousedown', _.bind(this.onIEMouseDown, this));
+        },
+        render: function() {
+            this.$el.attr('name', this.model.get('name'))
+            this.$el.toggleClass('invalid', !!this.model.validationError);
+            this.$el.toggleClass('gui-disabled', !this.model.get('enabled'));
+            
+            
+            var text = this.model.get('value'),
+                tokens = this.model.tokenModel.tokens,
+                sources = tokens.sources,
+                $el = this.$el;
+            
+            // var value = this.model.get('value'),
+            //     tokens = value.get('tokens'),
+            //     text = value.get('text'),
+            //     sources = this.model.sources,
+            //     $el = this.$el;
+            
+
+            var elements = [],
+                views = this.views;
+
+            // text = text.replace(/\$\{(\w+)\}/g, function(matchFull, match, offset, subject) { 
+            text = text.replace(/\$(\{[^\}]+\})/g, _.bind(function(matchFull, match, offset, subject) { 
+
+                // matchFull = "${123}", match = "123", offset = 30, subject = text
+                var json = JSON.parse(match),
+                    token = tokens.get(json.id),
+                    View = sources[token.get('source')].view || Backbone.View,
+                    view = new View({model: token});                    
+
+                elements.push({id: json.id, view: view})
+                views[json.id] = view;
+
+                return '<span id="'+json.id+'"></span>';
+                                
+
+            }, this));
+            this.$el.html(text);
+            
+            _.each(elements, function(tup) {
+                var id = tup.id,
+                    view = tup.view;
+              
+
+                this.$el.find('#'+id).replaceWith(view.render().el)
+                
+            }, this)
+
+
+
+
+            return this;
+        },
+
+        // ===================
+        // = Field interface =
+        // ===================
+        focus: function() {
+            if(this.$el.closest('.gui-disabled')[0]) 
+                return; // ie7/8
+            this.$el.moveCursorToEnd();
+            this.$el.selectAll();
+        },
+        attackElement: attackElement,
+        leaveElement: leaveElement,
+        onFocus: function(e) {
+            var keydown = base._keyDownEvent;
+            if(keydown && keydown.which == base.keys.TAB) {
+                this.focus();
+            }
+        },     
+        onBlur: function(e) {
+            var text = this.$el.getPreText(),
+                wasInvalid = !!this.model.validationError;
+
+            this.model.set({'value': text}, {validate: true});
+            if(wasInvalid && !this.model.validationError)
+                // there is a small change the new value above is the same as
+                // before making it invalid, not triggering change -> render.
+                this.render();
+
+            this.trigger('fieldblur');
+        },
+        onReturnKeyDown: function(e) {        
+            // Set value immediately when pressing Return, as the event
+            // may continue upwards to a form, triggering a submit.
+            var v = this.$el.getPreText();
+            this.model.set('value', v);
+            // Don't allow newlines in a text field
+            e.preventDefault();
+        },
+        
+        onKeyPress: function(e) {
+            // On eg future numeric textfield, type is supposed to only 
+            // trigger when hitting an allowed key.
+            var character = String.fromCharCode(e.which)
+            
+            if(this.model.triggerchars[character]) {
+                // var m = new menu.Menu({
+                //     options: [
+                //         {id: 'foo', text: 'Foo'},
+                //         {id: 'bar', text: 'Bar'},
+                //         {id: 'lax', text: 'Lax'}
+                //     ]
+                // })
+                // m.show({left: 10, top: 10, focus: false})
+
+                console.log('I once had a dog, and his name was Bingo')
+                
+                this.started = true;
+                // this.range = this.$el.range();
+                // this.range.start()
+                // console.log('selection', $.Range.current().range.commonAncestorContainer.parentElement)
+                console.log('selection', $.Range.current().start())
+                this.start = $.Range.current().start().offset + 1
+                
+            }
+            else if(this.started) {
+
+                // Track the text between start and cursor
+                var range = $.Range.current()
+                var currstart = $.Range.current().start()
+                // range.end(currstart)
+                // range.start()
+
+                window.setTimeout(_.bind(function() {
+                    console.log('text', this.$el.text().substring(this.start, currstart.offset+1))                    
+
+
+                    // Add the text "foo" after start() pos and select it
+                    var range = $.Range.current()
+
+                    // Create and insert some text
+                    var foo = document.createTextNode('foo')
+                    range.range.insertNode(foo)
+
+                    // Try to select it
+                    range.range.selectNode(foo)
+                    range.select()
+                    // range.start(currstart.offset+1)
+                    // range.end('+1')
+                    // range.select();
+
+                    // this.$el.range().select()
+
+                }, this), 1)
+
+
+            }
+
+
+            this.trigger('type', {e: e, character: String.fromCharCode(e.which)});
+        },
+        onRightKeyDown: function(e) {
+            var curr = $.Range.current(),
+                end = curr.end();
+            if(curr.range.collapsed && end.offset == end.container.length)
+                e.preventDefault(); // prevent page from scrolling right
+        },
+        onLeftKeyDown: function(e) {
+            var curr = $.Range.current();
+            if(curr.range.collapsed && curr.start().offset == 0)
+                e.preventDefault(); // prevent page from scrolling left
+        },
+        onIEMouseDown: function(e) {
+            if(this.$el.closest('.gui-disabled').length) {
+                e.preventDefault(); // don't focus
+                var focusable = this.$el.parent().closest('*:focusable');
+                window.setTimeout(function() { focusable.focus(); }, 1); 
+            }
+        }
+    });
+
+
+
+    
+  
+    
     var viewtypes = {
         text: Text,
-        password: Password,
-        hidden: Hidden,
         textarea: TextArea,
-        combo: Combo,
-        date: Date,        
-        datepicker: DatePicker,
+        hidden: Hidden,
         checkbox: Checkbox,
         checkboxgroup: CheckboxGroup,
-        radiogroup: RadioGroup
+        radio: Radio,
+        radiogroup: RadioGroup,
+        combo: Combo,
+        date: Date,
+        datepicker: DatePicker,
+        tokentextarea: TokenTextArea,
+        subform: Subform
     };
     var modeltypes = {
         bool: BoolModel,
@@ -1498,48 +1588,38 @@ define([
         number: NumberModel,
         datetime: DateTimeModel,
         selection: SelectionModel,
-        model: ModelModel
+        model: ModelModel,
     };
 
+    return {
+        viewtypes: viewtypes,
+        modeltypes: modeltypes,
 
-
-
-
-    var exp = {
-        // Form views
         Form: Form,
-        SimpleForm: SimpleForm,
-        CustomForm: CustomForm,
-        
-        // Field views
         Text: Text,
-        Password: Password,
-        Hidden: Hidden,
         TextArea: TextArea,
+        Hidden: Hidden,
+        Checkbox: Checkbox,
+        CheckboxGroup: CheckboxGroup,
+        Radio: Radio,
+        RadioGroup: RadioGroup,
         Combo: Combo,
         Date: Date,
         DatePicker: DatePicker,
-        Checkbox: Checkbox,
-        Radio: Radio,        
-        CheckboxGroup: CheckboxGroup,
-        RadioGroup: RadioGroup,
+        TokenTextArea: TokenTextArea,
+        Subform: Subform,
+        TokenTextArea: TokenTextArea,
 
-
-        // Models
+        FieldModel: FieldModel,
         BoolModel: BoolModel,
         StringModel: StringModel,
         NumberModel: NumberModel,
         DateTimeModel: DateTimeModel,
         SelectionModel: SelectionModel,
+        SingleSelectionModel: SingleSelectionModel,
         ModelModel: ModelModel,
-        
-        // maps
-        viewtypes: viewtypes,
-        modeltypes: modeltypes
-    };
-
-    return exp;
+        TokenModel: TokenModel        
+    }
 
 
-
-});
+})

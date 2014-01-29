@@ -2,10 +2,17 @@ define([
     'jquery',
     'underscore',
     'backbone',
-    'jquery-hotkeys',
-    'jquerypp'
+    'jquery.hotkeys',
+    'jquerypp',
+    'jquery-migrate',
+    'jqueryui-position'
 ], function($, _, Backbone) {
 
+    // Diable stack-trace output from jquery-migrateTrace
+    $.migrateTrace = false;
+    
+    // And silence the deprecation warnings as well
+    $.migrateMute = true;
 
 
 
@@ -56,6 +63,7 @@ define([
     // = Namespace =
     // =============
     var gui = {};
+    window.gui = gui
 
     // ========
     // = Keys =
@@ -78,9 +86,15 @@ define([
     gui.modifierKeys = {
         16: 'shift',
         17: 'ctrl',
+        91: 'meta',
         18: 'alt'};
 
-
+    gui.isModifierKey = function(e) {
+        /* Example:
+           gui.isModifierKey(event) 
+        */
+        return e.keyCode in gui.modifierKeys;
+    }
 
 
 
@@ -94,7 +108,36 @@ define([
     }
 
 
+    gui.repr = function(o, depth, max) {
+        depth = depth || 0;
+        max = max || 3;
 
+        if(depth >= max)
+            return '...';
+        else if(o === null)
+            return 'null';
+            
+        switch(typeof(o)) {
+            case 'string': return '"'+o+'"';
+            case 'function': return 'function';
+            case 'undefined': return 'undefined';
+            case 'object': 
+                if(_.isArray(o))
+                    return '[' + _.map(o, function(item) { 
+                        return gui.repr(item, depth+1, max); 
+                    }).join(', ') + ']';
+                else if(_.isObject(o))
+                    return '{' + _.map(o, function(item, key) { 
+                        return key+': '+gui.repr(item, depth+1, max); 
+                    }).join(', ') + '}';
+                else
+                    return o.toString();
+            default:
+                return o
+        }
+    }
+    
+    
     // ================
     // = IE polyfills =
     // ================
@@ -748,31 +791,9 @@ define([
                     this.trigger('move', {model: model, toIndex: toIndex, fromIndex: fromIndex});
             }
         };
+        
+
     
-        var backboneset = Backbone.Model.prototype.set;
-        Backbone.Model.prototype.set = function(key, value, options) {
-            var attrs, attr, val;
-            if(_.isObject(key) || key === null) {
-                attrs = key;
-                options = value;
-            } else {
-                attrs = {};
-                attrs[key] = value;
-            }            
-            _.each(_.clone(attrs), function(value, key) {
-                
-                 var setter = 'set_' + key;                 
-                 if(typeof this[setter] === 'function') {
-                     this[setter](value, attrs, options, key); // var v = 
-                     // if(v !== undefined)
-                     //     attrs[key] = v;
-                 }
-                 else if(this.traits && this.traits[key]) {
-                     attrs[key] = this.traits[key].parse(value);
-                 }
-            }, this);
-            return backboneset.call(this, attrs, options);
-        };
 
         Backbone.Model.prototype.sync = function(method, model, options) {
             if (this.toRemoteJSON && (method == 'update' || method == 'create')) {
@@ -784,6 +805,84 @@ define([
                 return Backbone.sync.call(this, method, this, options);
             }
         };
+        
+        Backbone.Subset = Backbone.Collection.extend({
+            initialize: function(models, options) {
+                console.log('INITIAZLIE: ', options.source)
+                this.source = options.source;
+                
+                this._prepareModel = _.bind(this._prepareModel, this);
+            },
+            _prepareModel: function(item, options) {
+                console.log('HAAA', this.source)
+                console.log('HAAA2', this.source.get)                
+                
+                // console.log('options: ', (options.source || this.source))
+                if(item) {
+                    var model = this.source.get(item.id || item)
+                    if(!model) 
+                        throw new Error('Unknown item: ' + item)
+                    return model;
+                }
+            },
+            toString: function() {
+                return 'Backbone.Subset(source='+this.source+')';
+            }
+        });
+        
+        
+        Backbone.SubsetMulti = Backbone.Collection.extend({
+            _class: 'Backbone.SubsetMulti',
+            /*
+            Just like Backbone.Subset, but it has multiple source collections
+            and each model of a SubsetMulti has an attribute "collection" 
+            indicating wich collection it should go into.
+            
+            var coll = new Backbone.SubsetMulti({
+                sources: {
+                    mycoll: {
+                        collection: mycollection
+                    },
+                    othercoll: {
+                        collection: othercollection
+                    }
+                }})
+            coll.add({id: 'foo', source: 'mycoll', sourceId: 123, text: 'Foo'})
+            coll.add({id: 'bar', source: 'othercoll', sourceId: 456, text: 'Bar'})            
+            */
+            initialize: function(models, options) {
+                this.sources = options.sources;
+                this.Model = options.Model || Backbone.Model;
+            },
+            _prepareModel: function(item, options) {
+                // console.log('item.id', item.id)
+                if(!item)
+                    return item;
+                
+                if(item.attributes)
+                    item = item.attributes;
+                
+                if(!item.source) 
+                    throw new Error('Item has no "source" property');                
+                if(!item.sourceId) 
+                    throw new Error('Item has no "sourceId" property');
+                if(!this.sources[item.source]) 
+                    throw new Error('Unknown coll "'+item.source+'".');                
+                
+                
+                // Just return the stupid model from this collection as
+                // usual, but add a client-side property <model>.ref
+                // referring the original model holding all the interesting properties.
+                // This stupid model only holds an id and some optional metadata.
+                
+                var ref = this.sources[item.source].collection.get(item.sourceId)
+                
+                var model = new this.Model(item);
+                model.ref = ref;
+                return model;
+            }
+        });
+
         
 
     
@@ -801,11 +900,15 @@ define([
                 */
                 var child = this, // were starting of alike..
                     inits = [],
+                    protoProps = protoProps || {},
                     mixins = protoProps.mixins || [];
 
                 _.each(mixins.slice(), function(mixin) {
-                    if(!mixin)
-                        throw new Error('Unknown mixin')
+
+                    if(!mixin) {
+                        throw new Error(protoProps.toString() + ' has an undefined mixin.')
+                    }
+
 
                     if(mixin.beforeinitcls) // collect initcls functions to run later
                         mixin.beforeinitcls.call(child);
@@ -815,6 +918,9 @@ define([
                 
                 if(protoProps.initcls)
                     inits.push(protoProps.initcls);
+                else if(this.prototype.initcls)
+                    inits.push(this.prototype.initcls);                    
+
 
                 
                 if(protoProps.defaultOptions) {
@@ -827,8 +933,12 @@ define([
                     }
                 }
 
+
                 // add all keys from all mixins if not already declared
                 // in protoProps. 
+                // if(protoProps._class == 'SimpleSelectModel') {
+                //     debugger
+                // }
                 _.each(mixins, function(mixin) {
                     _.defaults(protoProps, mixin);
                     if(mixin.initcls) // collect initcls functions to run later
@@ -926,9 +1036,26 @@ define([
         return obj;
     };
     _.arrayify = function(v) {
-        if(!_.isArray(v)) 
-            v = [v];
-        return v;
+        /*
+        An alternative Array constructor.
+        >>> new Array()
+        []
+        >>> _.arrayify()
+        []
+        >>> new Array()
+        [null]
+        >>> _.arrayify(null)
+        [null]
+        >>> new Array([1, 2, 3])
+        [[1, 2, 3]]                
+        >>> _.arrayify([1, 2, 3])
+        [1, 2, 3]        
+        */
+        if(v === undefined)
+            return [];
+        else if(_.isArray(v))
+            return v
+        return [v]
     };
 
 
@@ -1139,40 +1266,17 @@ define([
 
 
 
-
-    // ==========
-    // = Mixins =
-    // ==========
-    /* A mixin for inheriting events declared on parent view classes. */
-    gui.ChildView = {
-        beforeinitcls: function() {
-            var parentMixins = this.__super__.mixins;        
-            this.prototype.mixins = _.extend([], parentMixins, this.prototype.mixins);        
-        },
-        initcls: function() {
-            var parentEvents = this.__super__.events,
-                parentHotkeys = this.__super__.hotkeys;
-            this.prototype.events = _.extend({}, parentEvents, this.prototype.events);
-            this.prototype.hotkeys = _.extend({}, parentHotkeys, this.prototype.hotkeys);        
-        }
-    };
     
     /* merge the "defaults" dict of the super class */
     gui.ChildModel = {
         initcls: function() {
             var parentDefaults = this.__super__.defaults || {};
             this.prototype.defaults = _.extend({}, parentDefaults, this.prototype.defaults);
+            var parentDefaults = this.__super__.traits || {};
+            
+            this.prototype.traits = _.extend({}, parentDefaults, _.result(this.prototype, 'traits'));            
         }
-    };
-    
-    gui.Traits = {
-        toRemoteJSON: function() {
-            return _.object(_.map(this.traits, function(trait,k) {
-                return [k, trait.toJSON(this.attributes[k])]
-            }, this))
-        }
-    }
-    
+    };    
 
 
 
@@ -1450,6 +1554,17 @@ define([
             top: e.pageY - offset.top
         };
     };
+
+    gui.modelify = function(obj, klass) {
+        if(obj instanceof Backbone.Model)
+            return obj;
+        return new (klass || Backbone.Model)(obj || {});
+    };
+
+    gui.pad = function(value, padlen, padchar) {
+        var pad = new Array(1 + padlen).join(padchar);
+        return (pad + value).slice(-pad.length);
+    }
 
 
     return gui;

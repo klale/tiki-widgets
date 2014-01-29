@@ -4,7 +4,7 @@ define([
     'backbone',
     'gui/base',
     'gui/tools',
-    'position'
+    'jqueryui-position'
 ], function($, _, Backbone, gui, tools) {
 
     // =========
@@ -171,7 +171,7 @@ define([
                 el: this.el,
                 selectables: 'li.selectable',
                 collection: options,
-                chooseOnClick: true,
+                // chooseOnClick: true,
                 chooseOnMouseUp: true,                
                 chooseOnDblClick: false
             });

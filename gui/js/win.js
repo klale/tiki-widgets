@@ -46,7 +46,6 @@ define([
             '<div class="content"></div>'+          
             '<div class="resize"></div>'
         ),
-        mixins: [gui.ChildView],
         events: {
             'mousedown': 'bringToTop',
             'focusin': 'onFocusIn',
@@ -55,7 +54,9 @@ define([
             'draginit .resize': 'onResizeDragInit',
             'dragmove .resize': 'onResizeDragMove',
             'dragend .resize': 'onResizeDragEnd'            
-        },                
+        },
+        merge: ['events'],
+        
         initialize: function(config) {
             config = config || {};
             this.title = config.title || this.title;

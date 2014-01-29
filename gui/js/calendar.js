@@ -3,17 +3,19 @@ define([
     'underscore',
     'backbone',
     './base',
-    './tools',    
+    './tools',
+    './traits',
     'moment'
-], function($, _, Backbone, gui, tools, moment) {
+], function($, _, Backbone, gui, tools, t, moment) {
 
 var exp = {};    
+
 
 
 // =================
 // = MonthCalendar =
 // =================
-var MonthCalendarModel = Backbone.Model.extend({
+var MonthCalendarModel = t.Model.extend({    
     defaults: function() {
         return {
             date: new Date(),
@@ -118,7 +120,7 @@ exp.MonthCalendar = Backbone.View.extend({
         // Add the weekday names
         var tr = $('<tr class="weekdays"></tr>').appendTo(table.find('thead'));                
         for(var i=0,days=[1,2,3,4,5,6,0]; i<days.length; i++) {
-            tr.append($('<th>'+moment.weekdaysShort[days[i]]+'</th>'));
+            tr.append($('<th>'+moment.weekdaysShort()[days[i]]+'</th>'));
         }
         
         // Add all the days
