@@ -148,6 +148,27 @@
 // ============
 // = Checkbox =
 // ============
+
+// Todo: Remove this workaround.
+// Why is not .gui-checkbox:before inherited by .gui-radio?
+.gui-checkbox-bg {
+    @include icon-before("\00a0"); // blank space
+    @include inline-block();
+    width: 15px;
+    height: 15px;
+    content: '\00a0';        
+    border: 1px solid #999;
+    
+    text-align: center;
+    font-size: 11px;
+    line-height: 16px;
+    margin-right: 6px;
+    margin-left: 3px;
+    color: #333;
+    @include gradient(#fff, #e0e0e0);    
+    border-radius: 3px;
+}
+
 .gui-checkbox {
 
     // active and focus
@@ -169,21 +190,7 @@
     // icon
     &:before {
         // draw a checkbox
-        @include border-radius(3px);
-
-        @include icon-before("\00a0"); // blank space
-        @include inline-block();
-        width: 15px;
-        height: 15px;
-        content: '\00a0';        
-        border: 1px solid #999;
-        text-align: center;
-        font-size: 11px;
-        line-height: 16px;
-        margin-right: 6px;
-        margin-left: 3px;
-        color: #333;
-        @include gradient(#fff, #e0e0e0);
+        @extend .gui-checkbox-bg;
 
         .ie9 & {
             background-color: #fff;  
@@ -192,7 +199,9 @@
         }
     }
 
-    &.gui-checked:before {
+    
+    &.gui-checked:before,
+    &[checked]:before {
         content: "\e0fe";
     }
 
@@ -208,55 +217,7 @@
             border: 1px solid #ccc !important;
             box-shadow: none;
         }
-
-        .gui-ie7 & {      
-            color: #aaa;  
-            i {
-                background-position: -68px 0px;
-            }            
-            &.gui-checked i {
-                background-position: -85px 0px;
-            }
-        }        
-    }
-    > i {
-        display: none
-    }
-
-
-
-    .gui-ie7 & {
-        position: relative;
-        padding-left: 22px;
-        text-decoration: none;
-        color: #555;  // todo: $textcolor
-        i {
-            display: block;
-            position: absolute;
-            width: 17px;
-            height: 17px;
-            left: 0px;
-            top: 0px;
-            background-image: url(../img/form.png);
-            background-repeat: no-repeat;
-            cursor: default;
-            background-position: 0px 0px;
-        }
-        &.active i {
-            background-position: -34px 0px;
-        }
-        &.gui-checked i {
-            background-position: -17px 0px;            
-        }
-        &.gui-checked.active i {
-            background-position: -51px 0px;
-        }
-        &.focus i {
-            @include focusstyle();
-        }        
-    }
-
-    
+    }    
 }
 
 
@@ -267,8 +228,10 @@
     line-height: 18px;
     
     &:before {
+        @extend .gui-checkbox-bg;
+
         // draw a circle
-        @include border-radius(13px);
+        border-radius: 13px;
         position: absolute;
         left: 0px;
         top: 0px;
@@ -279,33 +242,6 @@
     	content: "\f111";        
     }    
 
-    .gui-disabled &,
-    &.gui-disabled {
-        .gui-ie7 & {      
-            i {
-                background-position: -170px 0px;            
-            }            
-            &.gui-checked i {
-                background-position: -187px 0px;            
-            }
-        }        
-    }
-
-    
-    .gui-ie7 & {
-        i {
-            background-position: -102px 0px;
-        }        
-        &.active i {
-            background-position: -136px 0px;
-        }
-        &.gui-checked i {
-            background-position: -119px 0px;            
-        }
-        &.gui-checked.active i {
-            background-position: -153px 0px;
-        }
-    }
 }
 
 
@@ -322,6 +258,8 @@
     position: relative;
     height: 24px;    
     border: 1px solid #bcbcbc;
+    display: inline-block;
+
 
     &:focus,&.focus {
         @include glowoutline();        
@@ -502,6 +440,8 @@
 /* ============= */
 .gui-date {
     position: relative;
+    display: inline-block;
+    width: 150px;
     
     > button {
         position: absolute;
@@ -540,6 +480,20 @@
             color: #777;
             text-shadow: #fff 0px 2px;            
         }
+    }
+    &.horizontal {
+        li {
+            overflow: hidden;
+            .label {
+                width: 20%;
+                float: left;
+            }
+            .field {
+                width: 75%;
+                float: left;
+            }
+        }        
+        
     }
 }
 

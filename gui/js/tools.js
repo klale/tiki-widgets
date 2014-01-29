@@ -3,7 +3,7 @@ define([
     'underscore',
     'backbone',
     'moment',    
-    'globalize/sv_se',
+    'globalize/globalize',
     './base',
     './tools'    
 ], function($, _, Backbone, moment, Globalize, gui, tools) {
@@ -154,8 +154,10 @@ define([
             _.bindAll(this, 'onSelectableMouseDown', 'chooseSelected', 'onSelectableKeyDown')
             this.selectables = config.selectables;
             this.collection = config.collection; // optional
+            this.keynav = config.keynav === false ? false : true; // bool, true default, false to disable key navigation
 
-            this.$el.on('keydown', this.onSelectableKeyDown);            
+            if(this.keynav)
+                this.$el.on('keydown', this.onSelectableKeyDown);            
             this.$el.on('mousedown', config.selectables, this.onSelectableMouseDown);
             
             // Todo: Replace these silly arguments with the out-commented code below?
@@ -186,7 +188,8 @@ define([
             this.$el.off('mousedown', this.selectables, this.onSelectableMouseDown);
             this.$el.off('dblclick', this.selectables, this.chooseSelected);
             this.$el.off('click', this.selectables, this.chooseSelected);
-            this.$el.off('keydown', this.onSelectableKeyDown);            
+            if(this.keynav)
+                this.$el.off('keydown', this.onSelectableKeyDown);            
         },
         onMouseDown: function(e) {
             if(!$(e.target).closest(this.el, this.selectables).length || e.target == this.el) {
@@ -195,8 +198,10 @@ define([
         },
         
         onMetaAKeyDown: function(e) {
-            this.selectAll();
-            e.preventDefault();
+            if(this.keynav) {
+                this.selectAll();
+                e.preventDefault();
+            }
         },
         onSelectableMouseDown: function(e) {
             var el = $(e.currentTarget);
@@ -260,7 +265,13 @@ define([
         select: function(el) {
             if(_.isNumber(el))
                 el = this.$(this.selectables+':nth-child('+el+')');
+            else if(_.isString(el)) {
+                console.log('Q: ', this.selectables+'[data-id="'+el+'"]')
+                el = this.$(this.selectables+'[data-id="'+el+'"]');
+            }
 
+
+                
             var ev = {
                 el: el[0],
                 selected: this.getSelected()
@@ -275,11 +286,17 @@ define([
         selectOne: function(el) {
             if(!el || !el[0])
                 el = this.$(this.selectables+':visible:first');
-
-            if(!el || !el.is(this.selectables)) 
-                return;
+            else if(_.isNumber(el))
+                el = this.$(this.selectables+':nth-child('+el+')');
+            else if(_.isString(el)) {
+                console.log('Q: ', this.selectables+'[data-id="'+el+'"]')
+                el = this.$(this.selectables+'[data-id="'+el+'"]');
+            }
             
-
+            if(!el)
+                return;
+            if(el.is && !el.is(this.selectables))
+                return;
 
             if(!el.hasClass('selected')) {
                 this.unselectAll();                
@@ -295,6 +312,13 @@ define([
             this.$(this.selectables).last().addClass('head');
             this.trigger('select');
             this.trigger('change');
+        },
+        setSelection: function(items) {
+            this.unselectAll();
+            _(_.arrayify(items)).each(function(item) {
+                // item can be an index, an elemenet
+                this.select(item);
+            }, this)
         },
         unselect: function(el) {
             var ev = {el: el[0]};
@@ -808,7 +832,13 @@ define([
             if(!val)
                 return '<td><div></div></td>';
             return '<td><div>'+moment.utc(row[col.name]).local().format('YYYY-MM-DD')+'</div></td>';            
-        }
+        },
+        'amount': function(row, col) {
+            var val = row[col.name];
+            if(!val)
+                return '<td><div></div></td>';
+            return '<td><div>'+Globalize.format(val, 'n')+'</div></td>';            
+        },
     }
 
 

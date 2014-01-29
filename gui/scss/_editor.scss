@@ -1,19 +1,16 @@
 
 
 
-
 .gui-editor {
     position: relative;
     outline: none;
-    
-    .toolbar {
+
+
+    .btn-toolbar {
         height: 30px;
-        li {
-            float: left;
-            margin-right: 5px;
-        }
+
     }
-    
+
     .left {
         float: left;
         width: 100%;
@@ -27,7 +24,7 @@
     }
 
 
-    
+
     .pane {
         border: none;
         padding: 0;
@@ -40,7 +37,7 @@
         section {
             margin-bottom: 20px;
             padding: 10px;
-        
+
             padding-left: 13px;
             border: 1px solid #ccc;
             background-color: #fafafa;
@@ -71,7 +68,7 @@
             border: none;
             font-size: 17px;
         }
-        
+
         h3 {
             border-bottom: 1px solid #ddd;
             margin-bottom: 5px;
@@ -87,9 +84,9 @@
         }
 
         ul {
-            list-style-type: disc;            
-            margin: 20px 0 20px 20px;            
-        }    
+            list-style-type: disc;
+            margin: 20px 0 20px 20px;
+        }
         li {
             margin-bottom: 5px;
             padding-left: 5px;
@@ -100,16 +97,16 @@
         section > div.fileview,
         section > div.codeview {
             border: none;
-        }        
+        }
     }
     pre.html {
         padding: 10px;
         padding-left: 25px;
-        white-space: pre-wrap;        
+        white-space: pre-wrap;
         display: none;
     }
-    
-}    
+
+}
 
 
 
@@ -130,7 +127,7 @@
     .file {
         width: 128px;
         height: 150px;
-        display: inline-block;        
+        display: inline-block;
         margin-right: 10px;
         margin-bottom: 15px;
         text-align: center;
@@ -165,9 +162,9 @@
         }
         .icon img {
             //width: auto;
-            //height: auto;        
+            //height: auto;
             max-width: 128px;
-            max-height: 128px;       
+            max-height: 128px;
 
             //background-size: contain;
             //background-repeat: no-repeat;
@@ -177,10 +174,10 @@
 
         }
     }
-    .file.new.psd .icon {    
+    .file.new.psd .icon {
         background: url(/img/icons/psd.png) no-repeat;
     }
-    .file.new.pdf .icon {    
+    .file.new.pdf .icon {
         background: url(/img/icons/pdf.png) no-repeat;
     }
 
@@ -194,7 +191,7 @@
             color: #fff;
             display: inline-block;
         }
-    }    
+    }
     // Blue, if fileview has focus
     &:focus .file.selected {
         .icon img {
@@ -204,7 +201,7 @@
             background-color: #3B77D5;
         }
     }
-        
+
 }
 .fileview-quicklook {
     left: 0px;

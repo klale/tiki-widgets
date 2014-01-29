@@ -5,7 +5,9 @@ define([
     './base',
     './form',
     './traits',
-], function($, _, Backbone, base, form, traits) {
+    './simpleform',
+    './menu'
+], function($, _, Backbone, base, form, traits, simpleform, menu) {
    
 
     var tmpOptions = [
@@ -30,7 +32,7 @@ define([
     for its precidate-combo.
     
     It is used as the underlying model for the row views 
-    (as: myrowview.form.model).
+    (as: myrowview.form.values).
     
     A Constraint can be validated.
     */
@@ -41,6 +43,8 @@ define([
         toQueryString: function() {
             if(!this.get('name'))
                 return '';
+                
+            console.log('toQueryString', this.attributes)
             
             var s = this.get('name')+'='+this.get('predicate')+'='+this.get('value');
             if(this.get('predicate') == 'between')
@@ -63,11 +67,14 @@ define([
             'value': new traits.Number(),
             'value2': new traits.Number()
         },
+        defaults: {
+            predicate: 'atleast'
+        },
         predicates: [
-            {id: 'is', text: 'exactly'},
-            {id: 'between', text: 'between'},
+            {id: 'eq', text: 'Is'},
             {id: 'atleast', text: 'At least'},
-            {id: 'atmost', text: 'At most'}
+            {id: 'atmost', text: 'At most'},
+            {id: 'between', text: 'Between', isrange: true}
         ],
     });
     
@@ -80,10 +87,10 @@ define([
             'value2': new traits.DateTime()
         },
         predicates: [
-            {id: 'is', text: 'exactly'},
-            {id: 'between', text: 'between'},
+            {id: 'eq', text: 'Is'},
             {id: 'atleast', text: 'At least'},
-            {id: 'atmost', text: 'At most'}
+            {id: 'atmost', text: 'At most'},
+            {id: 'between', text: 'Between', isrange: true}
         ],
         toQueryString: function() {
             if(!this.get('name'))
@@ -106,11 +113,29 @@ define([
             'value2': new traits.String()
         },
         predicates: [
-            {id: 'is', text: 'Is exactly'},
+            {id: 'eq', text: 'Is'},
             {id: 'startswith', text: 'Starts with'},
             {id: 'endswith', text: 'Ends with'},
         ],
     });
+
+    var EnumConstraint = Constraint.extend({
+        traits: {
+            'title': new traits.String(),
+            'name': new traits.String(),
+            'predicate': new traits.String(),
+            // 'options': new traits.Collection(),
+            'value': new traits.String(),
+        },
+        defaults: {
+            predicate: 'eq'
+        },
+        predicates: [
+            {id: 'eq', text: 'Is'},
+            {id: 'ne', text: 'Is not'},
+        ],
+    });
+    
 
 
     // =========
@@ -121,7 +146,7 @@ define([
         template: _.template2(''+
             '<div class="title">${obj.title}</div>'+
             '<div class="fields">'+
-                '<div name="name"></div>'+
+                // '<div name="name"></div>'+
                 '<div name="predicate"></div>'+
                 '<div name="value"></div>'+
                 '<div name="value2"></div>'+                
@@ -137,20 +162,35 @@ define([
             this.$el.html(this.template(this.model.toJSON()));
 
             // Create a basic form            
-            this.form = new form.CustomForm({
-                model: this.model,
-                fields: [
-                    {name: 'name', type: 'combo', options: tmpOptions},
-                    {name: 'predicate', type: 'combo', options: this.model.predicates},
-                    {name: 'value', type: 'text'},
-                    {name: 'value2', type: 'text'}                    
-                ],
+            this.form = new simpleform.CustomForm({
+                values: this.model,
+                fields: {
+                    // 'name': {type: 'combo', options: tmpOptions},
+                    'predicate': {type: 'combo', options: this.model.predicates},
+                    'value': {type: 'text'},
+                    'value2': {type: 'text'}                    
+                },
                 el: this.el
             });
         },
         render: function() {
             this.form.render();
             this.$('>.title').text(this.model.get('title'));
+            
+            var pred = this.model.get('predicate');
+            if(pred) {
+                var isrange = _.findWhere(this.model.predicates, {id:pred}).isrange
+                console.log('IS: ', pred, isrange)
+                if(isrange)
+                    this.$('*[name=value2]').show();
+                else 
+                    this.$('*[name=value2]').hide();
+                
+            }
+            else {
+                this.$('*[name=value2]').hide();
+            }
+            
             return this;
         }
     });
@@ -162,16 +202,21 @@ define([
             this.$el.html(this.template(this.model.toJSON()));
 
             // Create a basic form            
-            this.form = new form.CustomForm({
-                model: this.model,
-                fields: [
-                    {name: 'name', type: 'combo', options: tmpOptions},
-                    {name: 'predicate', type: 'combo', options: this.model.predicates},
-                    {name: 'value', type: 'text', modeltype: 'number'},
-                    {name: 'value2', type: 'text', modeltype: 'number'}                    
-                ],
+            this.form = new simpleform.CustomForm({
+                values: this.model,
+                fields: {
+                    // 'name': {type: 'combo', options: tmpOptions},
+                    'predicate': {type: 'combo', options: this.model.predicates},
+                    'value': {type: 'text', modeltype: 'number'},
+                    'value2': {type: 'text', modeltype: 'number'}                    
+                },
                 el: this.el
             });
+            
+            this.form.form.values.on('change', function(e) {
+               console.log('yey', arguments) 
+            })            
+            
         },        
     })
 
@@ -180,7 +225,7 @@ define([
         template: _.template2(''+
             '<div class="title">${obj.title}</div>'+
             '<div class="fields">'+
-                '<div name="name"></div>'+
+                // '<div name="name"></div>'+
                 '<div name="predicate"></div>'+
                 '<div name="value"></div>'+
                 '<div name="value2"></div>'+                
@@ -196,21 +241,55 @@ define([
             this.$el.html(this.template(this.model.toJSON()));
 
             // Create a basic form
-            this.form = new form.CustomForm({
-                model: this.model,
-                fields: [
-                    {name: 'name', type: 'combo', options: tmpOptions},
-                    {name: 'predicate', type: 'combo', options: this.model.predicates},
-                    {name: 'value', type: 'date'},
-                    {name: 'value2', type: 'date'}                    
-                ],
+            this.form = new simpleform.CustomForm({
+                values: this.model,
+                fields: {
+                    // 'name': {type: 'combo', options: tmpOptions},
+                    'predicate': {type: 'combo', options: this.model.predicates},
+                    'value': {type: 'date'},
+                    'value2': {type: 'date'}                    
+                },
                 el: this.el
             });
-        },
-        render: function() {
-            this.form.render();
-            this.$('>.title').text(this.model.get('title'));
-            return this;
+        }
+        // render: function() {
+        //     this.form.render();
+        //     this.$('>.title').text(this.model.get('title'));
+        //     return this;
+        // }
+    });
+
+
+    var EnumRow = Backbone.View.extend({
+        tagName: 'li',
+        template: _.template2(''+
+            '<div class="title">${obj.title}</div>'+
+            '<div class="fields">'+
+                '<div name="predicate"></div>'+
+                '<div name="value"></div>'+
+            '</div>'+
+            '<div class="tools">'+
+                '<button class="remove">Remove</button>'+
+            '</div>'
+        ),
+        defaultmodel: EnumConstraint,
+        
+        initialize: function(config) {
+            this.model = config.model || new EnumConstraint(config, {parse: true});
+            this.$el.html(this.template(this.model.toJSON()));
+
+
+            var constraintType = this.model.collection.types.findWhere({name: this.model.get('name')});
+
+            // Create a basic form
+            this.form = new simpleform.CustomForm({
+                values: this.model,
+                fields: {
+                    'predicate': {type: 'combo', options: this.model.predicates},
+                    'value': {type: 'combo', options: constraintType.get('options')},
+                },
+                el: this.el
+            });
         }
     });
 
@@ -234,7 +313,8 @@ define([
         },
         model: function(attrs, options) {
             // get the class
-            var obj = options.types.findWhere({name: attrs.name});
+            // `options.collection` is what you would expect `this` to be.
+            var obj = options.collection.types.findWhere({name: attrs.name});
             
 
             var viewclass = viewtypes[obj.get('type')]
@@ -338,7 +418,22 @@ define([
             this.trigger('apply', {queryString: this.model.toQueryString()})
         },
         onAddClick: function(e) {
-            this.model.get('constraints').add({});
+            // this.model.get('constraints').add({});
+            var m = new menu.Menu({
+                options: this.model.get('constraintTypes').map(function(o) {
+                    return {id: o.get('name'), text: o.get('title')}
+                })
+            });
+            console.log('FOO2', this.model.get)
+            m.show().alignTo(this.el)
+            var model = this.model;
+            m.selectable.on('choose', function(e) {
+                console.log('NAME: ', e.model.get('id'))
+                model.get('constraints').add({
+                    name: e.model.get('id')
+                })
+            })
+            
         },        
         onNameChange: function(model, newval, changes) {
             var constraints = this.model.get('constraints'),
@@ -363,9 +458,10 @@ define([
 
 
     var viewtypes = {
-        date: DateRow,
-        string: StringRow,
-        number: NumberRow
+        'date': DateRow,
+        'string': StringRow,
+        'number': NumberRow,
+        'enum': EnumRow
     };
 
 
@@ -373,6 +469,7 @@ define([
         FilterView: FilterView,
         StringRow: StringRow,
         DateRow: DateRow,
+        EnumRow: EnumRow,
         viewtypes: viewtypes
     }
     
