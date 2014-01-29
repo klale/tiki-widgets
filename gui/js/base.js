@@ -5,9 +5,52 @@ define([
     'jquery-hotkeys',
     'jquerypp'
 ], function($, _, Backbone) {
+
+
+
+
+    // ==============
+    // = jquery 1.9 =
+    // ==============
+    /* Put back $.browser which was dropped in jQuery 1.9 */
+    $.uaMatch = function( ua ) {
+    	ua = ua.toLowerCase();
+
+    	var match = /(chrome)[ \/]([\w.]+)/.exec( ua ) ||
+    		/(webkit)[ \/]([\w.]+)/.exec( ua ) ||
+    		/(opera)(?:.*version|)[ \/]([\w.]+)/.exec( ua ) ||
+    		/(msie) ([\w.]+)/.exec( ua ) ||
+    		ua.indexOf("compatible") < 0 && /(mozilla)(?:.*? rv:([\w.]+)|)/.exec( ua ) ||
+    		[];
+
+    	return {
+    		browser: match[ 1 ] || "",
+    		version: match[ 2 ] || "0"
+    	};
+    };
+
+    // Don't clobber any existing $.browser in case it's different
+    if ( !$.browser ) {
+    	matched = $.uaMatch( navigator.userAgent );
+    	browser = {};
+
+    	if ( matched.browser ) {
+    		browser[ matched.browser ] = true;
+    		browser.version = matched.version;
+    	}
+
+    	// Chrome is Webkit, but Webkit is also Safari.
+    	if ( browser.chrome ) {
+    		browser.webkit = true;
+    	} else if ( browser.webkit ) {
+    		browser.safari = true;
+    	}
+
+    	$.browser = browser;
+    }
+
+
     
-
-
     
     // =============
     // = Namespace =
@@ -465,6 +508,7 @@ define([
 
 
     function tabChainTabKeyDown(e) {
+        console.log('REACT')
         if(e.altKey || e.ctrlKey || e.metaKey)
             return;
         var set = $(e.currentTarget).find('*:tabable'),
@@ -476,7 +520,7 @@ define([
 
     $.fn.tabChain = function(options) {
         this.each(function() {
-            $(this).on('keydown tab', null, tabChainTabKeyDown); 
+            $(this).on('keydown', null, 'tab', tabChainTabKeyDown); 
         });        
     }
 
@@ -744,6 +788,9 @@ define([
                     mixins = protoProps.mixins || [];
 
                 _.each(mixins.slice(), function(mixin) {
+                    if(!mixin)
+                        throw new Error('Unknown mixin')
+
                     if(mixin.beforeinitcls) // collect initcls functions to run later
                         mixin.beforeinitcls.call(child);
                 });
@@ -752,6 +799,17 @@ define([
                 
                 if(protoProps.initcls)
                     inits.push(protoProps.initcls);
+
+                
+                if(protoProps.defaultOptions) {
+                    var constr = (protoProps.constructor === Object) ? this : protoProps.constructor;
+                    protoProps.constructor = function(attributes, options) {
+                        // Inject the default options
+                        options = _.extend(options || {}, protoProps.defaultOptions);
+                        // Call the hijacked constructor                        
+                        constr.call(this, attributes, options);
+                    }
+                }
 
                 // add all keys from all mixins if not already declared
                 // in protoProps. 
@@ -856,6 +914,120 @@ define([
             v = [v];
         return v;
     };
+
+
+
+
+    /**
+     * Underscore mixins for deep objects
+     *
+     * Based on https://gist.github.com/echong/3861963
+     */
+    (function() {
+      var arrays, basicObjects, deepClone, deepExtend, deepExtendCouple, isBasicObject,
+        __slice = [].slice;
+
+      deepClone = function(obj) {
+        var func, isArr;
+        if (!_.isObject(obj) || _.isFunction(obj)) {
+          return obj;
+        }
+        if (obj instanceof Backbone.Collection || obj instanceof Backbone.Model) {
+          return obj;
+        }
+        if (_.isDate(obj)) {
+          return new Date(obj.getTime());
+        }
+        if (_.isRegExp(obj)) {
+          return new RegExp(obj.source, obj.toString().replace(/.*\//, ""));
+        }
+        isArr = _.isArray(obj || _.isArguments(obj));
+        func = function(memo, value, key) {
+          if (isArr) {
+            memo.push(deepClone(value));
+          } else {
+            memo[key] = deepClone(value);
+          }
+          return memo;
+        };
+        return _.reduce(obj, func, isArr ? [] : {});
+      };
+
+      isBasicObject = function(object) {
+        if (object == null) return false;
+        return (object.prototype === {}.prototype || object.prototype === Object.prototype) && _.isObject(object) && !_.isArray(object) && !_.isFunction(object) && !_.isDate(object) && !_.isRegExp(object) && !_.isArguments(object);
+      };
+
+      basicObjects = function(object) {
+        return _.filter(_.keys(object), function(key) {
+          return isBasicObject(object[key]);
+        });
+      };
+
+      arrays = function(object) {
+        return _.filter(_.keys(object), function(key) {
+          return _.isArray(object[key]);
+        });
+      };
+
+      deepExtendCouple = function(destination, source, maxDepth) {
+        var combine, recurse, sharedArrayKey, sharedArrayKeys, sharedObjectKey, sharedObjectKeys, _i, _j, _len, _len1;
+        if (maxDepth == null) {
+          maxDepth = 20;
+        }
+        if (maxDepth <= 0) {
+          console.warn('_.deepExtend(): Maximum depth of recursion hit.');
+          return _.extend(destination, source);
+        }
+        sharedObjectKeys = _.intersection(basicObjects(destination), basicObjects(source));
+        recurse = function(key) {
+          return source[key] = deepExtendCouple(destination[key], source[key], maxDepth - 1);
+        };
+        for (_i = 0, _len = sharedObjectKeys.length; _i < _len; _i++) {
+          sharedObjectKey = sharedObjectKeys[_i];
+          recurse(sharedObjectKey);
+        }
+        sharedArrayKeys = _.intersection(arrays(destination), arrays(source));
+        combine = function(key) {
+          return source[key] = _.union(destination[key], source[key]);
+        };
+        for (_j = 0, _len1 = sharedArrayKeys.length; _j < _len1; _j++) {
+          sharedArrayKey = sharedArrayKeys[_j];
+          combine(sharedArrayKey);
+        }
+        return _.extend(destination, source);
+      };
+
+      deepExtend = function() {
+        var finalObj, maxDepth, objects, _i;
+        objects = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), maxDepth = arguments[_i++];
+        if (!_.isNumber(maxDepth)) {
+          objects.push(maxDepth);
+          maxDepth = 20;
+        }
+        if (objects.length <= 1) {
+          return objects[0];
+        }
+        if (maxDepth <= 0) {
+          return _.extend.apply(this, objects);
+        }
+        finalObj = objects.shift();
+        while (objects.length > 0) {
+          finalObj = deepExtendCouple(finalObj, deepClone(objects.shift()), maxDepth);
+        }
+        return finalObj;
+      };
+
+      _.mixin({
+        deepClone: deepClone,
+        isBasicObject: isBasicObject,
+        basicObjects: basicObjects,
+        arrays: arrays,
+        deepExtend: deepExtend
+      });
+
+    }).call(this);
+
 
 
     /* 
@@ -1116,7 +1288,7 @@ define([
 
     gui.makePreText = function(plaintext) {
         var html,
-            plaintext = plaintext.trim();
+            plaintext = (plaintext || '').trim();
         
         if($.browser.webkit || $.browser.chrome) {
             // Wrap each textline inside <div>line</div>
