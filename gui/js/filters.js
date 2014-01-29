@@ -2,9 +2,10 @@ define([
     'jquery',
     'underscore',
     'backbone',
+    'jsuri',
     './base',
     './form'
-], function($, _, Backbone, base, form) {
+], function($, _, Backbone, jsuri, base, form) {
 
 
     var exp = {};
