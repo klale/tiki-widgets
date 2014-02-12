@@ -1,0 +1,161 @@
+@import "base";
+/*
+A base theme.
+*/
+
+
+
+
+$selected: #7C7C7C;
+$selected_focused: #3B77D5;
+$selected_grad: #aaa #888;
+$selected_grad_focused: #638CF5 #2464F3;
+
+
+@mixin glowtext() {
+    color: rgb(14, 158, 211);
+    text-shadow: 0 0 5px rgba(14, 158, 211, 0.4);
+}
+@mixin glow() {
+    // Cyan glow
+    @include box-shadow(0 0 5px rgba(14, 158, 211, 0.4));
+    border-color: rgb(14, 158, 211) !important;
+    outline: none;
+}
+@mixin glow-invalid() {
+    // Red glow
+    @include box-shadow(0 0 5px rgba(255, 0, 0, 0.4));
+    border-color: rgb(255, 0, 0) !important;
+    outline: none;
+}
+
+
+@mixin selectables() {
+    .selected {
+        background-color: $selected;
+        color: #fff;
+        border-color: darken($selected, 20%);
+    }
+    &:focus .selected,
+    &.focus .selected {
+        @include two-color-gradient($selected_grad_focused);      
+        border-color: darken($selected_focused, 20%);        
+    }    
+}
+
+
+
+
+
+// ========
+// = Menu =
+// ========
+.tiki-menu {
+    @extend .base-menu;
+    @include selectables();
+
+    > ul {
+        > li {
+            padding: 4px 15px;
+            color: #444;
+            &.disabled {
+                color: #aaa;
+            }
+        }
+        > li.spacer {
+            height: 1px;
+            margin: 5px 0;
+            background-color: #ddd;
+        }
+        i {
+            @include icon();
+            display: none;
+        }
+    }
+}
+
+
+// ============
+// = Sortable =
+// ============
+.tiki-spaceholder {
+    @extend .base-spaceholder;
+}
+
+
+// ============
+// = Calendar =
+// ============
+.tiki-calendar {
+    @extend .base-calendar;
+    @include selectables();
+    .selected .date {
+        color: #fff;
+    }    
+}
+
+
+// ============
+// = Controls =
+// ============
+.tiki-text {
+    @extend .base-text;
+    border: 1px solid #ccc;
+    padding: 2px 5px;   
+    background-color: #fff;
+    line-height: 20px;
+    height: 25px;    
+        
+    &.empty {
+        font-style: italic;
+        color: #999;
+    }
+    &:focus,&.focus {
+        @include glow();
+    }
+    &.invalid {
+        border: 1px solid red;
+        background-color: #ffece7;
+        &:focus,&.focus {
+            @include glow-invalid();
+        }
+    }
+}
+
+.tiki-password {
+    @extend .base-password;
+}
+.tiki-textarea {
+    @extend .base-textarea;
+}
+.tiki-checkbox {
+    @extend .base-checkbox;
+}
+.tiki-radio {
+    @extend .base-radio;
+}
+.tiki-combo {
+    @extend .base-combo;
+}
+.tiki-hidden {
+    @extend .base-hidden;
+}
+.tiki-checkboxgroup {
+    @extend .base-checkboxgroup;
+}
+.tiki-radiogroup {
+    @extend .base-radiogroup;
+}
+.tiki-date {
+    @extend .base-date;
+}
+.tiki-datepicker {
+    @extend .base-datepicker;
+    @include selectables();
+}
+.tiki-simpleform {
+    @extend .base-simpleform;
+}
+
+
+

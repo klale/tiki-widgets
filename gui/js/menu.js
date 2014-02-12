@@ -2,10 +2,10 @@ define([
     'jquery',
     'underscore',
     'backbone',
-    'gui/base',
-    'gui/tools',
-    'jqueryui-position'
-], function($, _, Backbone, gui, tools) {
+    './util',
+    './tools'
+], function($, _, Backbone, Util, Tools) {
+    'use strict';
 
     // =========
     // = Utils =
@@ -20,23 +20,6 @@ define([
     // ==========================
     // = Models and collections =
     // ==========================
-    var OptionModel = Backbone.Model.extend({
-        defaults: {
-            enabled: true,
-            submenu: null,  // new MenuModel()
-            expanded: false
-        },
-        parse: function(json, xhr) {
-            if(json.submenu) 
-                json.submenu = new MenuModel(json.submenu, {parse: true});
-            return json;
-        }
-    });
-    
-    var Options = Backbone.Collection.extend({
-        model: OptionModel
-    });
-    
     var MenuModel = Backbone.Model.extend({
         defaults: function() {
             return {
@@ -55,6 +38,25 @@ define([
         }
     });
     
+    var OptionModel = Backbone.Model.extend({
+        defaults: {
+            enabled: true,
+            submenu: null,  // new MenuModel()
+            expanded: false
+        },
+        parse: function(json, xhr) {
+            if(json.submenu) 
+                json.submenu = new MenuModel(json.submenu, {parse: true});
+            return json;
+        }
+    });
+    
+    var Options = Backbone.Collection.extend({
+        model: OptionModel
+    });
+    
+
+    
 
     // =========
     // = Views =
@@ -62,7 +64,7 @@ define([
     var Option = Backbone.View.extend({
         className: 'selectable',
         tagName: 'li',
-        template: _.template2('<span>${obj.text}</span><i>&#xe10a;</i>'),
+        template: Util.template('<span>${obj.text}</span><i>&#xe10a;</i>'),
 
         render: function() {
             this.$el.html(this.template(this.model.toJSON()));
@@ -130,9 +132,9 @@ define([
     });
     
     */
-    var Menu = Backbone.View.extend({
+    var Menu = Tools.View.extend({
         tagName: 'div', 
-        className: 'gui-menu',
+        className: 'tiki-menu',
         attributes: {
             tabindex: 0
         },
@@ -167,7 +169,7 @@ define([
             options.on('change:expanded', this.onExpandedChange, this);
             
             // Create a Selectable
-            this.selectable = new tools.Selectable({
+            this.selectable = new Tools.Selectable({
                 el: this.el,
                 selectables: 'li.selectable',
                 collection: options,
@@ -192,9 +194,6 @@ define([
             this.model.get('options').each(function(option) {
                 this.addOne(option);
             }, this);
-            
-            if($.browser.ltie9)
-                this.$el.ieshadow();            
             return this;
         },
         addOne: function(option) {
@@ -232,7 +231,7 @@ define([
         
                         
         show: function(options) {
-            var opt = _.defs(options, {
+            var opt = Util.defs(options, {
                 hideOther: true,
                 focus: true,
                 alignTo: false,
@@ -328,7 +327,7 @@ define([
             // setTimeout intto something reusable, quite common..
             window.setTimeout(_.bind(function(e) {
                 var focused = this.el.ownerDocument.activeElement;
-                if(!$(focused).is('.gui-menu')) 
+                if(!$(focused).is('.tiki-menu')) 
                     this._hideAll();
             }, this), 1);
         },
@@ -358,7 +357,7 @@ define([
         },
         onKeyDown: function(e) {
             this._okMouseUp = true;
-            if(gui.isArrowKey(e))
+            if(Util.isArrowKey(e))
                 this._lock = true;
         },
         onKeyUp: function() {

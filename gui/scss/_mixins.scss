@@ -1,19 +1,5 @@
-// ==========
-// = Colors =
-// ==========
-$selected: #7C7C7C;
-$selected_focused: #3B77D5;
-$selected_grad: #aaa #888;
-$selected_grad_focused: #638CF5 #2464F3;
 
 
-@mixin inline-block() {
-    display: inline-block;
-    .gui-ie7 & {
-        zoom: 1;
-        *display: inline;
-    }
-}
 
 
 @mixin glowtext() {
@@ -153,11 +139,6 @@ $selected_grad_focused: #638CF5 #2464F3;
 }
 
 
-@mixin box-sizing($arg) {
-    box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
-}
 
 @mixin gradient($start: #EEE, $stop: #FFF) {
     background: -webkit-gradient(
