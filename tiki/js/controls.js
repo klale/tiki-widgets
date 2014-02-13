@@ -528,16 +528,9 @@ define([
             this.listenTo(this.model, 'change', this.render, this);
             this.listenTo(this.model.get('value'), 'reset', this.render, this);
             
-
             // Create the dropdown menu
-            // TODO: could we avoid serializing the Collection here? Or is that wrong?
             this.menu = new Menu.Menu({
-                options: this.model.get('options').map(function(o) {
-                    // return {id: o.id, text: o.get('text')};
-                    if(_.isObject(o))
-                        return _.clone(o.attributes);
-                    return o;
-                })
+                options: config.options
             });
             this.menu.selectable.on('choose', this.onMenuChoose);
             this.menu.on('hide', this.onMenuHide);
@@ -586,7 +579,7 @@ define([
             this.model.get('value').reset([e.model]);
             
             // this.model.set({'value': text}, {validate: true});
-            this.model.trigger('change:value', this.model);
+            this.model.trigger('change:value', this.model, e.model.id);
         },
         onMenuHide: function() {
             this.focus();
