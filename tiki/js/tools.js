@@ -88,6 +88,22 @@ define([
     
     /*
     Extension of Backbone.View adding support for "merge" and "hotkeys"
+    
+    Example
+    -------
+    var MyView = SomeBaseView.extend({
+        
+        events: {
+            'click .foo': 'someHandler'
+        },
+        hotkeys: {
+            'keydown shift+return': 'asdsad'
+        },
+        merge: ['events', 'hotkeys'],
+             
+        initialize: function() {   
+        }
+    })    
     */
     tools.View = Backbone.View.extend({        
         initcls: function() {
@@ -240,8 +256,6 @@ define([
             e.preventDefault();
         }        
     });
-
-
 
 
 
