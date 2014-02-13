@@ -83,8 +83,7 @@
         color: #fff;
         border-color: darken($selected, 20%);
     }
-    &:focus .selected,
-    &.focus .selected {
+    &:focus .selected {
         @include two-color-gradient($selected_grad_focused);      
         border-color: darken($selected_focused, 20%);        
     }    
