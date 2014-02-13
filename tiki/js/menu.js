@@ -3,8 +3,9 @@ define([
     'underscore',
     'backbone',
     './util',
-    './tools'
-], function($, _, Backbone, Util, Tools) {
+    './tools',
+    './traits'
+], function($, _, Backbone, Util, Tools, Traits) {
     'use strict';
 
     // =========
@@ -20,24 +21,6 @@ define([
     // ==========================
     // = Models and collections =
     // ==========================
-    var MenuModel = Backbone.Model.extend({
-        defaults: function() {
-            return {
-                options: new Options()
-            };
-        },
-        parse: function(json, xhr) {
-            // parse config shorthands
-            json.options = new Options(_.map(json.options, function(o) {
-                if(o == '-')
-                    return {view: Spacer};
-                return o;
-            }), {parse: true});
-                    
-            return json;
-        }
-    });
-    
     var OptionModel = Backbone.Model.extend({
         defaults: {
             enabled: true,
@@ -55,6 +38,17 @@ define([
         model: OptionModel
     });
     
+    var MenuModel = Traits.Model.extend({
+        traits: {
+            options: new Traits.Collection(Options)
+        },
+        defaults: function() {
+            return {
+                options: []
+            };
+        }
+    });
+    
 
     
 
@@ -66,7 +60,7 @@ define([
         tagName: 'li',
         template: Util.template('<span>${obj.text}</span><i>&#xe10a;</i>'),
 
-        render: function() {
+        render: function() {            
             this.$el.html(this.template(this.model.toJSON()));
             if(!this.model.get('enabled'))
                 this.$el.addClass('disabled').removeClass('selectable');
