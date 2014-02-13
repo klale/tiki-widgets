@@ -24,7 +24,6 @@ define([
             };
         }
     });
-    window.MonthCalendarModel = MonthCalendarModel;
 
     /**
      * A month calendar.
