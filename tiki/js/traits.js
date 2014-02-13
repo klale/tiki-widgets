@@ -225,20 +225,38 @@ define([
         },
         initialize: function(config) {
             config = config || {};
-            this.source = config.source;
+            this.Collection = Backbone.Collection;
+
+            // if(Util.issubclass(config, Backbone.Collection)) {
+            if(config && config.prototype && config.prototype.add) {
+
+                this.Collection = config;
+            }
         },
         parse: function(v, obj, attrs, key) {            
             // Convert eg 'foo' => [{id: 'foo'}]
-            if(v instanceof Backbone.Collection)
+            if(!v || v instanceof this.Collection)
                 return v;
-            
-            v = _.map(Util.arrayify(v), function(o) {
-                if(_.isString(o))
-                    return {id: o};
-                return o;
-            });
                 
-            return new Backbone.Collection(v);
+            if(v instanceof Backbone.Collection) {
+                v = v.models;
+                if(this.Collection)
+                    v = _.map(v, function(o) { return o.attributes; })
+            }
+            else if(v)
+                v = _.map(Util.arrayify(v), function(o) {
+                    if(_.isString(o))
+                        return {id: o};
+                    else if(o.attributes)
+                        return o.attributes
+                    return o;
+                }, this);
+            
+
+                
+            if(v) {
+                return new this.Collection(v);
+            }
         },
         toJSON: function(v, obj) {
             // 'v' is a Collection
