@@ -569,7 +569,7 @@ define([
                 return;
             }
             this.showMenu();
-            // this.menu.el.focus();
+            this.menu.el.focus();
             e.stopPropagation();
             e.preventDefault();
         },
