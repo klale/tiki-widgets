@@ -365,7 +365,7 @@ define([
             this.trigger('change');
         },
         setSelection: function(items) {
-            _(Util.listify(items)).each(function(item) {
+            _(Util.arrayify(items)).each(function(item) {
                 // item can be an index, an elemenet
                 this.select(item);
             }, this);

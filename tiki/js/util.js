@@ -310,6 +310,12 @@ define([
         return new (klass || Backbone.Model)(obj || {});
     };
 
+    util.arrayify = function(obj, klass) {
+        if(!(_.isArray(obj)))
+            return [obj];
+        return obj;
+    };    
+
     util.pad = function(value, padlen, padchar) {
         var pad = new Array(1 + padlen).join(padchar);
         return (pad + value).slice(-pad.length);
