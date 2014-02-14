@@ -326,6 +326,8 @@ define([
         select: function(el) {
             if(_.isNumber(el))
                 el = this.$(this.selectables+':nth-child('+el+')');
+            else if(_.isString(el))
+                el = this.$(this.selectables+'[data-id="'+el+'"]');                
 
             var ev = {
                 el: el[0],
