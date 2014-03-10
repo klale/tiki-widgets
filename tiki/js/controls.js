@@ -147,13 +147,24 @@ define([
         render: function() {
             var renderer = this.model.get('renderer'),
                 name = this.model.get('name'),
-                html = renderer ? renderer(this) : this.model.getFormattedValue();
+                html = renderer ? renderer(this) : this.renderValue(),
+                isInvalid = !!this.model.validationError;
 
-            this.$el.attr('name', name).html(html);
-            this.$el.toggleClass('invalid', !!this.model.validationError);
+            if(!isInvalid)
+                this.$el.attr('name', name).html(html);
+            this.$el.toggleClass('invalid', isInvalid);
             this.$el.toggleClass('tiki-disabled', !this.model.get('enabled'));
             return this;
         },
+        renderValue: function() {
+            var format = this.model.get('format'),
+                value = this.model.get('value');
+            
+            if(format)
+                return Globalize.format(value || '', format);                
+            return value;
+        },
+        
 
         // ===================
         // = Control interface =
@@ -239,7 +250,7 @@ define([
         render: function() {
             var renderer = this.model.get('renderer'),
                 name = this.model.get('name'),
-                html = renderer ? renderer(this) : this.model.getFormattedValue();
+                html = renderer ? renderer(this) : this.renderValue();
 
             this.$el.attr('name', name).html(Util.makePreText(html || ''));
             this.$el.toggleClass('invalid', !!this.model.validationError);

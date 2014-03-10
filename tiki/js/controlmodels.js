@@ -34,14 +34,8 @@ define([
         },
         merge: ['defaults', 'traits'],        
         
-        format: function(value) {
-            return value;
-        },
         getValue: function() {
             return this.get('value');
-        },
-        getFormattedValue: function() {
-            return this.format(this.get('value'));
         }
     },{
         createFromElement: function(el) {
@@ -76,9 +70,6 @@ define([
         },
         defaults: {
             format: 'n'
-        },
-        format: function(value) {
-            return Globalize.format(value || '', this.get('format'));            
         }
     },{
         createFromElement: createFromElement
@@ -124,10 +115,6 @@ define([
         defaults: {
             format: 'd'
         },
-        
-        format: function(value) {
-            return Globalize.format(value || '', this.get('format'));            
-        },
         getValue: function() {
             var val = this.get('value');
             if(val)
@@ -144,10 +131,6 @@ define([
         },
         defaults: {
             format: 'd'
-        },
-        
-        format: function(value) {
-            return Globalize.format(value || '', this.get('format'));            
         },
         getValue: function() {
             return this.traits.value.toJSON(this.get('value'));
