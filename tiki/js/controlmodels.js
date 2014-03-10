@@ -84,6 +84,37 @@ define([
         createFromElement: createFromElement
     });
     
+
+
+
+    /*
+    Examples
+    --------
+    var intmodel = new IntModel({
+        format: 'n0',            // Add 1000 separator
+        value: 12345
+    })
+    */
+    var IntModel = ControlModel.extend({
+        traits: {
+            value: new traits.Int(),
+            format: new traits.String()
+        }
+    },{
+        createFromElement: createFromElement
+    });
+
+
+    var FloatModel = ControlModel.extend({
+        traits: {
+            value: new traits.Float(),
+            format: new traits.String()
+        }
+    },{
+        createFromElement: createFromElement
+    });
+    
+    
     var DateModel = ControlModel.extend({
         /* Does not know about time and time zones */
         traits: {
@@ -289,6 +320,8 @@ define([
             bool: BoolModel,
             string: StringModel,
             number: NumberModel,
+            int: IntModel,
+            float: FloatModel,
             date: DateModel, 
             datetime: DateTimeModel,
             selection: SelectionModel,
@@ -298,6 +331,8 @@ define([
         BoolModel: BoolModel,
         StringModel: StringModel,
         NumberModel: NumberModel,
+        IntModel: IntModel,      
+        FloatModel: FloatModel,  
         DateTimeModel: DateTimeModel,
         DateModel: DateModel,         
         SelectionModel: SelectionModel,
