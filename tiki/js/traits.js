@@ -70,7 +70,7 @@ define([
                 constr = this;
             if(_.isFunction(proto.traits))
                 proto.traits = proto.traits.call(proto);
-            _.each(proto.traits, function(k,trait) {
+            _.each(proto.traits, function(trait, k) {
                 trait.name = k;
             });
                         
