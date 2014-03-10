@@ -105,6 +105,8 @@ define([
                 return [key, trait.toJSON(this.attributes[key], this)];
             }, this));
         }
+    },{
+        extend: Util.extend
     });
 
 
@@ -115,13 +117,16 @@ define([
             this.initialize.apply(this, arguments);
     };
     _.extend(Trait.prototype, Backbone.Events, {
-        initialize: function() {}
+        initialize: function() {},
+        toString: function() {
+            return 'Traits.'+this.constructor.name+'(name='+Util.repr(this.name)+')';
+        }
     });
-    Trait.extend = Backbone.Model.extend;
+    Trait.extend = Util.extend;
         
 
     
-    Traits.String = Trait.extend({
+    Traits.String = Trait.extend('String', {
         constructor: function(config) {
             if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.String();
         },
@@ -135,7 +140,8 @@ define([
         }
     });
 
-    Traits.Bool = Trait.extend({
+
+    Traits.Bool = Trait.extend('Bool', {
         constructor: function(config) {
             if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Bool();
         },        
@@ -147,7 +153,8 @@ define([
         }
     });
     
-    Traits.Number = Trait.extend({
+    
+    Traits.Float = Trait.extend('Float', {
         constructor: function(config) {
             if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Number();
         },        
@@ -163,8 +170,9 @@ define([
             return v;
         }
     });
+    Traits.Number = Traits.Float; // Legacy
     
-    Traits.Date = Trait.extend({
+    Traits.Date = Trait.extend('Date', {
         constructor: function(config) {
             if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Date();
         },
@@ -181,9 +189,10 @@ define([
     });
 
 
-    Traits.DateTime = Trait.extend({
-        /* Timezone-aware timestamp 
-        self.toJSON(value) returns the value as UTC time.
+    Traits.DateTime = Trait.extend('DateTime', {
+        /* Timezone-aware timestamp.
+        self.toJSON(value) returns the value as UTC time, 
+        eg "2014-02-11T15:10:42.021Z"
         */
         constructor: function(config) {
             if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.DateTime();
@@ -197,7 +206,7 @@ define([
         }
     });
     
-    Traits.Instance = Trait.extend({
+    Traits.Instance = Trait.extend('Instance', {
         constructor: function(config) {
             if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Instance();
         },
@@ -215,7 +224,7 @@ define([
         }
     });
     
-    Traits.Collection = Trait.extend({
+    Traits.Collection = Trait.extend('Collection', {
         /*
         TODO: Add support for passing a Collection
         object, not just arrays.
@@ -266,7 +275,7 @@ define([
         }
     });
     
-    Traits.Subset = Trait.extend({
+    Traits.Subset = Trait.extend('Subset', {
         constructor: function(config) {
             if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Subset(config);
         },        

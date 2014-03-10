@@ -30,6 +30,28 @@ define([
 
 
 
+    function namedConstructor(name, constructor) {
+        var f = new Function('constructor', 'return function ' + name + '() { '+
+                              'constructor.apply(this, arguments); };')
+        return f(constructor);
+    }
+    util.extend = function (constructorName, protoProps, classProps) {
+        if(!_.isString(constructorName)) {
+            classProps = protoProps,
+            protoProps = constructorName,
+            constructorName = null;
+        }    
+        if(constructorName) {
+            var constr = protoProps.hasOwnProperty('constructor') ? protoProps.constructor : this;
+            protoProps.constructor = namedConstructor(constructorName, constr);
+        }
+        return Backbone.Model.extend.call(this, protoProps, classProps);
+    };
+    
+
+
+
+
     var tests = {
         dateManip: /^([\+\-])?(\d{0,3})(\w)?$/,
         iscompactdate: /^(\d{2,4})(\d{2})(\d{2})$/,
@@ -161,6 +183,12 @@ define([
         }
     };
 
+
+    util.modelToStr = function(obj /*, keys*/) {
+        var keys = Array.prototype.slice.call(arguments, 1),
+            s = _.map(keys, function(k) { return k+'='+util.repr(obj.get(k)); }).join(', ')
+        return obj.constructor.name +'('+s+')';
+    }
 
 
     util.isinstance = function(obj, klass) {

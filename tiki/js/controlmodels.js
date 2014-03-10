@@ -23,7 +23,7 @@ define([
     // ==========
     // = Models =
     // ==========
-    var ControlModel = traits.Model.extend({
+    var ControlModel = traits.Model.extend('ControlModel', {
         traits: {
             type: new traits.String(),
             enabled: new traits.Bool()
@@ -36,6 +36,9 @@ define([
         
         getValue: function() {
             return this.get('value');
+        },
+        toString: function() {
+            return Util.modelToStr(this, 'name', 'enabled', 'value')
         }
     },{
         createFromElement: function(el) {
@@ -51,25 +54,28 @@ define([
         }
     });
     
-    var BoolModel = ControlModel.extend({      
+    var BoolModel = ControlModel.extend('BoolModel', {      
         traits: {
             value: new traits.Bool()
         }
     });
 
-    var StringModel = ControlModel.extend({      
+    var StringModel = ControlModel.extend('StringModel', {
         traits: {
             value: new traits.String()
         }
     });
 
-    var NumberModel = ControlModel.extend({      
+    var NumberModel = ControlModel.extend('NumberModel', {      
         traits: {
             value: new traits.Number(),
             format: new traits.String()
         },
         defaults: {
             format: 'n'
+        },
+        toString: function() {
+            return Util.modelToStr(this, 'name', 'enabled', 'format', 'value');
         }
     },{
         createFromElement: createFromElement
@@ -86,27 +92,33 @@ define([
         value: 12345
     })
     */
-    var IntModel = ControlModel.extend({
+    var IntModel = ControlModel.extend('IntModel', {
         traits: {
             value: new traits.Int(),
             format: new traits.String()
+        },
+        toString: function() {
+            return Util.modelToStr(this, 'name', 'enabled', 'format', 'value');
         }
     },{
         createFromElement: createFromElement
     });
 
 
-    var FloatModel = ControlModel.extend({
+    var FloatModel = ControlModel.extend('FloatModel', {
         traits: {
             value: new traits.Float(),
             format: new traits.String()
+        },
+        toString: function() {
+            return Util.modelToStr(this, 'name', 'enabled', 'format', 'value');
         }
     },{
         createFromElement: createFromElement
     });
     
     
-    var DateModel = ControlModel.extend({
+    var DateModel = ControlModel.extend('DateModel', {
         /* Does not know about time and time zones */
         traits: {
             value: new traits.Date(),
@@ -114,6 +126,9 @@ define([
         },
         defaults: {
             format: 'd'
+        },
+        toString: function() {
+            return Util.modelToStr(this, 'name', 'enabled', 'format', 'value');
         },
         getValue: function() {
             var val = this.get('value');
@@ -124,13 +139,16 @@ define([
         createFromElement: createFromElement
     });
 
-    var DateTimeModel = ControlModel.extend({
+    var DateTimeModel = ControlModel.extend('DateTimeModel', {
         traits: {
             value: new traits.DateTime(),
             format: new traits.String()            
         },
         defaults: {
             format: 'd'
+        },
+        toString: function() {
+            return Util.modelToStr(this, 'name', 'enabled', 'format', 'value');
         },
         getValue: function() {
             return this.traits.value.toJSON(this.get('value'));
@@ -140,7 +158,7 @@ define([
     });
 
 
-    var SelectionModel = ControlModel.extend({
+    var SelectionModel = ControlModel.extend('SelectionModel', {
         /*
         var sm = new SelectionModel({
             name: 'favcolor',
@@ -172,12 +190,15 @@ define([
             var val = this.get('value');
             if(val)
                 return val.pluck('id');
+        toString: function() {
+            return Util.modelToStr(this, 'name', 'enabled', 'options', 'value');
+        },
         }
     });
 
 
 
-    var SingleSelectionModel = ControlModel.extend({
+    var SingleSelectionModel = ControlModel.extend('SingleSelectionModel', {
         /*    
         var sm = new SingleSelectionModel({
             id: 'favcolor',
@@ -192,6 +213,9 @@ define([
         traits: {
             options: new traits.Collection(),
             value: new traits.Subset({source: 'options'})
+        },
+        toString: function() {
+            return Util.modelToStr(this, 'name', 'enabled', 'options', 'value');
         },
         getValue: function() {
             var val = this.get('value');
@@ -217,7 +241,7 @@ define([
     });
 
 
-    var InstanceModel = ControlModel.extend({
+    var InstanceModel = ControlModel.extend('InstanceModel', {
         /*
         Underlying model for a complex control.
         Has the ususal properties like .name, .type, .enabled, etc
