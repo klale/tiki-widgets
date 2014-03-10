@@ -8,6 +8,80 @@ define([
 
     var util = {};
 
+    util.reverseSortBy = function(sortByFunction) {
+        return function(left, right) {
+            var l = sortByFunction(left);
+            var r = sortByFunction(right);
+            if (l === void 0) return -1;
+            if (r === void 0) return 1;
+            return l < r ? 1 : l > r ? -1 : 0;
+        };
+    };
+
+
+    util.center = function(el, args) {
+        el = $(el);
+        var winHeight = $(window).height(),
+            winWidth = $(window).width(),
+            top = ((winHeight - el.outerWidth()) / 2) + $(window).scrollTop(),
+            left = ((winWidth - el.outerHeight()) / 2) + $(window).scrollLeft();
+        el.css({top: args.top || 0, left: left});
+    };
+
+
+
+    var tests = {
+        dateManip: /^([\+\-])?(\d{0,3})(\w)?$/,
+        iscompactdate: /^(\d{2,4})(\d{2})(\d{2})$/,
+        yyyymmdd: /^(\d{4})(\d{2})(\d{2})$/,
+        yymmdd: /^(\d{2})(\d{2})(\d{2})$/
+    };    
+    util.interpretdate = function(value, basedate) {
+        var date = false;
+        if(value instanceof Date) {
+            date = value;
+        }
+        else {
+            var s = $('<div>'+value+'</div>').getPreText();
+            if(s == 'now') {
+                date = new Date();
+            }
+            else if(basedate && s && tests.dateManip.test(s)) {
+                // Date manipulation
+                // >>> dateManip.exec('+1d')
+                // ["+1d", "+", "1", "d"]
+                s = tests.dateManip.exec(s);
+                var method = s[1] == '-' ? 'subtract' : 'add';
+                var unit = s[3] || 'd';
+                var num = parseInt(s[2], 10);
+                date = moment(basedate || new Date())[method](unit, num).toDate();
+            }
+            else if(/^\d+$/.test(s)) { // Timestamp, millis
+                date = new Date(parseInt(s, 10));
+            }        
+            else if(s) {
+                if(tests.iscompactdate.test(s)) {
+                    var matcher = tests.yyyymmdd.test(s) ? tests.yyyymmdd : tests.yymmdd;
+                    var gr = matcher.exec(s);
+                    var year = parseInt(gr[1], 10) > 1000 ? gr[1] : parseInt(gr[1], 10)+2000;
+                    date = new Date(year, gr[2]-1, gr[3]); // month is zero-based
+                } 
+                else {
+                    // Let globalize parse it
+                    var result = Globalize.parseDate(value);
+                    if(result)
+                        date = result;
+                    else {                        
+                        // let moment have a go as well
+                        var m = moment(date || value);  
+                        if(m && m.toDate().valueOf())
+                            date = m.toDate();
+                    }
+                }
+            }
+        }
+        return date; // false or window.Date object
+    };
     
     // ===================
     // = Keyboard events =
