@@ -4,8 +4,9 @@ define([
     'backbone',
     'moment',    
     'globalize/globalize',
-    './util'
-], function($, _, Backbone, moment, Globalize, Util) {
+    './util',
+    './models'
+], function($, _, Backbone, moment, Globalize, Util, Models) {
     'use strict';
 
     var tools = {};
@@ -240,187 +241,89 @@ define([
 
 
 
+
     tools.Selectable = tools.View.extend({
-        events: {
-            'mousedown': 'onMouseDown'
-        },
-        // hotkeys: {
-        //     'keydown meta+a': 'onMetaAKeyDown',
-        // },
-
         initialize: function(config) {
-            _.bindAll(this, 'onSelectableMouseDown', 'onChooseSelected', 'onSelectableKeyDown');
-            this.selectables = config.selectables;
-            this.collection = config.collection; // optional
-
-            this.$el.on('mousedown', config.selectables, this.onSelectableMouseDown);
+            _.bindAll(this, 'onSelectableMouseDown', 'onKeyDown', 'onMetaAKeyDown', 'onSelectedAdd',
+                      'onSelectedRemove', 'onSelectedReset');
+        
+            // Crete the model
+            if(!config.model)
+                this.model = new Models.Selection({
+                    selectables: config.selectables,
+                    selected: config.selected,
+                });
             
-            // Todo: Why can't i declare this 'keydown' in events dict above?
-            this.$el.on('keydown', this.onSelectableKeyDown);
             
-
-            // Todo: Replace these silly arguments with the out-commented code below?
-            if(config.chooseOnDblClick)
-                this.$el.on('dblclick', config.selectables, this.onChooseSelected);
-            if(config.chooseOnClick)
-                this.$el.on('click', config.selectables, this.onChooseSelected);
-            if(config.chooseOnMouseUp)
-                this.$el.on('mouseup', config.selectables, this.onChooseSelected);
-          
-
-            // this.triggerChooseOn = config.triggerChooseOn || ['keydown enter', 'dblclick li'];
-            // _.each(this.triggerChooseOn, function(evtstr) {
-            //     var matches = evtstr.match(splitter),
-            //         eventName = match[1], 
-            //         hotkey = match[2] || '',
-            //         selector = match[3] || '';
-            //                         
-            //     if(_.indexOf(['keydown', 'keypress', 'keyup')], matches[1]) {
-            //         // register hotkey
-            //         this.$el.on(eventName, selector || null, hotkey, this.chooseSelected);
-            //     } else {
-            //         this.$el.on(eventName, match[2] + ' ' + match[3], this.chooseSelected);                    
-            //     }
-            // })
-        },
-        getSelected: function() {
-            return this.$(this.selectables).filter('.selected');
-        },
-        getSelectedModels: function(collection) {
-            collection = collection || this.collection;
-            return this.getSelected().map(function() {
-                return collection.at($(this).index());
-            }).toArray();
-        },
-        getSelectedModel: function(collection) {
-            return (collection || this.collection).at(this.getSelected().filter(':first').index());
-        },
-        getSelectables: function() {
-            return this.$(this.selectables);
-        },
-        toggle: function(el) {
-            if($(el).is('.selected')) 
-                this.unselect(el);
-            else
-                this.select(el);
-        },
-        select: function(el) {
-            if(_.isNumber(el))
-                el = this.$(this.selectables+':nth-child('+el+')');
-            else if(_.isString(el))
-                el = this.$(this.selectables+'[data-id="'+el+'"]');                
-
-            var ev = {
-                el: el[0],
-                selected: this.getSelected()
-            };
-            if(this.collection)
-                ev.model = this.collection.at(el.index());
-                
-            $(el).addClass('selected');
-            this.trigger('select', ev);
-            this.trigger('change');
-        },
-        selectOne: function(el) {
-            if(!el || !el[0])
-                el = this.$(this.selectables+':visible:first');
-
-            if(!el || !el.is(this.selectables)) 
-                return;
+            this.listenTo(this.model.get('selected'), {
+                'add': this.onSelectedAdd,
+                'remove': this.onSelectedRemove,
+                'reset': this.onSelectedReset
+            });
+        
+            // view configs
+            this.selector = config.selector;
+            this.views = config.views;
+            this.keynav = Util.pop(config, 'keynav', true);
+            this.idAttr = Util.pop(config, 'idAttr', 'data-id');
             
-
-
-            if(!el.hasClass('selected')) {
-                this.unselectAll();                
-                this.select(el);
+        
+            // Bind handlers
+            this.$el.on('mousedown', this.selector, this.onSelectableMouseDown);
+            if(this.keynav) {
+                this.$el.on('keydown', null, 'meta+a', this.onMetaAKeyDown);
+                this.$el.on('keydown', this.onKeyDown);
             }
-
-            el.make('head').make('tail');
         },
-        selectAll: function() {
-            this.unselectAll();
-            this.$(this.selectables).addClass('selected');
-            this.$(this.selectables).first().addClass('tail');
-            this.$(this.selectables).last().addClass('head');
-            this.trigger('select');
-            this.trigger('change');
-        },
-        setSelection: function(items) {
-            _(Util.arrayify(items)).each(function(item) {
-                // item can be an index, an elemenet
-                this.select(item);
+        render: function() {
+            this.$(this.selector+'.selected').removeClass('selected head tail');
+            this.model.get('selected').each(function(model) {
+                this.getEl(model).addClass('selected');
             }, this);
         },
-        unselect: function(el) {
-            var ev = {el: el[0]};
-            if(this.collection)
-                ev.model = this.collection.at(el.index());
-            
-            $(el).removeClass('selected');
-            this.trigger('unselect', ev);
-            this.trigger('deselect'); // legacy
-            this.trigger('change');
-            
-            if(this.collection)
-                ev.model = this.collection.at(el.index());
+        getModel: function(el) {
+            return this.model.get('selectables').get($(el).attr(this.idAttr));
         },
-
-        unselectAll: function() {
-            this.$('.selected').each(_.bind(function(i, el) {
-                this.unselect($(el));
-            }, this));
-            this.$('.selected').removeClass('selected');
-            this.$('.head').removeClass('.head');
-            this.$('.tail').removeClass('.tail');
+        getEl: function(model) {
+            return this.$el.find(this.selector+'['+this.idAttr+'="'+model.id+'"]').filter(':first');
         },
-        moveUp: function(steps) {
-
-        },
-        moveDown: function(steps) {
         
+        // Collection events
+        onSelectedReset: function() {
+            var selected = this.model.get('selected');
+            this.$(this.selector+'.selected').removeClass('selected head tail');
+
+            if(selected.length) {
+                selected.each(function(model) {
+                    this.getEl(model).addClass('selected');
+                }, this);
+                this.getEl(selected.at(0)).addClass('head tail');
+            }
         },
-        selectRight: function() {
-            
+        onSelectedAdd: function(model, coll, options) {
+            this.getEl(model).addClass('selected');
         },
-        selectLeft: function() {
-            
+        onSelectedRemove: function(model, coll, options) {
+            this.getEl(model).removeClass('selected');
         },
-        selectUp: function() {
-            
-        },
-        selectDown: function() {
-            
-        },   
+
+        // Dom events
         onMouseDown: function(e) {
-            if(!$(e.target).closest(this.el, this.selectables).length || e.target == this.el) {
-                this.unselectAll();
+            // Clicking directly on the container deselects all
+            if(!$(e.target).closest(this.el, this.selector).length || e.target == this.el) {
+                this.model.get('selected').reset();
             }
         },
         onMetaAKeyDown: function(e) {
-            if(this.keynav) {
-                this.selectAll();
-                e.preventDefault();
-            }
-        },
-        onChooseSelected: function(e) {
-            this.trigger('beforechoose', e);
-            if(e.cancel)
-                return;
-            
-            var el = $(e.currentTarget);
-            e = {selected: el};
-            
-            if(this.collection)
-                e.model = this.collection.at(el.index());
-
-            this.selectOne(el);
-            this.trigger('choose', e);
+            this.model.selectAll();
+            e.preventDefault();
         },
         onSelectableMouseDown: function(e) {
-            var el = $(e.currentTarget);
-        
+            var el = $(e.currentTarget),
+                sel = this.model;
+    
             if(e.metaKey) {
-                this.toggle(el);
+                sel.toggle(this.getModel(el));
                 el.make('head');
             }
             else if(e.shiftKey) {
@@ -428,81 +331,88 @@ define([
                     b = el.index(),
                     start = Math.min(a,b),
                     end = Math.max(a,b);
-                this.unselectAll();
-                this.$(this.selectables).slice(start, end+1).addClass('selected');
+                     
+                sel.get('selected').set(sel.get('selectables').slice(start, end+1));
                 el.make('head');
-            
+        
                 // Allow text selection, but no shift-click text selection
                 e.preventDefault();
                 Util.iepreventTextSelection(e);
             }
             else {
-                this.selectOne(el);
-                // this.trigger('choose', {selected: el});
+                sel.get('selected').reset(this.getModel(el));
             }
         },   
-        onSelectableKeyDown: function(e) {
-            if(e.which == Util.keys.ENTER) {
-                var el = this.getSelected(),
-                    ev = {selected: el};
-                if(el[0]) {
-                    if(this.collection)
-                        ev.model = this.collection.at(el.index());
-                    this.trigger('choose', ev);
-                }
-                e.preventDefault();
-            }
-            else if(Util.isArrowKey(e)) {
+        onKeyDown: function(e) {
+            var sel = this.model;
+                        
+            if(Util.isArrowKey(e)) {
                 if(!e.ctrlKey && !e.metaKey && !e.altKey)
                     e.preventDefault();
-                
-                if(!this.$('.selected').length) {
-                    this.selectOne();
+            
+
+            
+                if(sel.get('selected').length == 0) {
+                    sel.selectFirst();
                     return;
-                }                
-                var head = this.$('.head'),
+                }
+                var up = e.which == Util.keys.UP,
+                    down = e.which == Util.keys.DOWN,
+                    head = this.$('.head'),
                     tail = this.$('.tail'),
-                    prev = head.prevAll(this.selectables+':visible:first'),
-                    next = head.nextAll(this.selectables+':visible:first');
+                    prev = head.prevAll(this.selector+':visible:first'),
+                    next = head.nextAll(this.selector+':visible:first');
 
                 // within visible viewport?
-                if(e.which == Util.keys.UP)
+                if(up)
                     prev.scrollIntoView(true, this.el);
-                else if(e.which == Util.keys.DOWN)
+                else if(down)
                     next.scrollIntoView(false, this.el);
-            
+        
                 if(!e.shiftKey) {
-                    if(e.which == Util.keys.DOWN && next[0]) 
-                        this.selectOne(tail.nextAll(this.selectables+':visible:first'));
-                    else if(e.which == Util.keys.UP && prev[0]) 
-                        this.selectOne(tail.prevAll(this.selectables+':visible:first'));
-                }    
+                    var el;                    
+                    if(down && next[0]) 
+                        el = tail.nextAll(this.selector+':first');
+                    else if(up && prev[0]) 
+                        el = tail.prevAll(this.selector+':first');
+
+                    if(!el || !el[0]) {
+                        el = this.$(this.selector+':'+ (up ? 'first':'last'));
+                    }
+
+                    if(el && el[0])
+                        sel.get('selected').reset(this.getModel(el))
+                        
+                }
                 else {            
                     var below;
-                    if(e.which == Util.keys.DOWN && next[0]) {
+                    if(down && next[0]) {
                         below = head.index() >= tail.index(); 
                         if(below) {
-                            this.select(next);
+                            sel.get('selected').add(this.getModel(next));
                             next.make('head');
+                            
                         } else {
-                            this.unselect(head);
+                            sel.get('selected').remove(this.getModel(head));
                             next.make('head');
                         }
                     }
-                    else if(e.which == Util.keys.UP && prev[0]) {
+                    else if(up && prev[0]) {
                         below = head.index() > tail.index();
                         if(below) {
-                            this.unselect(head);
+                            sel.get('selected').remove(this.getModel(head));
                             prev.make('head');
                         } else {
-                            this.select(prev);
+                            sel.get('selected').add(this.getModel(prev));
                             prev.make('head');
                         }
                     }
                 }
             }
         }
-    });
+    
+    
+    });    
         
     
 

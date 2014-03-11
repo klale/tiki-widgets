@@ -534,7 +534,7 @@ define([
     
         initialize: function(config) {       
             config = config || {};
-            _.bindAll(this, 'onMenuChoose', 'onMenuHide');
+            _.bindAll(this, 'onMenuSelect', 'onMenuHide');
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
             this.listenTo(this.model, 'change', this.render, this);
             this.listenTo(this.model.get('value'), 'reset', this.render, this);
@@ -543,7 +543,7 @@ define([
             this.menu = new Menu.Menu({
                 options: config.options
             });
-            this.menu.selectable.on('choose', this.onMenuChoose);
+            this.menu.on('select', this.onMenuSelect);
             this.menu.on('hide', this.onMenuHide);
             this.menu.render();
         },        
@@ -584,13 +584,9 @@ define([
             e.stopPropagation();
             e.preventDefault();
         },
-        onMenuChoose: function(e) {
-            // var option = e.model;
-            // var id = option.get('id');
-            this.model.get('value').reset([e.model]);
-            
-            // this.model.set({'value': text}, {validate: true});
-            this.model.trigger('change:value', this.model, e.model.id);
+        onMenuSelect: function(model) {
+            this.model.get('value').reset([model]);
+            this.model.trigger('change:value', this.model, model.id);
         },
         onMenuHide: function() {
             this.focus();

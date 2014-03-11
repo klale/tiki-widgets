@@ -44,7 +44,7 @@ define([
         },
         defaults: function() {
             return {
-                options: []
+                options: null
             };
         }
     });
@@ -60,7 +60,11 @@ define([
         tagName: 'li',
         template: Util.template('<span>${obj.text}</span><i>&#xe10a;</i>'),
 
-        render: function() {            
+        initialize: function() {
+            // Todo: assumes id extists on creation and never changes. OK?
+            this.$el.attr('data-id', this.model.id)
+        },
+        render: function() {
             this.$el.html(this.template(this.model.toJSON()));
             if(!this.model.get('enabled'))
                 this.$el.addClass('disabled').removeClass('selectable');
@@ -121,12 +125,12 @@ define([
     m.model.get('options').add({id: 'helo', text: 'I am new option'})
 
     // Add handler
-    m.selectable.on('choose', function(e) {
+    m.on('select', function(e) {
         consolse.log('you chose: ', e);
     });
     
     */
-    var Menu = Tools.View.extend({
+    var MenuBase = Tools.View.extend({
         tagName: 'div', 
         className: 'tiki-menu',
         attributes: {
@@ -134,7 +138,6 @@ define([
         },
         events: {
             'mouseover li': 'onMouseOver',
-            'blur': 'onBlur',
             'click li.selectable': 'onSelectableClick',
             'keydown': 'onKeyDown',
             'keyup': 'onKeyUp',
@@ -143,17 +146,15 @@ define([
         hotkeys: {
             'keydown right': 'onRightKeyDown',
             'keydown left': 'onLeftKeyDown',
-            'keydown esc': 'onESCKeyDown'
+            'keydown esc': 'onESCKeyDown',
+            'keydown return': 'onReturnKeyDown'
         },
         _isroot: true,
         initialize: function(config) {
             config = config || {};
-            _.bindAll(this, 'onShowTimeout', 'onKeyUpTimeout');
-            this._views = {};
-            this.overlay = config.overlay;
-            if(config.model)
-                this.model = config.model;
-            else
+            _.bindAll(this, 'onShowTimeout', 'onKeyUpTimeout', 'onSelectedAdd', 'onSelectedRemove');
+            this.views = {};
+            if(!config.model)
                 this.model = new MenuModel(config, {parse: true});
             
             // Observe the options-collection
@@ -165,21 +166,15 @@ define([
             // Create a Selectable
             this.selectable = new Tools.Selectable({
                 el: this.el,
-                selectables: 'li.selectable',
-                collection: options,
-                // chooseOnClick: true,
-                chooseOnMouseUp: true,                
-                chooseOnDblClick: false
+                selector: 'li.selectable',
+                selectables: options,
             });
-            this.selectable.on('choose', this.onSelectableChoose, this);
-            this.selectable.on('select', this.onSelectableSelect, this);
-            this.selectable.on('unselect', this.onSelectableUnselect, this);
-            this.selectable.on('beforechoose', this.onBeforeChoose, this);
+            this.selectable.model.get('selected').on({
+                'add': this.onSelectedAdd,
+                'reset': this.onSelectedAdd,
+                'remove': this.onSelectedRemove});
+
             this.$el.scrollMeOnly();
-            if($.browser.ltie8) {
-                this.$el.iefocus();
-                this.el.hideFocus = true;
-            }
             if($.browser.ltie10)
                 this.$el.attr('unselectable', 'on');                     
         },
@@ -192,7 +187,7 @@ define([
         },
         addOne: function(option) {
             var view = makeview(option.get('view') || Option, option);
-            this._views[option.cid] = view;
+            this.views[option.cid] = view;
             this.$('>ul').append(view.render().el);
             
             // render a submenu as well?
@@ -200,12 +195,12 @@ define([
                 this._showSubmenu(option);
         },
         removeOne: function(option) {
-            this._views[option.cid].remove();
+            this.views[option.cid].remove();
         },
         
         _showSubmenu: function(model) {
             var menu = makeview(model.get('view') || Menu, model.get('submenu'));
-            menu.show({hideOther:false, focus:false}).alignTo(this._views[model.cid].el, {at: 'right top'});
+            menu.show({hideOther:false, focus:false}).alignTo(this.views[model.cid].el, {at: 'right top'});
 
             // set silly properties, factor away these
             menu._isroot = false;
@@ -222,6 +217,16 @@ define([
             for(var menu=this; menu; menu=menu._parentmenu) 
                 menu.hide();
         },
+        _select: function(model) {
+            var model = this.selectable.model.get('selected').at(0),
+                el = this.selectable.getEl(model);
+            this._lock = true;
+            el.blink(_.bind(function() {
+                this._hideAll();
+                this._lock = false;
+                this.trigger('select', model);                
+            }, this));
+        },        
         
                         
         show: function(options) {
@@ -235,9 +240,9 @@ define([
             var availHeight = $(this.el.ownerDocument.documentElement).height() - 10; // ~10px dropshadow
             this.$el.css('max-height', availHeight);
                         
-            if(opt.hideOther && Menu.active) 
-                Menu.active.hide();
-            Menu.active = this;
+            if(opt.hideOther && MenuBase.active) 
+                MenuBase.active.hide();
+            MenuBase.active = this;
             
             // implicit dom insert
             if(!this.el.parentElement)
@@ -265,7 +270,7 @@ define([
             this.$el.fadeOutFast({detach:true});
             this.trigger('hide', this);
             if(this._isroot)
-                Menu.active = null;
+                MenuBase.active = null;
         },
         alignTo: function(el, options) {            
             this.$el.position(_.defaults(options || {}, {
@@ -277,10 +282,11 @@ define([
         },
         trigger: function() {
             // overload Backbone.Event.trigger to pass events upward the menu chain
-            Menu.__super__.trigger.apply(this, arguments);
+            MenuBase.__super__.trigger.apply(this, arguments);
             if(this._parentmenu)
                 this._parentmenu.trigger.apply(this._parentmenu, arguments);
         },
+        
         onExpandedChange: function(model) {
             if(!model.get('submenu')) 
                 return;
@@ -289,45 +295,34 @@ define([
             else
                 this._hideSubmenu(model);
         },        
-        onSelectableChoose: function(e) {
-            this._lock = true;
-            e.selected.blink(_.bind(function() {
-                this._hideAll();
-                this._lock = false;
-                this.trigger('select', e);                
-            }, this));            
-        },
-        onSelectableSelect: function(e) {
-            if(e.model.get('submenu')) 
-                e.model.set('expanded', true);
+
+        onSelectedAdd: function(model) {
+            if(model.get('submenu')) 
+                model.set('expanded', true);
             this.el.focus();
         },
-        onSelectableUnselect: function(e) {
-            if(e.model.get('submenu'))
-                e.model.set('expanded', false);
+        onSelectedRemove: function(model) {
+            if(model.get('submenu'))
+                model.set('expanded', false);
         },        
         onMouseOver: function(e) {
             // todo: detach mouseover listener instead of _lock property
             if(this._lock || this.$el.is(':animated'))
                 return;
                 
-            var target = $(e.currentTarget);
-            if(target.is('li.selectable'))
-                this.selectable.selectOne(target);
-        },
-        onBlur: function() {
-            // When a focused menu loses focus to anything but another menu,
-            // hide this menu and any sub/parent menus. Todo: abstract the 
-            // setTimeout intto something reusable, quite common..
-            window.setTimeout(_.bind(function(e) {
-                var focused = this.el.ownerDocument.activeElement;
-                if(!$(focused).is('.tiki-menu')) 
-                    this._hideAll();
-            }, this), 1);
+            var target = $(e.currentTarget),
+                sel = this.selectable;
+            if(target.is('li.selectable')) {
+                var model = sel.getModel(target);
+                sel.model.selectOne(model);
+                target.addClass('head tail');
+            }
         },
         onSelectableClick: function(e) {
             // clicking a submenu li should not propagate to parent menu's li
             // (causing more than one 'choose' event)
+            this._select();
+            
             e.stopPropagation();
         },
         onRightKeyDown: function(e) {
@@ -349,6 +344,9 @@ define([
         onESCKeyDown: function(e) {
             this._hideAll();
         },
+        onReturnKeyDown: function(e) {
+            this._select();
+        },
         onKeyDown: function(e) {
             this._okMouseUp = true;
             if(Util.isArrowKey(e))
@@ -358,6 +356,8 @@ define([
             window.setTimeout(this.onKeyUpTimeout, 100);
         },
         onMouseUp: function(e) {
+            if(this._okMouseUp)
+                this._select();
             this._okMouseUp = true;
         },
         onBeforeChoose: function(e) {
@@ -371,7 +371,25 @@ define([
         }
     });
 
+    var Menu = MenuBase.extend({
+        events: {
+            'blur': 'onBlur'
+        },
+        merge: ['events'],
+        
+        onBlur: function() {
+            // When a focused menu loses focus to anything but another menu,
+            // hide this menu and any sub/parent menus.
+            window.setTimeout(_.bind(function(e) {
+                var focused = this.el.ownerDocument.activeElement;
+                if(!$(focused).is('.tiki-menu')) 
+                    this._hideAll();
+            }, this), 1);
+        }
+    });
+
     return {
+        MenuBase: MenuBase,
         Menu: Menu,
         Spacer: Spacer
     };
