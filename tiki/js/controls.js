@@ -186,15 +186,11 @@ define([
             }
         },     
         onBlur: function(e) {
-            var text = this.$el.getPreText(),
-                wasInvalid = !!this.model.validationError;
-
+            var text = this.$el.getPreText();
             this.model.set({'value': text}, {validate: true});
-            if(wasInvalid && !this.model.validationError)
-                // there is a small change the new value above is the same as
-                // before making it invalid, not triggering change -> render.
-                this.render();
 
+            // It might require a render now even if the model is untouched
+            this.render();
             this.trigger('controlblur');
             this.$el.trigger('controlblur');
         },
@@ -203,6 +199,7 @@ define([
             // may continue upwards to a form, triggering a submit.
             var v = this.$el.getPreText();
             this.model.set('value', v);
+            this.render();
             // Don't allow newlines in a text control
             e.preventDefault();
         },
