@@ -217,9 +217,10 @@ define([
             for(var menu=this; menu; menu=menu._parentmenu) 
                 menu.hide();
         },
-        _select: function(model) {
-            var model = this.selectable.model.get('selected').at(0),
-                el = this.selectable.getEl(model);
+        _select: function() {
+            var model = this.selectable.model.get('selected').at(0);
+            if(!model) return;
+            var el = this.selectable.getEl(model);
             this._lock = true;
             el.blink(_.bind(function() {
                 this._hideAll();
@@ -271,6 +272,8 @@ define([
             this.trigger('hide', this);
             if(this._isroot)
                 MenuBase.active = null;
+            
+            this.selectable.model.get('selected').reset();
         },
         alignTo: function(el, options) {            
             this.$el.position(_.defaults(options || {}, {
