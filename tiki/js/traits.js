@@ -3,20 +3,39 @@ define([
     'underscore',
     'backbone',
     'globalize/globalize',
-    './tools',
     './util'
-], function($, _, Backbone, Globalize, Tools, Util) {
+], function($, _, Backbone, Globalize, Util) {
     'use strict';
+
     
     var Traits = {};
+
+
+    // =========
+    // = Utils =
+    // =========
+    var parsedatetime = function(v) {
+        if(v === null)
+            return null;
+        if(!_.isString(v) && !_.isDate(v))
+            throw new TypeError();        
+        var timestamp = Util.interpretdate(v);
+        if(!timestamp)
+            throw {
+                name: 'ValueError',
+                message: 'Invalid date format'
+            }
+        return timestamp;
+    };
+
+    
 
     Traits.Model = Backbone.Model.extend({
         /*
         Extension of Backbone.Model adding support for typed attributes and 
         serialization.
         
-        >>> Thing = Backbone.Model.extend({
-        >>>     mixins: [Traits],
+        >>> var Thing = Traits.Model.extend({
         >>>     traits: {
         >>>         'start_at': new traits.DateTime()
         >>>     }
@@ -28,8 +47,7 @@ define([
         
         "traits" can also be a function returning a dict of traits.
 
-        >>> Thing = Backbone.Model.extend({
-        >>>     mixins: [HasTraits],
+        >>> var Thing = Traits.Model.extend({
         >>>     traits: function() {
         >>>         return {'start_at': new traits.DateTime()};
         >>>     }
@@ -38,33 +56,15 @@ define([
         It also adds support for declaring setter functions using a special 
         syntax: "set_mypropertyname".
 
-        >>> Thing = Backbone.Model.extend({
+        >>> var Thing = Traits.Model.extend({
         >>>     set_score: function(value, attrs, options, key) {
         >>>         attrs[key] = score * 2;
         >>>     }
         >>> })
         >>> thing = new Thing({score: 5});
         >>> thing.get('score')
-        10
-        
+        10        
         */
-        // constructor: function(attributes, options) {
-        //     console.log('IM HERE: ', this+'')
-        //     var defaults;
-        //     var attrs = attributes || {};
-        //     options || (options = {});
-        //     this.cid = _.uniqueId('c');
-        //     this.attributes = {};
-        //     _.extend(this, _.pick(options, modelOptions));
-        //     if (options.parse) attrs = this.parse(attrs, options) || {};
-        //     if (defaults = _.result(this, 'defaults')) {
-        //         attrs = _.defaults({}, attrs, defaults);
-        //     }
-        //     console.log('NOW CALL set(...): ', this+'')    
-        //     this.set(attrs, options);
-        //     this.changed = {};
-        //     this.initialize.apply(this, arguments);
-        // },
         initcls: function() {
             var proto = this.prototype, 
                 constr = this;
@@ -80,7 +80,9 @@ define([
             });
         },
         set: function(key, value, options) {
-            var attrs, attr, val;
+            var attrs, attr, val, errors={},
+                options = _.extend(options || {}, {validate: true});
+                
             if(_.isObject(key) || key === null) {
                 attrs = key;
                 options = value;
@@ -88,17 +90,30 @@ define([
                 attrs = {};
                 attrs[key] = value;
             }
-            
             _.each(_.clone(attrs), function(value, key) {
-                 var setter = 'set_' + key;                 
-                 if(typeof this[setter] === 'function') {
-                     this[setter](value, attrs, options, key);
-                 }
-                 else if(this.traits && this.traits[key]) {
-                     attrs[key] = this.traits[key].parse(value, this, attrs, key);
-                 }
+                if(typeof this['set_' + key] === 'function') {
+                    this['set_' + key](value, attrs, options, key, errors);
+                }
+                else if(this.traits && this.traits[key]) {
+                    try {
+                        attrs[key] = this.traits[key].parse(value, this, attrs, key);
+                    }
+                    catch(e) {
+                        if(e.name == 'TypeError' || e.name == 'ValueError') {
+                            errors[key] = e;
+                        }
+                        else throw e;
+                    }
+                }
             }, this);
-            return Backbone.Model.prototype.set.call(this, attrs, options);
+            
+            if(_.isEmpty(errors)) {
+                this.validationError = null;
+                return Backbone.Model.prototype.set.call(this, attrs, options);
+            }
+            this.validationError = errors;
+            options.validationError = errors;
+            this.trigger('invalid', this, errors, options);
         },
         toJSON: function() {
             return _.object(_.map(this.traits, function(trait, key) {
@@ -156,35 +171,62 @@ define([
     
     Traits.Float = Trait.extend('Float', {
         constructor: function(config) {
-            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Number();
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Float();
         },        
         parse: function(v) {
-            if(!v && v !== 0) 
+            if(v == null || v === '') 
                 return null;
-            else if(_.isString(v))
-                return Globalize.parseFloat(v) || null; // returns NaN on fail.
+            if(_.isString(v))
+                v = Globalize.parseFloat(v); // returns NaN on fail.
             else
-                return _.isNumber(v) ? v : null;            
+                v = parseFloat(v)  
+            if(_.isNaN(v)) 
+                throw new TypeError();
+            return v;
         },
         toJSON: function(v) {
             return v;
         }
-    });
+    });    
     Traits.Number = Traits.Float; // Legacy
+
+
+    Traits.Int = Trait.extend('Int', {
+        constructor: function(config) {
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Int();
+        },        
+        parse: function(v) {
+            if(v == null || v === '') 
+                return null;
+            if(_.isString(v))
+                v = Globalize.parseInt(v); // returns NaN on fail.
+            else
+                v = parseInt(v);
+            if(_.isNaN(v)) 
+                throw new TypeError();
+            return v;
+        },
+        toJSON: function(v) {
+            return v;
+        }
+    });    
+    
+
     
     Traits.Date = Trait.extend('Date', {
         constructor: function(config) {
             if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Date();
         },
         parse: function(v) {
-            var timestamp = Tools.interpretdate(v);
-            if(timestamp) {
-                return new Date(timestamp.getFullYear(), timestamp.getMonth(), timestamp.getDate());
-            }
+            if(v === null)
+                return null;
+            var v = parsedatetime(v);
+            // strip time
+            return new Date(v.getFullYear(), v.getMonth(), v.getDate());
         },
         toJSON: function(v) {
             /* Return eg 2012-03-22 */
-            return util.dateToYMD(v);
+            return Util.dateToYMD(v);
         }
     });
 
@@ -198,7 +240,9 @@ define([
             if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.DateTime();
         },        
         parse: function(v) {
-            return Tools.interpretdate(v);
+            if(v === null)
+                return null;
+            return parsedatetime(v);
         },
         toJSON: function(v) {
             // UTC datetime string, eg "2014-02-11T15:10:42.021Z"
@@ -282,7 +326,7 @@ define([
         initialize: function(config) {
             // 'source' is the name of a collection trait within this model
             //  or any Collection object.
-            this.source = config.source;
+            this.source = _.isString(config) ? config : config.source;
         },
         parse: function(v, obj, attrs, key) {
             if(v instanceof Util.Subset)

@@ -68,11 +68,11 @@ define([
         },
         showNextMonth: function() {
             var date = this.model.get('date');
-            this.model.set('date', moment(date).clone().add({months: 1}));
+            this.model.set('date', moment(date).clone().add({months: 1}).toDate());
         },
         showPrevMonth: function() {
             var date = this.model.get('date');
-            this.model.set('date', moment(date).clone().subtract({months: 1}));
+            this.model.set('date', moment(date).clone().subtract({months: 1}).toDate());
         },
     
         render: function() {
