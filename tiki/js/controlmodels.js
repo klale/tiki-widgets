@@ -190,9 +190,9 @@ define([
             var val = this.get('value');
             if(val)
                 return val.pluck('id');
+        },
         toString: function() {
             return Util.modelToStr(this, 'name', 'enabled', 'options', 'value');
-        },
         }
     });
 
