@@ -506,11 +506,8 @@ define([
 
 
 
-
-  
-
-    var Combo = Tools.View.extend({
-        className: 'tiki-combo',
+    var Dropdown = Tools.View.extend({
+        className: 'tiki-dropdown',
         attributes: {
             tabindex: 0
         },
@@ -805,7 +802,7 @@ define([
             checkboxgroup: CheckboxGroup,
             radio: Radio,
             radiogroup: RadioGroup,
-            combo: Combo,
+            dropdown: Dropdown,
             date: Date,
             datepicker: DatePicker
         },
@@ -816,7 +813,7 @@ define([
         CheckboxGroup: CheckboxGroup,
         Radio: Radio,
         RadioGroup: RadioGroup,
-        Combo: Combo,
+        Dropdown: Dropdown,
         Date: Date,
         DatePicker: DatePicker
     };

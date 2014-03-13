@@ -227,7 +227,7 @@ define([
             /* Construct a model from attributes and possibly child <br/>
             elements of `el` 
             
-            <input type="combo" id="favcolors" value="red" options="allColors">
+            <input type="dropdown" id="favcolors" value="red" options="allColors">
             */
             var attr = $(el).getAllAttributes();
             return new this({

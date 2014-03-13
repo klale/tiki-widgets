@@ -232,7 +232,7 @@ define([
                 
                 if(config.controls) {
                     // Create the control from a json object spec, eg: 
-                    // {name: 'name', type: 'combo', options: myOptions},
+                    // {name: 'name', type: 'dropdown', options: myOptions},
                     // Or control could be a ready-to-use ControlModel. 
                     
                     control = config.controls[name];
