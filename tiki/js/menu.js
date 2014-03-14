@@ -138,7 +138,6 @@ define([
         },
         events: {
             'mouseover li': 'onMouseOver',
-            'click li.selectable': 'onSelectableClick',
             'keydown': 'onKeyDown',
             'keyup': 'onKeyUp',
             'mouseup': 'onMouseUp'
@@ -320,13 +319,6 @@ define([
                 sel.model.selectOne(model);
                 target.addClass('head tail');
             }
-        },
-        onSelectableClick: function(e) {
-            // clicking a submenu li should not propagate to parent menu's li
-            // (causing more than one 'choose' event)
-            this._select();
-            
-            e.stopPropagation();
         },
         onRightKeyDown: function(e) {
             var model = this.selectable.getSelectedModel();
