@@ -8,6 +8,36 @@ define([
 
     var util = {};
 
+    util.getClosestStartingWith = function(collection, text, textAttr) {
+            if(!text.length)
+                return;
+            textAttr = textAttr || 'text';
+            /* Convert "apa" to a regex like /(^apa.*)|(^ap.*)|(^a.*)/i
+            This return a sets like:
+            >>> 'apa'.match(re).slice(1)
+            ["apa", undefined, undefined]
+            >>> 'ap'.match(re).slice(1)
+            [undefined, "ap", undefined]
+            */
+            for(var re=[text], i=1; i < text.length; i++)
+                re.push(text.slice(0, i*-1));
+            var restr = _.map(re, function(s) {
+                return '(^'+s+'.*)';
+            }).join('|');
+            re = new RegExp(restr, 'i');
+            
+            // Find the model with the longest match
+            var match = _.sortBy(_.compact(collection.map(function(model) {
+                var match = (model.get('text') || '').match(re);
+                if(!match) return;
+                match = match.slice(1);
+                var score = match.length - _.indexOf(match, model.get(textAttr));
+                return [score, model];
+            })), function(tup) { return tup[0]*-1; })[0];
+            if(match)
+                return match[1];        
+    };
+
     util.reverseSortBy = function(sortByFunction) {
         return function(left, right) {
             var l = sortByFunction(left);

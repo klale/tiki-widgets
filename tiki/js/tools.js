@@ -245,34 +245,36 @@ define([
     tools.Selectable = tools.View.extend({
         initialize: function(config) {
             _.bindAll(this, 'onSelectableMouseDown', 'onKeyDown', 'onMetaAKeyDown', 'onSelectedAdd',
-                      'onSelectedRemove', 'onSelectedReset');
+                      'onSelectedRemove', 'onSelectedReset', 'onKeyPress', 'onMouseUp', 'onSelectableMouseOver');
         
-            // Crete the model
+            // Implicitly create a model if not set
             if(!config.model)
                 this.model = new Models.Selection({
                     selectables: config.selectables,
                     selected: config.selected,
                 });
-            
-            
+                
             this.listenTo(this.model.get('selected'), {
                 'add': this.onSelectedAdd,
                 'remove': this.onSelectedRemove,
                 'reset': this.onSelectedReset
             });
         
-            // view configs
             this.selector = config.selector;
             this.views = config.views;
             this.keynav = Util.pop(config, 'keynav', true);
-            this.idAttr = Util.pop(config, 'idAttr', 'data-id');
-            
-        
-            // Bind handlers
+            this.idAttr = config.idAttr || 'data-id';
+            this.textAttr = config.textAttr || 'text';
+            this._typing = '';
+                    
+            // Bind dom handlers
             this.$el.on('mousedown', this.selector, this.onSelectableMouseDown);
+            this.$el.on('mouseover', this.selector, this.onSelectableMouseOver);            
+            this.$el.on('mouseup', this.onMouseUp)
             if(this.keynav) {
                 this.$el.on('keydown', null, 'meta+a', this.onMetaAKeyDown);
                 this.$el.on('keydown', this.onKeyDown);
+                this.$el.on('keypress', this.onKeyPress);
             }
         },
         render: function() {
@@ -281,8 +283,24 @@ define([
                 this.getEl(model).addClass('selected');
             }, this);
         },
+        selectClosestStartingWith: function(text) {
+            if(!text.length)
+                return;
+            var coll = this.model.get('selectables'),
+                model = Util.getClosestStartingWith(coll, text, this.textAttr);
+            if(model) 
+                this.model.selectOne(model)
+        },
+
+        // Default implementations
+        getModelByStartingWith: function(text) {
+            if(!text.length) return;
+            return Util.getClosestStartingWith(this.model.get('selectables'), 
+                                               text, this.textAttr);            
+        },
         getModel: function(el) {
-            return this.model.get('selectables').get($(el).attr(this.idAttr));
+            var idAttr = this.idAttr;
+            return this.model.get('selectables').get($(el).attr(idAttr));
         },
         getEl: function(model) {
             return this.$el.find(this.selector+'['+this.idAttr+'="'+model.id+'"]').filter(':first');
@@ -314,6 +332,42 @@ define([
                 this.model.get('selected').reset();
             }
         },
+        onMouseUp: function(e) {
+            if(this._dragSelecting) {
+                this._dragSelecting = false;
+                // you cannot change selection when drag-selecting
+                this.$el.css('user-select', 'text');
+
+
+                var hasChanged = this.$('.selected').length != this.model.get('selected').models.length;
+
+                if(hasChanged) {
+                    var models = this.$('.selected').map(_.bind(function(i, el) {
+                        return this.getModel(el);
+                    }, this)).toArray();
+                    this.model.get('selected').reset(models);
+                }
+            }
+        },
+        onSelectableMouseOver: function(e) {
+            if(!this._dragSelecting) 
+                return;
+            this.$el.css('user-select', 'none');
+            e.preventDefault();
+            var el = $(e.target);
+            
+            var a = this.$('.tail').index(),
+                b = el.index(),
+                start = Math.min(a,b),
+                end = Math.max(a,b);
+            
+            // Todo: improve this
+            this.$(this.selector).removeClass('selected');
+            this.$(this.selector).slice(start, end+1).addClass('selected');
+                
+            // sel.get('selected').reset(sel.get('selectables').slice(start, end+1));
+            el.make('head');                
+        },
         onMetaAKeyDown: function(e) {
             this.model.selectAll();
             e.preventDefault();
@@ -340,6 +394,12 @@ define([
                 Util.iepreventTextSelection(e);
             }
             else {
+                this._dragSelecting = true;
+                var m = this.getModel(el);
+                // No action if clicking the only selected item multiple times
+                if(sel.isSelected(m) && sel.get('selected').length == 1)
+                    return;
+
                 sel.get('selected').reset(this.getModel(el));
             }
         },   
@@ -409,9 +469,19 @@ define([
                     }
                 }
             }
-        }
-    
-    
+        },
+        onKeyPress: function(e) {
+            if(e.which < 48) 
+                return;
+            this._typing += String.fromCharCode(e.charCode);
+            this._onKeyPressDeb();
+            var model = this.getModelByStartingWith(this._typing)
+            if(model) 
+                this.model.selectOne(model);
+        },
+        _onKeyPressDeb: _.debounce(function() {
+            this._typing = '';
+        }, 500)
     });    
         
     
