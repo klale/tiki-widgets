@@ -26,7 +26,7 @@ define([
     s.selectOne('foo');
     s.selectAll();
     */
-    var Selection = Traits.Model.extend({
+    var Selection = Traits.Model.extend('Selection', {
         traits: {
             selectables: new Traits.Collection(),
             selected: new Traits.Subset('selectables')
@@ -36,6 +36,9 @@ define([
             selected: null
         },
 
+        isSelected: function(model) {
+            return !!this.get('selected').get(model);
+        },
         selectOne: function(model, options) {
             this.get('selected').reset(model, options);
         },
