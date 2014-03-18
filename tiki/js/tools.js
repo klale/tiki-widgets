@@ -105,6 +105,8 @@ define([
             });
             return this;
         }
+    },{
+        extend: Util.extend
     });
 
 
@@ -248,7 +250,7 @@ define([
 
 
 
-    tools.Selectable = tools.View.extend({
+    tools.Selectable = tools.View.extend('Selectable', {
         initialize: function(config) {
             _.bindAll(this, 'onSelectableMouseDown', 'onKeyDown', 'onMetaAKeyDown', 'onSelectedAdd',
                       'onSelectedRemove', 'onSelectedReset', 'onKeyPress', 'onMouseUp', 'onSelectableMouseOver');
