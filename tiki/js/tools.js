@@ -98,7 +98,13 @@ define([
                 proto[propname] = _.extend({}, parentval, _.result(proto, propname));
             });  
         },
-        mixins: [tools.Hotkeys]
+        mixins: [tools.Hotkeys],
+        empty: function(html) {
+            _(this.views).each(function(view) {
+                view.remove();
+            });
+            return this;
+        }
     });
 
 
