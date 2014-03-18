@@ -331,8 +331,8 @@ define([
                     b = el.index(),
                     start = Math.min(a,b),
                     end = Math.max(a,b);
-                     
-                sel.get('selected').set(sel.get('selectables').slice(start, end+1));
+                                    
+                sel.get('selected').reset(sel.get('selectables').slice(start, end+1));
                 el.make('head');
         
                 // Allow text selection, but no shift-click text selection

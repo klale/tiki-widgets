@@ -37,13 +37,13 @@ define([
         },
 
         selectOne: function(model, options) {
-            this.get('selected').set(model, options);
+            this.get('selected').reset(model, options);
         },
         selectFirst: function(options) {
-            this.get('selected').set(this.get('selectables').at(0), options);
+            this.get('selected').reset(this.get('selectables').at(0), options);
         },
         selectAll: function() {
-            this.get('selected').set(this.get('selectables').models);
+            this.get('selected').reset(this.get('selectables').models);
         },
         toggle: function(model) {
             if(this.get('selected').get(model))
