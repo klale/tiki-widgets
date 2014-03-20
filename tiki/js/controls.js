@@ -531,7 +531,7 @@ define([
             _.bindAll(this, 'onMenuSelect', 'onMenuHide');
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
             this.listenTo(this.model, 'change', this.render, this);
-            this.listenTo(this.model.get('value'), 'reset', this.render, this);
+            this.listenTo(this.model.get('options'), 'reset add remove', this.onOptionsChange, this)
             
             // Create the dropdown menu
             this.menu = new Menu.Menu({
@@ -540,12 +540,15 @@ define([
             this.menu.on('select', this.onMenuSelect);
             this.menu.on('hide', this.onMenuHide);
             this.menu.render();
-        },        
+        },   
+        onOptionsChange: function() {
+            this.menu.model.get('options').set(this.model.get('options').toJSON());
+        },  
         render: function() {
             this.$el.attr('name', this.model.get('name'));
             
-            var first = this.model.get('value').at(0);
-            var text = first ? first.get('text') : '';            
+            var value = this.model.get('value');
+            var text = value ? value.get('text') : '';            
             this.$el.html(this.template({text: text}));
         
             if($.browser.ltie9) {
@@ -579,8 +582,7 @@ define([
             e.preventDefault();
         },
         onMenuSelect: function(model) {
-            this.model.get('value').reset([model]);
-            this.model.trigger('change:value', this.model, model.id);
+            this.model.set('value', model);
         },
         onMenuHide: function() {
             this.focus();

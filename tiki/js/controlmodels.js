@@ -3,8 +3,9 @@ define([
     'underscore',
     'backbone',
     'globalize/globalize',
-    './traits'
-], function($, _, Backbone, Globalize, traits) {
+    './traits',
+    './util'
+], function($, _, Backbone, Globalize, traits, Util) {
     'use strict';
 
     var createFromElement = function(el) {
@@ -18,7 +19,7 @@ define([
         });
     };
 
-
+    
 
     // ==========
     // = Models =
@@ -32,7 +33,8 @@ define([
             value: null,
             enabled: true
         },
-        merge: ['defaults', 'traits'],        
+        merge: ['defaults', 'traits'],
+        catchErrors: true,
         
         getValue: function() {
             return this.get('value');
@@ -212,7 +214,7 @@ define([
         */
         traits: {
             options: new traits.Collection(),
-            value: new traits.Subset({source: 'options'})
+            value: new traits.CollectionModel({source: 'options'})
         },
         toString: function() {
             return Util.modelToStr(this, 'name', 'enabled', 'options', 'value');
@@ -224,11 +226,6 @@ define([
         }
     },{
         createFromElement: function(el) {
-            /* Construct a model from attributes and possibly child <br/>
-            elements of `el` 
-            
-            <input type="dropdown" id="favcolors" value="red" options="allColors">
-            */
             var attr = $(el).getAllAttributes();
             return new this({
                 id: attr.name,

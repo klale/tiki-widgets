@@ -21,13 +21,21 @@ define([
             throw new TypeError();        
         var timestamp = Util.interpretdate(v);
         if(!timestamp)
-            throw {
-                name: 'ValueError',
-                message: 'Invalid date format'
-            }
+            throw new ValueError('Invalid date format');
         return timestamp;
     };
 
+
+    
+    function ErrorBase(message) {
+        this.message = message;
+    }
+    ErrorBase.prototype.toString = function(config) { 
+        return this.name + ': ' + this.message;
+    };
+    ErrorBase.extend = Util.extend;
+    
+    var ValueError = ErrorBase.extend('ValueError', {name: 'ValueError'});
     
 
     Traits.Model = Backbone.Model.extend({
@@ -90,20 +98,23 @@ define([
                 attrs = {};
                 attrs[key] = value;
             }
+            
             _.each(_.clone(attrs), function(value, key) {
                 if(typeof this['set_' + key] === 'function') {
                     this['set_' + key](value, attrs, options, key, errors);
                 }
                 else if(this.traits && this.traits[key]) {
-                    try {
-                        attrs[key] = this.traits[key].parse(value, this, attrs, key);
-                    }
-                    catch(e) {
-                        if(e.name == 'TypeError' || e.name == 'ValueError') {
-                            errors[key] = e;
+                    if(this.catchErrors)
+                        try {
+                            attrs[key] = this.traits[key].parse(value, this, attrs, key);
                         }
-                        else throw e;
-                    }
+                        catch(e) {
+                            if(e.name == 'TypeError' || e.name == 'ValueError')
+                                errors[key] = e;
+                            else throw e;
+                        }
+                    else 
+                        attrs[key] = this.traits[key].parse(value, this, attrs, key);
                 }
             }, this);
             
@@ -356,6 +367,73 @@ define([
         }
     });
 
+
+    Traits.CollectionModel = Trait.extend('CollectionModel', {
+        constructor: function(config) {
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.CollectionModel(config);
+        },
+        initialize: function(config) {
+            // 'source' is the name of a collection trait within this model
+            //  or any Collection object.
+            this.source = _.isString(config) ? config : config.source;
+        },
+        parse: function(v, obj, attrs, key) {
+            /*
+            Example:
+            --------
+            var Thing = Traits.Model.extend({
+                traits: {
+                    allColors: new t.Collection(),
+                    favoriteColor: new t.CollectionModel({source: 'allColors'})
+                }
+            });
+                    
+            >>> var i = Traits.CollectionModel({source: 'colors'})
+            >>> i.parse('red')
+            <ColorModel color=red>
+            >>> i.parse(colorRed) 
+            <ColorModel color=red>       
+            >>> i.parse('banana')        ValueError
+            >>> i.parse(['banana'])      TypeError
+            >>> i.parse(null)        
+            null
+            >>> i.parse(undefined)
+            null            
+            >>> i.parse('')              Todo: throw ValueError?
+            null                         
+            >>> i.parse({foo:'bar'})     ValueError
+            >>> i.parse({id:'banana'})   ValueError('banana invalid value')!
+            >>> i.parse({id:'red', foo: 'bar'}) 
+            <ColorModel color=red>
+            */
+            if(v == null || v === '') 
+                return null;            
+            if(v.id)
+                v = v.id
+            else if(_.isNumber(v))
+                v = String(v);
+            if(!_.isString(v))
+                throw new TypeError('Expected string or number, got '+v);
+            if(!v) 
+                throw new ValueError('No id')
+            
+            var s = this.source;
+            if(_.isString(s)) {         
+                s = obj.get(s);
+                if(!s) 
+                    s = attrs[this.source];
+            }
+            var model = s.get(v);
+            if(!model)
+                throw new ValueError(v + ' not in ' + this.source);
+            return model;
+        },
+        toJSON: function(v, obj) {
+            // 'v' is a model
+            if(v)
+                return v.toJSON();
+        }        
+    })
 
     
     return Traits;
