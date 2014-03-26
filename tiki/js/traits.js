@@ -410,7 +410,7 @@ define([
                 return null;            
             if(v.id)
                 v = v.id
-            else if(_.isNumber(v))
+            if(_.isNumber(v))
                 v = String(v);
             if(!_.isString(v))
                 throw new TypeError('Expected string or number, got '+v);
