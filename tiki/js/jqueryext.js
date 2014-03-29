@@ -313,7 +313,7 @@ define([
         if($.browser.ltie9) {
             // Todo: Temp, stupid ie
             var attrs = el.attributes,
-                names = ['name', 'factory', 'class', 'style', 'value'];
+                names = ['name', 'factory', 'class', 'style', 'value', 'disabled'];
             for(var i=0; i<names.length; i++) {
                 if(attrs[names[i]])
                     attributes[names[i]] = attrs[names[i]].nodeValue;
@@ -451,7 +451,7 @@ define([
     $.extend($.expr[':'], {
         selectable: function(el) {
             // visible and not disabled
-            return $(el).is(':visible') && !$(el).is('.tiki-disabled');
+            return $(el).is(':visible') && !$(el).is('.disabled');
         }, 
         floating: function(el) {
             // absolute or fixed positioned
@@ -466,7 +466,7 @@ define([
             };
         }),
         tabable: function(el) {
-            return el.tabIndex !== -1 && $(el).closest('.tiki-disabled').length === 0;
+            return el.tabIndex !== -1 && $(el).closest('.disabled').length === 0;
         },
         inviewport: function(el) {
             var scrollTop = $(window).scrollTop(),

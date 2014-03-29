@@ -161,20 +161,6 @@
     white-space: nowrap;
     overflow: hidden;
     
-    &.empty {
-        font-style: italic;
-        color: #999;
-    }
-    &:focus {
-        @include glowoutline();
-    };
-    &.invalid {
-        border: 1px solid red;
-        background-color: #ffece7;
-        &:focus {
-            @include glowoutlineinvalid();
-        }
-    }    
     
     // disabled-style
     .tiki-disabled &,
@@ -210,7 +196,7 @@
 
 // Todo: Remove this workaround.
 // Why is not .tiki-checkbox:before inherited by .tiki-radio?
-.base-checkbox-bg {
+@mixin base-checkbox-bg() {
     @include icon-before("\00a0"); // blank space
     display: inline-block;
     width: 15px;
@@ -228,11 +214,11 @@
     border-radius: 3px;
 }
 
-.base-checkbox {
 
+
+@mixin base-checkbox() {
     // active and focus
-    &:active:before,
-    &.active:before {
+    &:active:before {
         @include gradient(darken(#e0e0e0, 10%), darken(#fff, 10%));
         @include box-shadow(inset 0px 2px 4px rgba(0, 0, 0, 0.3));
     }
@@ -244,11 +230,11 @@
     @include user-select(none);
     height: 17px;
     display: inline-block;
-
+    
     // icon
     &:before {
         // draw a checkbox
-        @extend .base-checkbox-bg;
+        @include base-checkbox-bg();
         .ie9 & {
             background-color: #fff;  
             box-shadow: inset 0 -8px 13px -2px rgba( 0, 0, 0, .15);
@@ -256,7 +242,7 @@
         }
     }
     
-    &.tiki-checked:before,
+    &.checked:before,
     &[checked]:before {
         content: "\e0fe";
     }
@@ -278,15 +264,13 @@
 
 
 
-.base-radio {
-    @extend .base-checkbox;
+@mixin base-radio() {
+    @include base-checkbox();
     padding-left: 25px;
     position: relative;
     line-height: 18px;
     
     &:before {
-        @extend .base-checkbox-bg;
-
         // draw a circle
         border-radius: 13px;
         position: absolute;
@@ -295,8 +279,8 @@
         font-size: 8px;
         line-height: 15px;        
     }
-    &.tiki-checked:before {
-    	content: "\f111";        
+    &.checked:before {
+      content: "\f111";        
     }    
 
 }
@@ -394,6 +378,8 @@
 
 
 .base-checkboxgroup {
+    padding: 0px;
+    list-style-type: none;
     li {
         margin-bottom: 3px;
     }
@@ -401,6 +387,8 @@
 
 
 .base-radiogroup {
+    padding: 0px;
+    list-style-type: none;    
     li {
         margin-bottom: 3px;
     }
@@ -467,6 +455,11 @@
 
 
 .base-simpleform {
+    > ul {
+        padding: 0;
+        margin: 0;
+        list-style-type: none;
+    }
     > ul > li {
         margin-bottom: 5px;
         .label {

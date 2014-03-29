@@ -70,12 +70,12 @@ define([
         this.$el.detach();
     };
     var ControlView = {
-        initialize: function() {
+        initialize: function(config) {
             this.listenTo(this.model, 'change:name', this.onNameChange, this);    
             this.listenTo(this.model, 'change:disabled', this.onDisabledChange, this);
         },
         onDisabledChange: function(model, disabled) {
-            this.$el.toggleClass('disabled', disabled);
+            this.$el.toggleClass('tiki-disabled', disabled);
         },
         onNameChange: function(model, name) {
             this.$el.attr('name', this.model.get('name'));
@@ -105,11 +105,13 @@ define([
             'keydown right': 'onRightKeyDown'
         },
         defaultmodel: ControlModels.String,
+        mixins: [ControlView],
     
         initialize: function(config) {
             config = config || {};
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
             this.listenTo(this.model, 'change', this.render, this);
+            ControlView.initialize.call(this, config);
             if($.browser.ltie9)
                 this.$el.on('mousedown', _.bind(this.onIEMouseDown, this));
         },
@@ -122,7 +124,7 @@ define([
             if(!isInvalid)
                 this.$el.attr('name', name).html(html);
             this.$el.toggleClass('invalid', isInvalid);
-            this.$el.toggleClass('disabled', this.model.get('disabled'));
+            this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
             this.$el.attr('contenteditable', this.model.get('disabled') ? 'false':'true')
             return this;
         },
@@ -140,7 +142,7 @@ define([
         // = Control interface =
         // ===================
         focus: function() {
-            if(this.$el.closest('.disabled')[0]) 
+            if(this.$el.closest('.tiki-disabled')[0]) 
                 return; // ie7/8
             this.$el.moveCursorToEnd();
             this.$el.selectAll();
@@ -193,7 +195,7 @@ define([
             //     e.preventDefault(); // prevent page from scrolling left
         },
         onIEMouseDown: function(e) {
-            if(this.$el.closest('.disabled').length) {
+            if(this.$el.closest('.tiki-disabled').length) {
                 e.preventDefault(); // don't focus
                 var focusable = this.$el.parent().closest('*:focusable');
                 window.setTimeout(function() { focusable.focus(); }, 1); 
@@ -221,7 +223,7 @@ define([
 
             this.$el.attr('name', name).html(Util.makePreText(html || ''));
             this.$el.toggleClass('invalid', !!this.model.validationError);
-            this.$el.toggleClass('disabled', this.model.get('disabled'));
+            this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
             return this;
         },
         onFocus: function(e) {
@@ -317,7 +319,7 @@ define([
         },
         render: function() {
             this.$el.toggleClass('checked', !!this.model.get('selected'));
-            this.$el.toggleClass('disabled', !!this.model.get('disabled'));
+            this.$el.toggleClass('tiki-disabled', !!this.model.get('disabled'));
             this.$el.html(this.model.get('text') || '');
             this.$el.attr('name', this.model.get('name'));
             return this;
@@ -328,18 +330,17 @@ define([
             this.$el.html(text);
         },
         onSelectedChange: function(model, selected) {
-            console.log('CHANGE', model.id, selected)
             this.$el.toggleClass('checked', selected);
         },
         onDisabledChange: function(model, disabled) {
-            this.$el.toggleClass('disabled', disabled);
+            this.$el.toggleClass('tiki-disabled', disabled);
         },
         onNameChange: function(model, name) {
             this.$el.attr('name', this.model.get('name'));
         },
         onClick: function(e) {             
             e.preventDefault();
-            if(this.$el.closest('.disabled').length) {
+            if(this.$el.closest('.tiki-disabled').length) {
                 e.preventDefault(); // don't focus
                 return;
             }
@@ -354,7 +355,7 @@ define([
             e.preventDefault();
         },
         onMouseDown: function(e) {
-            if(!this.$el.closest('.disabled')[0]) {
+            if(!this.$el.closest('.tiki-disabled')[0]) {
                 this.$el.addClass('active');
             }
         }
@@ -371,7 +372,7 @@ define([
         // },
         onClick: function(e) {             
             e.preventDefault();
-            if(this.$el.closest('.disabled')[0])
+            if(this.$el.closest('.tiki-disabled')[0])
                 return;
             this.model.set('selected', true);
             this.$el.removeClass('active');
@@ -397,7 +398,6 @@ define([
             this.listenTo(options, 'remove', this.addRemove, this);
         },
         render: function() {
-            // console.log('RE-RENDER all checkboxes')
             this.empty().$el.empty();
             this.$el.attr('name', this.model.get('name'));
             this.model.get('options').each(function(model) {
@@ -468,10 +468,9 @@ define([
             if(!this.model)
                 this.model = new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
 
-            ControlView.initialize.call(this);
+            ControlView.initialize.call(this, config);
             var options = this.model.get('options');
             this.listenTo(options, 'change:selected', this.onSelectedChange, this);
-            
 
             // Create the dropdown menu
             this.menu = new Menu.Menu({
@@ -487,7 +486,7 @@ define([
             var value = this.model.get('value');
             var text = value ? value.get('text') : '';            
             this.$el.html(this.template({text: text}));
-            this.$el.toggleClass('disabled', this.model.get('disabled'));
+            this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
         
             if($.browser.ltie9) {
                 this.$('*').add(this.el).attr('unselectable', 'on');
@@ -509,7 +508,7 @@ define([
         leaveElement: leaveElement,
         
         onMouseDown: function(e) {
-            if(this.$el.closest('.disabled').length) {
+            if(this.$el.closest('.tiki-disabled').length) {
                 e.preventDefault(); // don't focus
                 return;
             }
@@ -571,7 +570,7 @@ define([
             this.$el.empty().append('<button class="calendar" tabindex="-1"></button>');
             this.$el.append(this.textcontrol.render().el);
             this.textcontrol.delegateEvents();
-            this.$el.toggleClass('disabled', this.model.get('disabled'));
+            this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
             this.$el.toggleClass('invalid', !!this.model.validationError);
             return this;
         },
@@ -628,13 +627,13 @@ define([
             e.stopPropagation();            
         },
         onButtonClick: function(e) {
-            if(this.$el.closest('.disabled').length) {
+            if(this.$el.closest('.tiki-disabled').length) {
                 return;                
             }
             this.showDatePicker();            
         },
         onMouseDown: function(e) {
-            if(this.$el.closest('.disabled').length)
+            if(this.$el.closest('.tiki-disabled').length)
                 e.preventDefault(); // don't focus
         },
         onDatePickerKeyDown: function(e) {
