@@ -5,9 +5,13 @@ define([
     'globalize/globalize',
     './util',
     './controlmodels',
-    './controls'
-], function($, _, Backbone, Globalize, Util, ControlModels, Controls) {
+    './controls',
+    './traits',
+    './tools'
+], function($, _, Backbone, Globalize, Util, ControlModels, Controls, Traits, Tools) {
     'use strict';
+
+
 
     // ========
     // = Form =
@@ -32,7 +36,7 @@ define([
     
     
 
-    var Form = Backbone.Model.extend({
+    var Form = Traits.Model.extend('Tiki.Form.Form', {
         /**
         var f = new Form({
             controls: [
@@ -135,10 +139,14 @@ define([
 
 
 
-    var SimpleForm = Backbone.View.extend({
+    var SimpleForm = Tools.View.extend('Tiki.Form.SimpleForm', {
         /* A simple <ul> based form layout.
         Example
         -------
+        // pass an existing Form.Form
+        var myform = new SimpleForm({form: myform})
+        
+        // or create one implicitly
         var myform = new SimpleForm({
             model: new Backbone.Model(null, {
                 url: '/foo/bar'
@@ -157,13 +165,11 @@ define([
         */
         className: 'tiki-simpleform',
         template: _.template('<ul class="form"></ul>'),
-        mixins: [ErrorMessages],
 
         initialize: function(config) {
             this.form = config.form || new Form(config);
             this.views = {};
             this.metadata = config.metadata || {};
-            ErrorMessages.initialize.call(this, config);
         },
         render: function() {
             this.$el.html(this.template());
@@ -216,8 +222,7 @@ define([
     // ==============
     // = CustomForm =
     // ==============
-    var CustomForm = Backbone.View.extend({
-        mixins: [ErrorMessages],
+    var CustomForm = Tools.View.extend('Tiki.Form.CustomForm', {
     
         initialize: function(config) {
             this.views = {};
@@ -280,9 +285,7 @@ define([
                 view.attackElement(el);
                 view.render();
                 view.delegateEvents();
-            }, this);
-            
-            ErrorMessages.initialize.call(this, config);
+            }, this);        
         },    
         render: function() {
             return this;
