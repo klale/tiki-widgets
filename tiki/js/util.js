@@ -2,12 +2,20 @@ define([
     'jquery',
     'underscore',
     'backbone',
+    'moment',
     './base'
-], function($, _, Backbone) {
-    'use strict';
+], function($, _, Backbone, moment) {
+    // 'use strict';
 
     var util = {};
 
+
+    util.idArray = function(models) {
+        return _.map(util.arrayify(models), function(m) {
+            if(m.id) return m.id;
+            return m;
+        });
+    };
     util.getClosestStartingWith = function(collection, text, textAttr) {
             if(!text.length)
                 return;
@@ -58,29 +66,135 @@ define([
         el.css({top: args.top || 0, left: left});
     };
 
+    util.getEditDistance = function(a, b){
+      if(a.length == 0) return b.length; 
+      if(b.length == 0) return a.length; 
 
+      var matrix = [];
 
-    function namedConstructor(name, constructor) {
-        var f = new Function('constructor', 'return function ' + name + '() { '+
-                              'constructor.apply(this, arguments); };')
-        return f(constructor);
-    }
-    util.extend = function (constructorName, protoProps, classProps) {
-        if(!_.isString(constructorName)) {
-            classProps = protoProps,
-            protoProps = constructorName,
-            constructorName = null;
-        }    
-        if(constructorName) {
-            var constr = protoProps.hasOwnProperty('constructor') ? protoProps.constructor : this;
-            protoProps.constructor = namedConstructor(constructorName, constr);
+      // increment along the first column of each row
+      var i;
+      for(i = 0; i <= b.length; i++){
+        matrix[i] = [i];
+      }
+
+      // increment each column in the first row
+      var j;
+      for(j = 0; j <= a.length; j++){
+        matrix[0][j] = j;
+      }
+
+      // Fill in the rest of the matrix
+      for(i = 1; i <= b.length; i++){
+        for(j = 1; j <= a.length; j++){
+          if(b.charAt(i-1) == a.charAt(j-1)){
+            matrix[i][j] = matrix[i-1][j-1];
+          } else {
+            matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
+                                    Math.min(matrix[i][j-1] + 1, // insertion
+                                             matrix[i-1][j] + 1)); // deletion
+          }
         }
-        return Backbone.Model.extend.call(this, protoProps, classProps);
+      }
+
+      return matrix[b.length][a.length];
+    };
+
+    util.extend = function(name, protoProps, staticProps) {
+        /**
+        this = the Function object we're exteding
+        child = the new Function object. I run initcls on child
+                just after it has been created.
+        protoProps = stuff to extend `this` with. Could contain an initcls.
+        protoProps.mixins = list of Objects (or Functions) to extend from
+                            also. These might contain initcls.
+        */
+        if(!_.isString(name)) {
+            staticProps = protoProps;
+            protoProps = name;
+            name = 'child';
+        }
+        protoProps = protoProps || {};
+        
+        var inits = [],
+            mixins = protoProps.mixins || [];
+    
+    
+        // Apply defaultOptions
+        if(protoProps.defaultOptions) {
+            var constr = (protoProps.constructor === Object) ? this : protoProps.constructor;
+            protoProps.constructor = function(attributes, options) {
+                // Inject the default options
+                options = _.extend(options || {}, protoProps.defaultOptions);
+                // Call the hijacked constructor                        
+                constr.call(this, attributes, options);
+            };
+        }
+        
+        // Add initcls to inits
+        if(protoProps.initcls)
+            inits.push(protoProps.initcls);
+        else if(this.prototype.initcls)
+            inits.push(this.prototype.initcls);
+    
+        // Apply mixins
+        _.each(mixins, function(mixin) {
+            _.defaults(protoProps, mixin);
+            if(mixin.initcls) // collect initcls functions to run later
+                inits.push(mixin.initcls);
+        });
+    
+        
+        var parent = this;
+        var child;
+    
+        if(name.indexOf('.') !== -1) {
+            var ns = name.split('.').slice(0,-1),
+                len = ns.length;
+            if(len == 0)
+                // var A;
+                eval('var '+name);
+            else if(len == 1) { 
+                // var A = {}
+                eval('var '+ns[0]+'={}');
+            else
+                // var A = {B: {C: {D: {}}}}  etc
+                eval('var '+ns[0]+'={'+ns.slice(1).join(': {') + ': {}' + new Array(len).join('}'));
+        }
+    
+        // The constructor function for the new subclass is either defined by you
+        // (the "constructor" property in your `extend` definition), or defaulted
+        // by us to simply call the parent's constructor.
+        if (protoProps && _.has(protoProps, 'constructor')) {
+            child = eval(name+'=protoProps.constructor');
+        } else {
+            child = eval(name+'=function(){ return parent.apply(this, arguments); }');
+        }    
+    
+        // Add static properties to the constructor function, if supplied.
+        _.extend(child, parent, staticProps);
+    
+        // Set the prototype chain to inherit from `parent`, without calling
+        // `parent`'s constructor function.
+        var Surrogate = function(){ this.constructor = child; };
+        Surrogate.prototype = parent.prototype;
+        child.prototype = new Surrogate;
+    
+        // Add prototype properties (instance properties) to the subclass,
+        // if supplied.
+        if (protoProps) _.extend(child.prototype, protoProps);
+    
+        // Set a convenience property in case the parent's prototype is needed
+        // later.
+        child.__super__ = parent.prototype;
+        
+        // Call all initcls
+        for(var i=0, l=inits.length; i<l; i++)
+            inits[i].call(child);
+    
+        return child;
     };
     
-
-
-
 
     var tests = {
         dateManip: /^([\+\-])?(\d{0,3})(\w)?$/,
@@ -297,9 +411,13 @@ define([
 
     /* 
     Util.template()
-    -----------
+    ---------------
     A modified copy of Underscore.template (v1.3.3), adding the `settings` 
     variable to the rendering scope, along with the usual 'obj' and '_'.
+    
+    Example:
+    Util.template('<div>${foo.bar}</div>', {foo: 'bar'})
+    
     */
     (function(Util) {
         var noMatch = /.^/;
@@ -557,60 +675,6 @@ define([
     });
 
     
-
-
-    _.each(["Model", "Collection", "View", "Router"], function(klass) {
-        var extend = Backbone[klass].extend;
-
-        Backbone[klass].extend = function(protoProps, classProps){
-            /**
-            this = the Function object we're exteding
-            child = the new Function object. I run initcls on child
-                    just after it has been created.
-            protoProps = stuff to extend `this` with. Could contain an initcls.
-            protoProps.mixins = list of Objects (or Functions) to extend from
-                                also. These might contain initcls.
-            */
-            protoProps = protoProps || {};
-            var child = this, // were starting of alike..
-                inits = [],
-                mixins = protoProps.mixins || [];
-
-
-            // Apply defaultOptions
-            if(protoProps.defaultOptions) {
-                var constr = (protoProps.constructor === Object) ? this : protoProps.constructor;
-                protoProps.constructor = function(attributes, options) {
-                    // Inject the default options
-                    options = _.extend(options || {}, protoProps.defaultOptions);
-                    // Call the hijacked constructor                        
-                    constr.call(this, attributes, options);
-                };
-            }
-
-            // Add initcls to inits
-            if(protoProps.initcls)
-                inits.push(protoProps.initcls);
-            else if(this.prototype.initcls)
-                inits.push(this.prototype.initcls);
-
-            // Apply mixins
-            _.each(mixins, function(mixin) {
-                _.defaults(protoProps, mixin);
-                if(mixin.initcls) // collect initcls functions to run later
-                    inits.push(mixin.initcls);
-            });
-
-            // Exend as usual
-            child = extend.call(child, protoProps, classProps);                    
-        
-            // Then call all initcls
-            for(var i=0, l=inits.length; i<l; i++)
-                inits[i].call(child);
-        
-            return child;            
-        };
-    });
 
 
     

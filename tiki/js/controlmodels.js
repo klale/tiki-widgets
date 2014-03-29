@@ -8,67 +8,72 @@ define([
 ], function($, _, Backbone, Globalize, traits, Util) {
     'use strict';
 
+
+    var exp = {};
+
     var createFromElement = function(el) {
         var attr = $(el).getAllAttributes();
         return new this({
             id: attr.name,
             type: attr.type,
             value: attr.value || $(el).html(),
-            enabled: attr.enabled == 'false' ? false : true,
+            disabled: !!attr.disabled,
             format: attr.format
         });
     };
 
-    
+
 
     // ==========
     // = Models =
     // ==========
-    var ControlModel = traits.Model.extend('ControlModel', {
+    // Abstract
+    var ControlModel = traits.Model.extend({
         traits: {
             type: new traits.String(),
-            enabled: new traits.Bool()
+            name: new traits.String(),
+            disabled: new traits.Bool()
         },
         defaults: {
-            value: null,
-            enabled: true
+            disabled: false
         },
         merge: ['defaults', 'traits'],
         catchErrors: true,
         
+        
+        // legacy
         getValue: function() {
             return this.get('value');
         },
         toString: function() {
-            return Util.modelToStr(this, 'name', 'enabled', 'value')
-        }
-    },{
-        createFromElement: function(el) {
-            /* Construct a model from attributes and possibly child <br/>
-            elements of `el` */
-            var attr = $(el).getAllAttributes();
-            return new this({
-                id: attr.name,
-                type: attr.type,
-                value: attr.value || $(el).html(),
-                enabled: attr.enabled == 'false' ? false : true
-            });
+            return Util.modelToStr(this, 'name', 'disabled', 'value')
         }
     });
-    
-    var BoolModel = ControlModel.extend('BoolModel', {      
+    ControlModel.createFromElement = function(el) {
+        /* Construct a model from attributes and possibly child <br/>
+        elements of `el` */
+        var attr = $(el).getAllAttributes();
+        return new this({
+            id: attr.name,
+            type: attr.type,
+            value: attr.value || $(el).html(),
+            disabled: !!attr.disabled
+        });
+    };
+
+    exp.Bool = ControlModel.extend('ControlModels.Bool', {      
         traits: {
             value: new traits.Bool()
-        }
+        },
     });
 
-    var StringModel = ControlModel.extend('StringModel', {
+    exp.String = ControlModel.extend('ControlModels.String', {
         traits: {
             value: new traits.String()
         }
     });
 
-    var NumberModel = ControlModel.extend('NumberModel', {      
+    exp.Number = ControlModel.extend('ControlModels.Number', {      
         traits: {
             value: new traits.Number(),
             format: new traits.String()
@@ -77,7 +82,7 @@ define([
             format: 'n'
         },
         toString: function() {
-            return Util.modelToStr(this, 'name', 'enabled', 'format', 'value');
+            return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
         }
     },{
         createFromElement: createFromElement
@@ -94,33 +99,33 @@ define([
         value: 12345
     })
     */
-    var IntModel = ControlModel.extend('IntModel', {
+    exp.Int = ControlModel.extend('ControlModels.Int', {
         traits: {
             value: new traits.Int(),
             format: new traits.String()
         },
         toString: function() {
-            return Util.modelToStr(this, 'name', 'enabled', 'format', 'value');
+            return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
         }
     },{
         createFromElement: createFromElement
     });
 
 
-    var FloatModel = ControlModel.extend('FloatModel', {
+    exp.Float = ControlModel.extend('ControlModels.Float', {
         traits: {
             value: new traits.Float(),
             format: new traits.String()
         },
         toString: function() {
-            return Util.modelToStr(this, 'name', 'enabled', 'format', 'value');
+            return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
         }
     },{
         createFromElement: createFromElement
     });
     
     
-    var DateModel = ControlModel.extend('DateModel', {
+    exp.Date = ControlModel.extend('ControlModels.Date', {
         /* Does not know about time and time zones */
         traits: {
             value: new traits.Date(),
@@ -130,7 +135,7 @@ define([
             format: 'd'
         },
         toString: function() {
-            return Util.modelToStr(this, 'name', 'enabled', 'format', 'value');
+            return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
         },
         getValue: function() {
             var val = this.get('value');
@@ -141,7 +146,7 @@ define([
         createFromElement: createFromElement
     });
 
-    var DateTimeModel = ControlModel.extend('DateTimeModel', {
+    exp.DateTime = ControlModel.extend('ControlModels.DateTime', {
         traits: {
             value: new traits.DateTime(),
             format: new traits.String()            
@@ -150,7 +155,7 @@ define([
             format: 'd'
         },
         toString: function() {
-            return Util.modelToStr(this, 'name', 'enabled', 'format', 'value');
+            return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
         },
         getValue: function() {
             return this.traits.value.toJSON(this.get('value'));
@@ -158,9 +163,27 @@ define([
     },{
         createFromElement: createFromElement
     });
+    
+    exp.DateTime.extend = Util.extend;    
 
 
-    var SelectionModel = ControlModel.extend('SelectionModel', {
+    exp.Selected = ControlModel.extend('ControlModels.Selected', {      
+        initialize: function() {
+            this.on('change:selected', this.onSelectedChange, this)
+        },
+        get_value: function() {
+            return this.get('selected');
+        },
+        set_value: function(v, attrs, options) {
+            this.set('selected', v);
+        },
+        onSelectedChange: function() {
+            this.trigger('change:value', this, this.get('value'));
+        }
+    });
+
+
+    exp.Selection = ControlModel.extend('ControlModels.Selection', {
         /*
         var sm = new SelectionModel({
             name: 'favcolor',
@@ -188,21 +211,102 @@ define([
             options: new traits.Collection(),
             value: new traits.Subset({source: 'options'})
         },
+        defaults: {
+            value: null,
+            options: []
+        },
         getValue: function() {
             var val = this.get('value');
             if(val)
                 return val.pluck('id');
         },
         toString: function() {
-            return Util.modelToStr(this, 'name', 'enabled', 'options', 'value');
+            return Util.modelToStr(this, 'name', 'disabled', 'options', 'value');
         }
     });
 
+    exp.MultiSelection = ControlModel.extend('ControlsModels.MultiSelection', {
+        /*
+        var mod = new ControlModels.MultiSelection({
+            options: {
+                id: 'foo', text: 'Foo', selected: true},
+                id: 'bar', text: 'Bar'},
+                id: 'baz', text: 'Baz'},
+        })
+
+        // value support different formats
+        mod.set('value', [
+            {id: 'foo', text: 'Foo', selected: true}
+        ]);
+        mod.set('value', 'foo');
+        mod.set('value', [
+            {id: 'foo', selected: true},
+            {id: 'baz', selected: true},
+        ]);
+        mod.set('value', someCollection);
+
+        // Or fiddle with the options themselves
+        mod.get('options').get('foo').set('selected', true);
+
+        */
+        traits: {
+            options: new traits.Collection(),
+        },
+        defaults: {
+            options: []
+        },
+        setorder: ['options', 'value'],
+        initialize: function() {
+            this.listenTo(this.get('options'), 'change:selected', this.onSelectedChange, this);
+        },
+        get_value: function() {
+            return _.compact(this.get('options').map(function(m) {
+                if(m.get('selected')) return m
+            }));
+        },
+        set_value: function(v, attrs, options) {
+            options = options || {};
+            if(v == null)
+                v = [];
+            else if(v.models)
+                v = v.models;
+            else
+                v = Util.arrayify(v);
+                        
+            v = _.object(_(v).map(function(item) {
+                var k = item, v = true
+                if(item.attributes)
+                    item = item.attributes
+                if(item.id) {
+                    k = item.id;
+                    v = item.selected !== false;
+                }
+                return [k,v];
+            }));
+
+            var opts = attrs['options'] || this.get('options');
+            opts.each(function(m) {
+                m.set('selected', !!v[m.id], {mute: true});
+            }, this);
+
+            // No "change:value" when setting both 'options' and 'value' in one go.
+            if(!attrs.options && !options.silent)
+                this.trigger('change:value', this, this.get('value'));
+        },
+        onSelectedChange: function(model, value, options)  {
+            if(!options.mute)
+                this.trigger('change:value', this, this.get('value'));
+        },
+        toString: function() {
+            return Util.modelToStr(this, 'name', 'disabled', 'options');
+        }
+    });   
+    
 
 
-    var SingleSelectionModel = ControlModel.extend('SingleSelectionModel', {
+    exp.SingleSelection = ControlModel.extend('ControlModels.SingleSelection', {
         /*    
-        var sm = new SingleSelectionModel({
+        var sm = new SingleSelection({
             id: 'favcolor',
             options: [
                 {id: 'red', text: 'Red'},
@@ -212,17 +316,20 @@ define([
             value: 'blue'
         })
         */
+        defaults: {            
+            value: null,
+        },
         traits: {
             options: new traits.Collection(),
             value: new traits.CollectionModel({source: 'options'})
         },
         toString: function() {
-            return Util.modelToStr(this, 'name', 'enabled', 'options', 'value');
+            return Util.modelToStr(this, 'name', 'disabled', 'options', 'value');
         },
         getValue: function() {
             var val = this.get('value');
-            if(val && val.models.length)
-                return val.models[0].id;
+            if(val)
+                return val.id;
         }
     },{
         createFromElement: function(el) {
@@ -231,17 +338,72 @@ define([
                 id: attr.name,
                 type: attr.type,
                 value: attr.value,
-                enabled: attr.enabled == 'false' ? false : true,
+                disabled: !!attr.disabled,
                 options: attr.options ? window[attr.options] : null
             });
         }
     });
+    
+    
+    exp.SingleSelectionM = ControlModel.extend('ControlModels.SingleSelectionM', {
+        traits: {
+            options: new traits.Collection(),
+        },
+        defaults: {
+            options: []
+        },
+        setorder: ['options', 'value'],
+        initialize: function() {
+            this.listenTo(this.get('options'), 'change:selected', this.onSelectedChange, this);
+        },
+        get_value: function() {
+            return this.get('options').findWhere({selected: true});
+        },
+        set_value: function(v, attrs, options) {
+            if(v && v.id)
+                v = v.id
+            options = options || {};
+            var opt,
+                opts = attrs['options'] || this.get('options');
+            if(v) {
+                opt = opts.get(v);            
+                if(opt.get('selected'))
+                    return;
+            }
+            // unselect current, if any
+            var curr = opts.findWhere({selected: true});
+            if(curr) 
+                curr.set('selected', false);
+            
+            // select new
+            if(opt)
+                opt.set('selected', true, {mute:true})
 
+            // No "change:value" when setting both 'options' and 'value' in one go.
+            if(!attrs.options && !options.silent)
+                this.trigger('change:value', this, this.get('value'));
+        },
+        onSelectedChange: function(model, selected, options)  {
+            // ignore unselect events
+            if(!selected || options.mute) return;
+            
+            // unselect current, if any
+            this.get('options').each(function(m) {
+                if(m.get('selected') && m.id != model.id) 
+                    m.set('selected', false);
+            });
+            this.trigger('change:value', this, this.get('value'));
+        },
+        toString: function() {
+            return Util.modelToStr(this, 'name', 'disabled', 'options');
+        }        
+    });
+    
 
-    var InstanceModel = ControlModel.extend('InstanceModel', {
+    exp.Instance = ControlModel.extend('ControlModels.Instance', {
         /*
         Underlying model for a complex control.
-        Has the ususal properties like .name, .type, .enabled, etc
+        Has the ususal properties like .name, .type, .disabled, etc
         But its .value is not a scalar but is itself a model.
 
         > var Product = Backbone.Model.extend({
@@ -251,10 +413,10 @@ define([
         > });
         >
         > var MyCoolControl = Backbone.View.extend({
-        >     defaultmodel: InstanceModel(Product),
+        >     defaultmodel: Instance(Product),
         > });
         >
-        > var Foo = new InstanceModel(Product)
+        > var Foo = new Instance(Product)
         > var foo = new Foo()
         > foo.set('value', {name: 'CaptainCrunch', price: 2.99})
         > foo.get('value')
@@ -266,18 +428,11 @@ define([
                 Backbone.Model.prototype.constructor.apply(this, arguments);            
             }
             else {
-                return InstanceModel.extend({
+                return exp.Instance.extend({
                     valuemodel: arguments[0] || Backbone.Model
                 });
             }
         },
-        // UPDATE: defaults is run in initcls before an instance is created
-        // (due to merge: ['defaults', ..] in ControlModel above)
-        // defaults: function() {
-        //     return {
-        //         value: new this.valuemodel(null, {parse:true})
-        //     };
-        // },
         validate: function(attrs, options) {  
             if(!(attrs.value instanceof this.valuemodel))
                 return "Value is not instance of "+this.valuemodel;
@@ -308,40 +463,36 @@ define([
                 json.value = new this.valuemodel(null, {parse:true});
             }
             return json;
-        },
-        toJSON: function() {
-            // console.log('this.attributes', json.value);
-            var json = _.clone(this.attributes);
-
-            // json.value = json.value.toJSON();
-            return json;
         }
-        
     });
 
-    return {
+    return _.extend(exp, {
         register: {
-            bool: BoolModel,
-            string: StringModel,
-            number: NumberModel,
-            int: IntModel,
-            float: FloatModel,
-            date: DateModel, 
-            datetime: DateTimeModel,
-            selection: SelectionModel,
-            instance: InstanceModel
-        },        
+            bool: exp.Bool,
+            string: exp.String,
+            number: exp.Number,
+            int: exp.Int,
+            float: exp.Float,
+            date: exp.Date, 
+            datetime: exp.DateTime,
+            singleselection: exp.SingleSelectionM,
+            selection: exp.Selection,
+            multiselection: exp.MultiSelection,
+            instance: exp.Instance
+        },
         ControlModel: ControlModel,
-        BoolModel: BoolModel,
-        StringModel: StringModel,
-        NumberModel: NumberModel,
-        IntModel: IntModel,      
-        FloatModel: FloatModel,  
-        DateTimeModel: DateTimeModel,
-        DateModel: DateModel,         
-        SelectionModel: SelectionModel,
-        SingleSelectionModel: SingleSelectionModel,
-        InstanceModel: InstanceModel
-    };
+        
+        // Deprecated names
+        BoolModel: exp.Bool,
+        StringModel: exp.String,
+        NumberModel: exp.Number,
+        IntModel: exp.Int,      
+        FloatModel: exp.Float,  
+        DateTimeModel: exp.DateTime,
+        DateModel: exp.Date,         
+        SelectionModel: exp.Selection,
+        SingleSelectionModel: exp.SingleSelection,
+        InstanceModel: exp.Instance
+    });
 
 });

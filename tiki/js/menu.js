@@ -8,54 +8,22 @@ define([
 ], function($, _, Backbone, Util, Tools, Traits) {
     'use strict';
 
-    // =========
-    // = Utils =
-    // =========
-    function makeview(view, model) {
-        if(view.prototype.render) // its a View
-            return new view({model: model});
-        else // a callable returning a View
-            return view(model);
-    }
 
-    // ==========================
-    // = Models and collections =
-    // ==========================
-    var OptionModel = Backbone.Model.extend({
+    var Option = {};
+    Option.Model = Traits.Model.extend({
+        traits: function() {
+            return {
+                enabled: Traits.Bool(),
+                submenu: Traits.Instance(function() { return Menu.Model; }),
+                expanded: Traits.Bool()
+            }
+        },
         defaults: {
             enabled: true,
-            submenu: null,  // new MenuModel()
             expanded: false
-        },
-        parse: function(json, xhr) {
-            if(json.submenu) 
-                json.submenu = new MenuModel(json.submenu, {parse: true});
-            return json;
         }
     });
-    
-    var Options = Backbone.Collection.extend({
-        model: OptionModel
-    });
-    
-    var MenuModel = Traits.Model.extend({
-        traits: {
-            options: new Traits.Collection(Options)
-        },
-        defaults: function() {
-            return {
-                options: null
-            };
-        }
-    });
-    
-
-    
-
-    // =========
-    // = Views =
-    // =========
-    var Option = Backbone.View.extend({
+    Option.View = Backbone.View.extend({
         className: 'selectable',
         tagName: 'li',
         template: Util.template('<span>${obj.text}</span><i>&#xe10a;</i>'),
@@ -76,7 +44,16 @@ define([
             return this;
         }
         
+    });    
+        
+    
+    var Options = Backbone.Collection.extend({
+        model: Option.Model
     });
+    
+
+    
+
     var Spacer = Backbone.View.extend({
         tagName: 'li',
         className: 'spacer',
@@ -96,10 +73,9 @@ define([
         options: [
             {id: 'foo', text: 'Foo'},
             {id: 'bar', text: 'Bar', enabled: false},
-            {id: 'lax', text: 'Lax', view: LaxOption},
+            {id: 'lax', text: 'Lax'},
             '-',
             {id: 'filters', text: 'Filters', submenu: {
-                view: MySpecialMenu,
                 options: [
                     {id: 'foo2', text: 'Foo 2'},
                     {id: 'bar2', text: 'Bar 2'},
@@ -108,6 +84,7 @@ define([
             }}
         ]
     })
+    
     
     // Hide any other active menu, render and if necessary, append to body.
     m.show();  triggers "show"
@@ -130,14 +107,25 @@ define([
     });
     
     */
-    var MenuBase = Tools.View.extend({
+    var Menu = {};
+    Menu.Model = Traits.Model.extend({
+        traits: {
+            options: new Traits.Collection(Options)
+        },
+        defaults: function() {
+            return {
+                options: null
+            };
+        }
+    });    
+    Menu.BaseView = Tools.View.extend({
         tagName: 'div', 
         className: 'tiki-menu',
         attributes: {
             tabindex: 0
         },
         events: {
-            'mouseover li': 'onMouseOver',
+            'mouseenter li': 'onMouseOver',
             'keydown': 'onKeyDown',
             'keyup': 'onKeyUp',
             'mouseup': 'onMouseUp'
@@ -151,41 +139,42 @@ define([
         _isroot: true,
         initialize: function(config) {
             config = config || {};
-            _.bindAll(this, 'onShowTimeout', 'onKeyUpTimeout', 'onSelectedAdd', 'onSelectedRemove');
+            _.bindAll(this, 'onShowTimeout', 'onKeyUpTimeout');
             this.views = {};
-            if(!config.model)
-                this.model = new MenuModel(config, {parse: true});
             
-            // Observe the options-collection
+            if(!this.model)
+                this.model = new Menu.Model(config);
+            
             var options = this.model.get('options');
+            
+                
+            // Observe the options-collection
             options.on('add', this.addOne, this);
             options.on('remove', this.removeOne, this);
+            options.on('change:selected', this.onSelectedChange, this);
             options.on('change:expanded', this.onExpandedChange, this);
             
             // Create a Selectable
-            this.selectable = new Tools.Selectable({
+            this.selectable = new Tools.SelectableMutate({
                 el: this.el,
                 selector: 'li.selectable',
-                selectables: options,
+                collection: options,
             });
-            this.selectable.model.get('selected').on({
-                'add': this.onSelectedAdd,
-                'reset': this.onSelectedAdd,
-                'remove': this.onSelectedRemove});
 
             this.$el.scrollMeOnly();
             if($.browser.ltie10)
                 this.$el.attr('unselectable', 'on');                     
         },
         render: function() {
-            this.$el.empty().append('<ul></ul>');
+            this.empty().$el.html('<ul></ul>');
             this.model.get('options').each(function(option) {
                 this.addOne(option);
             }, this);
             return this;
         },
         addOne: function(option) {
-            var view = makeview(option.get('view') || Option, option);
+            var View = (option.get('text') == '-' ? Spacer : Option.View),
+                view = new View({model: option});
             this.views[option.cid] = view;
             this.$('>ul').append(view.render().el);
             
@@ -198,7 +187,7 @@ define([
         },
         
         _showSubmenu: function(model) {
-            var menu = makeview(model.get('view') || Menu, model.get('submenu'));
+            var menu = new Menu.View(model.get('submenu'));
             menu.show({hideOther:false, focus:false}).alignTo(this.views[model.cid].el, {at: 'right top'});
 
             // set silly properties, factor away these
@@ -217,7 +206,7 @@ define([
                 menu.hide();
         },
         _select: function() {
-            var model = this.selectable.model.get('selected').at(0);
+            var model = this.selectable.getFirstSelected();
             if(!model) return;
             var el = this.selectable.getEl(model);
             this._lock = true;
@@ -226,9 +215,7 @@ define([
                 this._lock = false;
                 this.trigger('select', model);                
             }, this));
-        },        
-        
-                        
+        },              
         show: function(options) {
             var opt = Util.defs(options, {
                 hideOther: true,
@@ -240,9 +227,9 @@ define([
             var availHeight = $(this.el.ownerDocument.documentElement).height() - 10; // ~10px dropshadow
             this.$el.css('max-height', availHeight);
                         
-            if(opt.hideOther && MenuBase.active) 
-                MenuBase.active.hide();
-            MenuBase.active = this;
+            if(opt.hideOther && Menu.BaseView.active) 
+                Menu.BaseView.active.hide();
+            Menu.BaseView.active = this;
             
             // implicit dom insert
             if(!this.el.parentElement)
@@ -264,15 +251,14 @@ define([
             return this;
         },
         hide: function() {  
+            this.selectable.reset();
             if(!this.$el.is(':visible'))
                 return;
         
             this.$el.fadeOutFast({detach:true});
             this.trigger('hide', this);
             if(this._isroot)
-                MenuBase.active = null;
-            
-            this.selectable.model.get('selected').reset();
+                Menu.BaseView.active = null;
         },
         alignTo: function(el, options) {            
             this.$el.position(_.defaults(options || {}, {
@@ -284,7 +270,7 @@ define([
         },
         trigger: function() {
             // overload Backbone.Event.trigger to pass events upward the menu chain
-            MenuBase.__super__.trigger.apply(this, arguments);
+            Menu.BaseView.__super__.trigger.apply(this, arguments);
             if(this._parentmenu)
                 this._parentmenu.trigger.apply(this._parentmenu, arguments);
         },
@@ -298,15 +284,11 @@ define([
                 this._hideSubmenu(model);
         },        
 
-        onSelectedAdd: function(model) {
-            if(model.get('submenu')) 
-                model.set('expanded', true);
-            this.el.focus();
+        onSelectedChange: function(model) {
+            // var hasSubmenu = !_.isEmpty(model.get('submenu'));
+            // if(hasSubmenu) 
+            //     this.set('expanded', this.get('selected'));
         },
-        onSelectedRemove: function(model) {
-            if(model.get('submenu'))
-                model.set('expanded', false);
-        },        
         onMouseOver: function(e) {
             // todo: detach mouseover listener instead of _lock property
             if(this._lock || this.$el.is(':animated'))
@@ -316,12 +298,12 @@ define([
                 sel = this.selectable;
             if(target.is('li.selectable')) {
                 var model = sel.getModel(target);
-                sel.model.selectOne(model);
+                sel.reset(model);
                 target.addClass('head tail');
             }
         },
         onRightKeyDown: function(e) {
-            var model = this.selectable.getSelectedModel();
+            var model = this.selectable.getFirstSelected();
             if(!model)  
                 return;
             model.set('expanded', true);
@@ -366,7 +348,7 @@ define([
         }
     });
 
-    var Menu = MenuBase.extend({
+    Menu.View = Menu.BaseView.extend({
         events: {
             'blur': 'onBlur'
         },
@@ -383,9 +365,11 @@ define([
         }
     });
 
+
     return {
-        MenuBase: MenuBase,
-        Menu: Menu,
+        Menu: Menu.View,
+        BaseView: Menu.BaseView,
+        Option: Option,
         Spacer: Spacer
     };
 

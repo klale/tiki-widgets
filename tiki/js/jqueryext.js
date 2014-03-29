@@ -204,6 +204,7 @@ define([
                 count++;
                 if(count == 3) {
                     window.clearInterval(timer);
+                    $(el).toggleClass('selected', true)
                     callback();
                 }
             }, 60);        

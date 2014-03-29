@@ -87,6 +87,11 @@ define([
                 proto[propname] = _.extend({}, parentval, _.result(proto, propname));
             });
         },
+        get: function(attr) {
+            if(this['get_'+attr])
+                return this['get_'+attr]();
+            return this.attributes[attr];
+        },        
         set: function(key, value, options) {
             var attrs, attr, val, errors={},
                 options = _.extend(options || {}, {validate: true});
@@ -99,7 +104,17 @@ define([
                 attrs[key] = value;
             }
             
-            _.each(_.clone(attrs), function(value, key) {
+            var attrslist = _(attrs).map(function(v,k) {return [k,v]})
+            if(this.setorder) {
+                var setorder = this.setorder;
+                attrslist = _.sortBy(attrslist, function(tup) {
+                    return _.indexOf(tup[0], setorder)
+                });
+            }
+            
+            
+            _.each(attrslist, function(tup) {
+                var key = tup[0], value = tup[1];
                 if(typeof this['set_' + key] === 'function') {
                     this['set_' + key](value, attrs, options, key, errors);
                 }
@@ -109,11 +124,13 @@ define([
                             attrs[key] = this.traits[key].parse(value, this, attrs, key);
                         }
                         catch(e) {
-                            if(e.name == 'TypeError' || e.name == 'ValueError')
+                            if(e.name == 'TypeError' || e.name == 'ValueError') {
                                 errors[key] = e;
+                                console.warn(e);
+                            }
                             else throw e;
                         }
-                    else 
+                    else
                         attrs[key] = this.traits[key].parse(value, this, attrs, key);
                 }
             }, this);
@@ -127,13 +144,15 @@ define([
             this.trigger('invalid', this, errors, options);
         },
         toJSON: function() {
-            return _.object(_.map(this.traits, function(trait, key) {
-                return [key, trait.toJSON(this.attributes[key], this)];
-            }, this));
-        }
-    },{
-        extend: Util.extend
+            var traits = this.traits, attrs = this.attributes;
+            if(_.isEmpty(traits)) 
+                return _.clone(attrs)
+            return _.object(_.map(this.attributes, function(v, k) {
+                return [k, traits[k] ? traits[k].toJSON(attrs[k]) : attrs[k]]
+            }));            
+        },
     });
+    Traits.Model.extend = Util.extend;
 
 
 
@@ -152,9 +171,9 @@ define([
         
 
     
-    Traits.String = Trait.extend('String', {
+    Traits.String = Trait.extend('Traits.String', {
         constructor: function(config) {
-            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.String();
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.String(config);
         },
         parse: function(v) {
             if(v != null)
@@ -167,9 +186,9 @@ define([
     });
 
 
-    Traits.Bool = Trait.extend('Bool', {
+    Traits.Bool = Trait.extend('Traits.Bool', {
         constructor: function(config) {
-            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Bool();
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Bool(config);
         },        
         parse: function(v) {
             return !!v;
@@ -180,9 +199,9 @@ define([
     });
     
     
-    Traits.Float = Trait.extend('Float', {
+    Traits.Float = Trait.extend('Traits.Float', {
         constructor: function(config) {
-            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Float();
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Float(config);
         },        
         parse: function(v) {
             if(v == null || v === '') 
@@ -202,9 +221,9 @@ define([
     Traits.Number = Traits.Float; // Legacy
 
 
-    Traits.Int = Trait.extend('Int', {
+    Traits.Int = Trait.extend('Traits.Int', {
         constructor: function(config) {
-            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Int();
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Int(config);
         },        
         parse: function(v) {
             if(v == null || v === '') 
@@ -224,9 +243,9 @@ define([
     
 
     
-    Traits.Date = Trait.extend('Date', {
+    Traits.Date = Trait.extend('Traits.Date', {
         constructor: function(config) {
-            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Date();
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Date(config);
         },
         parse: function(v) {
             if(v === null)
@@ -242,13 +261,13 @@ define([
     });
 
 
-    Traits.DateTime = Trait.extend('DateTime', {
+    Traits.DateTime = Trait.extend('Traits.DateTime', {
         /* Timezone-aware timestamp.
         self.toJSON(value) returns the value as UTC time, 
         eg "2014-02-11T15:10:42.021Z"
         */
         constructor: function(config) {
-            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.DateTime();
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.DateTime(config);
         },        
         parse: function(v) {
             if(v === null)
@@ -261,17 +280,21 @@ define([
         }
     });
     
-    Traits.Instance = Trait.extend('Instance', {
+    Traits.Instance = Trait.extend('Traits.Instance', {
         constructor: function(config) {
-            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Instance();
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Instance(config);
         },
         initialize: function(type) {
             this.type = type;
         },
         parse: function(v) {
-            if(v instanceof this.type)
+            var type = this.type;
+            if(_.isFunction(type) && !type.extend) { // ducktyping Model
+                type = type();
+            }
+            if(v instanceof type)
                 return v;
-            return new this.type(v, {parse: true});
+            return new type(v, {parse: true});
         },
         toJSON: function(v) {
             if(v)
@@ -279,32 +302,34 @@ define([
         }
     });
     
-    Traits.Collection = Trait.extend('Collection', {
-        /*
-        TODO: Add support for passing a Collection
-        object, not just arrays.
-        */
-        constructor: function(config) {
-            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Collection(config);
+    
+    Traits.Collection = Trait.extend('Traits.Collection', {
+
+        constructor: function(config, options) {
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Collection(config, options);
         },
-        initialize: function(config) {
+        initialize: function(config, options) {
             config = config || {};
             this.Collection = Backbone.Collection;
+            this.options = options;
 
-            // if(Util.issubclass(config, Backbone.Collection)) {
-            if(config && config.prototype && config.prototype.add) {
-
+            if(config && config.prototype && config.prototype.add) { // ducktype collection
                 this.Collection = config;
             }
         },
         parse: function(v, obj, attrs, key) {            
             // Convert eg 'foo' => [{id: 'foo'}]
-            if(!v || v instanceof this.Collection)
+            var Collection = this.Collection;
+            if(_.isFunction(this.Collection) && !this.Collection.extend) {
+                Collection = this.Collection();
+            }
+            if(!v || v instanceof Collection) {
                 return v;
+            }
                 
             if(v instanceof Backbone.Collection) {
                 v = v.models;
-                if(this.Collection)
+                if(Collection)
                     v = _.map(v, function(o) { return o.attributes; })
             }
             else if(v)
@@ -319,7 +344,7 @@ define([
 
                 
             if(v) {
-                return new this.Collection(v);
+                return new Collection(v, this.options);
             }
         },
         toJSON: function(v, obj) {
@@ -330,7 +355,7 @@ define([
         }
     });
     
-    Traits.Subset = Trait.extend('Subset', {
+    Traits.Subset = Trait.extend('Traits.Subset', {
         constructor: function(config) {
             if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Subset(config);
         },        
@@ -368,7 +393,7 @@ define([
     });
 
 
-    Traits.CollectionModel = Trait.extend('CollectionModel', {
+    Traits.CollectionModel = Trait.extend('Traits.CollectionModel', {
         constructor: function(config) {
             if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.CollectionModel(config);
         },
@@ -403,7 +428,8 @@ define([
             null                         
             >>> i.parse({foo:'bar'})     ValueError
             >>> i.parse({id:'banana'})   ValueError('banana invalid value')!
-            >>> i.parse({id:'red', foo: 'bar'}) 
+            >>> i.parse({id:'red', foo: 'bar'})
+            >>> i.parse({id:null, foo: 'bar'}) 
             <ColorModel color=red>
             */
             if(v == null || v === '') 
@@ -414,7 +440,7 @@ define([
                 v = String(v);
             if(!_.isString(v))
                 throw new TypeError('Expected string or number, got '+v);
-            if(!v) 
+            if(!v && v !== 0) 
                 throw new ValueError('No id')
             
             var s = this.source;

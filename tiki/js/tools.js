@@ -98,7 +98,8 @@ define([
                 proto[propname] = _.extend({}, parentval, _.result(proto, propname));
             });  
         },
-        mixins: [tools.Hotkeys],
+        // Mixin support for Hotkeys
+        delegateEvents: tools.Hotkeys.delegateEvents,                
         empty: function(html) {
             _(this.views).each(function(view) {
                 view.remove();
@@ -271,6 +272,7 @@ define([
             this.selector = config.selector;
             this.views = config.views;
             this.keynav = Util.pop(config, 'keynav', true);
+            this.dragselect = Util.pop(config, 'dragselect', true);
             this.idAttr = config.idAttr || 'data-id';
             this.textAttr = config.textAttr || 'text';
             this._typing = '';
@@ -383,7 +385,7 @@ define([
         onSelectableMouseDown: function(e) {
             var el = $(e.currentTarget),
                 sel = this.model;
-    
+        
             if(e.metaKey) {
                 sel.toggle(this.getModel(el));
                 el.make('head');
@@ -402,7 +404,8 @@ define([
                 Util.iepreventTextSelection(e);
             }
             else {
-                this._dragSelecting = true;
+                if(this.dragselect)
+                    this._dragSelecting = true;
                 var m = this.getModel(el);
                 // No action if clicking the only selected item multiple times
                 if(sel.isSelected(m) && sel.get('selected').length == 1)
@@ -491,6 +494,333 @@ define([
             this._typing = '';
         }, 500)
     });    
+
+
+
+
+    
+    
+    tools.SelectableMutate = tools.View.extend('SelectableMutate', {
+        initialize: function(config) {
+            _.bindAll(this, 'onSelectableMouseDown', 'onKeyDown', 'onMetaAKeyDown', 
+                'onSelectedChange', 'onKeyPress', 'onMouseUp', 'onSelectableMouseOver');
+        
+            if(config.selectables)
+                this.collection = config.selectables
+                
+            this.listenTo(this.collection, 'change:selected', this.onSelectedChange);
+            this.listenTo(this.collection, 'change:disabled', this.onDisabledChange);
+        
+            this.selector = config.selector;
+            this.views = config.views;
+            this.keynav = Util.pop(config, 'keynav', true);
+            this.dragselect = Util.pop(config, 'dragselect', true);
+            this.idAttr = config.idAttr || 'data-id';
+            this.textAttr = config.textAttr || 'text';
+            this._typing = '';
+            
+            if(config.selected)
+                this.reset(config.selected, {silent:true});
+                    
+            // Bind dom handlers
+            this.$el.on('mousedown', this.selector, this.onSelectableMouseDown);
+            this.$el.on('mouseover', this.selector, this.onSelectableMouseOver);            
+            this.$el.on('mouseup', this.onMouseUp)
+            if(this.keynav) {
+                this.$el.on('keydown', null, 'meta+a', this.onMetaAKeyDown);
+                this.$el.on('keydown', this.onKeyDown);
+                this.$el.on('keypress', this.onKeyPress);
+            }
+        },
+        render: function() {
+            var self = this;
+            this.$(this.selector+'.selected').removeClass('selected head tail');
+            _(this.getSelected()).each(function(m) { this.getEl(m).addClass('selected'); }, this);
+            _(this.getDisabled()).each(function(m) { this.getEl(m).addClass('disabled'); }, this);            
+        },
+        selectClosestStartingWith: function(text) {
+            if(!text.length)
+                return;
+            var coll = this.model.get('selectables'),
+                model = Util.getClosestStartingWith(coll, text, this.textAttr);
+            if(model) 
+                this.model.selectOne(model)
+        },
+    
+    
+
+        // =========================
+        // = Model <-> DOM Element =
+        // =========================
+        getModel: function(el) {
+            return this.collection.get($(el).attr(this.idAttr));
+        },
+        getEl: function(model) {
+            return this.$el.find(this.selector+'['+this.idAttr+'="'+model.id+'"]').filter(':first');
+        },
+        getModelByStartingWith: function(text) {
+            if(!text.length) return;
+            return Util.getClosestStartingWith(this.collection, 
+                                               text, this.textAttr);            
+        },
+
+
+
+        // =================
+        // = Selection API =
+        // =================
+        getSelected: function() {
+            return this.collection.filter(function(m) { return m.get('selected'); });
+        },
+        getFirstSelected: function() {
+            return this.collection.find(function(m) { return m.get('selected'); });
+        },        
+        getDisabled: function() {            
+            return this.collection.filter(function(m) { return m.get('disabled'); });
+        },
+        reset: function(models) {
+            // Iterate selected
+            var coll = this.collection;
+            if(_.isEmpty(models)) 
+                models = [];
+            else
+                models = Util.idArray(models);
+            
+            this.$(this.selector+'.selected').each(_.bind(function(i, el) {
+                var model = this.getModel(el);
+                var bool  = _.indexOf(models, model.id) !== -1;
+                model.set('selected', bool)
+            }, this));
+
+            // Iterate models
+            _(models).each(function(id) {
+                coll.get(id).set('selected', true);
+            });
+            
+            // Update head and tail
+            if(models.length==0)
+                this.$(this.selector+'.head '+this.selector+'.tail').removeClass('head tail');
+            else {
+                this.$(this.selector+'.selected:first').make('head');
+                this.$(this.selector+'.selected:last').make('tail');
+            }
+            
+            // // Iterate entire collection
+            // this.collection.each(function(model) {
+            //     model.set('selected', _.indexOf(models, model) !== -1);
+            // });
+        },
+        getAllSelectedIDs: function() {
+            return _.pluck(this.collection.filter(function(m) {return m.get('selected'); }), 'id');
+        },
+        selectFirst: function(options) {
+
+            this.reset();
+            var first = this.collection.find(function(model) { return !model.get('disabled')});
+            if(first)
+                this.reset(first);
+        },
+        selectAll: function(options) {
+            this.collection.each(function(m) { m.set('selected', true); });
+        },
+        // selectOne: function(model, options) {
+        //     // Deselect all selected
+        //     this.$(this.selector+'.selected').each(_.bind(function(i, el) {
+        //         this.getModel(el).set('selected', false);
+        //     }, this));            
+        //     // Select the new
+        //     model.set('selected', true, options)
+        // },
+        add: function(model, options) {
+            model.set('selected', true, options);
+        },
+        remove: function(model, options) {            
+            model.set('selected', false, options);
+        },
+        toggle: function(model, options) {
+            model.set('selected', !model.get('selected'));
+        },
+        isSelected: function(model) {
+            return !!model.get('selected');
+        },
+
+        
+        
+        // ================
+        // = Model events =
+        // ================
+        onSelectedChange: function(model, selected) {
+            this.getEl(model).toggleClass('selected', selected)
+        },
+        onDisabledChange: function(model, disabled) {
+            this.getEl(model).toggleClass('disabled', disabled)
+        },
+    
+    
+        // ==============
+        // = DOM events =
+        // ==============
+        onMouseDown: function(e) {
+            // Clicking directly on the container deselects all
+            if(!$(e.target).closest(this.el, this.selector).length || e.target == this.el) {
+                this.model.get('selected').reset();
+            }
+        },
+        onMouseUp: function(e) {
+            if(this._dragSelecting) {
+                this._dragSelecting = false;
+                // you cannot change selection when drag-selecting
+                this.$el.css('user-select', 'text');
+    
+    
+                var hasChanged = this.$('.selected').length != this.getSelected().length;
+    
+                if(hasChanged) {
+                    var models = this.$('.selected').map(_.bind(function(i, el) {
+                        return this.getModel(el);
+                    }, this)).toArray();
+                    this.reset(models);
+                }
+            }
+        },
+        onSelectableMouseOver: function(e) {
+            if(!this._dragSelecting) 
+                return;
+            this.$el.css('user-select', 'none');
+            e.preventDefault();
+            var el = $(e.target);
+            
+            var a = this.$('.tail').index(),
+                b = el.index(),
+                start = Math.min(a,b),
+                end = Math.max(a,b);
+            
+            // Todo: improve this
+            this.$(this.selector).removeClass('selected');
+            this.$(this.selector).slice(start, end+1).addClass('selected');
+                
+            // sel.get('selected').reset(sel.get('selectables').slice(start, end+1));
+            el.make('head');                
+        },
+        onMetaAKeyDown: function(e) {
+            this.selectAll();
+            e.preventDefault();
+        },
+        onSelectableMouseDown: function(e) {
+            var el = $(e.currentTarget),
+                sel = this.model;
+        
+            if(e.metaKey) {
+                this.toggle(this.getModel(el));
+                el.make('head');
+            }
+            else if(e.shiftKey) {
+                var a = this.$('.tail').index(),
+                    b = el.index(),
+                    start = Math.min(a,b),
+                    end = Math.max(a,b);
+             
+                this.reset(this.collection.slice(start, end+1));
+                el.make('head');
+        
+                // Allow text selection, but no shift-click text selection
+                e.preventDefault();
+                Util.iepreventTextSelection(e);
+            }
+            else {
+                if(this.dragselect)
+                    this._dragSelecting = true;
+                var m = this.getModel(el);
+                // No action if clicking the only selected item multiple times
+                if(this.isSelected(m) && this.$(this.selector+'.selected').length == 1)
+                    return;
+    
+                this.reset(this.getModel(el));
+            }
+        },   
+        onKeyDown: function(e) {
+            var sel = this.model;
+                        
+            if(Util.isArrowKey(e)) {
+                if(!e.ctrlKey && !e.metaKey && !e.altKey)
+                    e.preventDefault();
+            
+    
+            
+                if(this.$(this.selector+'.selected').length == 0) {
+                    // select first
+                    this.selectFirst();
+                    return;
+                }
+                var up = e.which == Util.keys.UP,
+                    down = e.which == Util.keys.DOWN,
+                    head = this.$('.head'),
+                    tail = this.$('.tail'),
+                    prev = head.prevAll(this.selector+':visible:first'),
+                    next = head.nextAll(this.selector+':visible:first');
+    
+                // within visible viewport?
+                if(up)
+                    prev.scrollIntoView(true, this.el);
+                else if(down)
+                    next.scrollIntoView(false, this.el);
+        
+                if(!e.shiftKey) {
+                    var el;                    
+                    if(down && next[0]) 
+                        el = tail.nextAll(this.selector+':first');
+                    else if(up && prev[0]) 
+                        el = tail.prevAll(this.selector+':first');
+    
+                    if(!el || !el[0])
+                        el = this.$(this.selector+':'+ (up ? 'first':'last'));
+                    
+                    if(el && el[0]) {
+                        this.reset(this.getModel(el));
+                    }
+                }
+                else {            
+                    var below;
+                    if(down && next[0]) {
+                        below = head.index() >= tail.index(); 
+                        if(below) {
+                            this.add(this.getModel(next));
+                            next.make('head');
+                            
+                        } else {
+                            this.remove(this.getModel(head));
+                            next.make('head');
+                        }
+                    }
+                    else if(up && prev[0]) {
+                        below = head.index() > tail.index();
+                        if(below) {
+                            this.remove(this.getModel(head));
+                            prev.make('head');
+                        } else {
+                            this.add(this.getModel(prev));
+                            prev.make('head');
+                        }
+                    }
+                }
+            }
+        },
+        onKeyPress: function(e) {
+            if(e.which < 48) 
+                return;
+            this._typing += String.fromCharCode(e.charCode);
+            this._onKeyPressDeb();
+            var model = this.getModelByStartingWith(this._typing)
+            if(model) 
+                this.reset(model);
+        },
+        _onKeyPressDeb: _.debounce(function() {
+            this._typing = '';
+        }, 500)
+    });    
+
+
+
         
     
 

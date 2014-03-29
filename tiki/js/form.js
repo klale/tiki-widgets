@@ -70,14 +70,13 @@ define([
                 'change': this.onValuesChange,
                 'invalid': this.oValuesInvalid});
         },
-                
-        onControlChange: function(control) {
+        onControlChange: function(control, value) {
             // control changes propagate to the model using control.get('name') as key.
             this.values.off('change', this.onValuesChange);
             // this.values.set(control.id, control.get('value'));
-            this.values.set(control.id, control.getValue());            
+            this.values.set(control.id, value);            
             this.values.on('change', this.onValuesChange);
-        },
+        },        
         onValuesChange: function(model) {
             // A change to 'this.values' triggers control.set('value', newvalue), which in turn
             // refreshes the view

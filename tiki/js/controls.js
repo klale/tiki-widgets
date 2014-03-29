@@ -6,46 +6,21 @@ define([
     './controlmodels',
     './calendar',
     './menu',
-    './tools'
-], function($, _, Backbone, Util, controlmodels, Calendar, Menu, Tools) {
+    './tools',
+    './traits'
+], function($, _, Backbone, Util, ControlModels, Calendar, Menu, Tools, Traits) {
     'use strict';
+    
     
     /*
     What is a control?
     - It's a form control (http://www.w3.org/TR/html401/interact/forms.html#form-controls)
     - It's a View with a Model.
     - The Model is store the control's value at model.get('value')
-    - The Model can have other attributes. Such as 'enabled' and 'options'.
+    - The Model can have other attributes. Such as 'disabled' and 'options'.
       But it only has one value, at model.get('value')
     - The value can be of any type. Anything from a simple scalar, to a Date object, Collection or model.
-    - getValue is expected to serialize this value into something JSON compatible that
-      you want to send back to a server or put in a localstorage. 
-      If value is a Collection of bloated models,
-      you might want to serialize it to a simple array of IDs.
     - A control inside a form must also have a model.get('name') 
-    
-    Minimal control example
-    ---------------------
-    var FooModel = Backbone.Model.extend({
-        initialize: function(config) {
-        },
-        getValue: function() {
-            return this.get('value');
-        }
-    });
-    
-    var Foo = Backbone.View.extend({
-        initialize: function(config) {
-            this.model = new Backbone.Model({
-                name: 'foo'
-            });
-        }
-    });
-
-
-    Create a control from a dom element
-    ---------------------------------
-    [docs here]
     
     
     Form example
@@ -57,11 +32,12 @@ define([
     var f = new form.Form({
         controls: [
             new form.DateModel({id: 'bar', viewtype='text'}),
-            new form.({id: 'bar', viewtype='text'}),
+            new form.IntModel({id: 'bar', viewtype='text'}),
             {id: 'foo', viewtype='text', modeltype='date', value='now'},
-
         ],
-        values: {               // <-- pass a Model or an object literal (which becomes a vanilla Model)
+        // Optionally pass a Model or an object literal as the form's 
+        // collective value. Object literals are wrapped in vanilla models.
+        values: {
             'bar': '2014-01-30'
         }
     })
@@ -72,27 +48,6 @@ define([
     Use eg a <select name="foo" multiple>...</select> as the View for 
     a SelectionModel.
     */
-
-
-
-
-
-    /*
-    Utility function for creating a Control instance from
-    a DOM element.
-    */
-    // function createFromElement(klass, el) {
-    //     var attr = $(el).getAllAttributes();
-    //     $(el).attr(klass.prototype.attributes || {});
-    //     $(el).addClass(klass.prototype.className);
-    //     return new klass({
-    //         el: el,
-    //         name: attr.name,
-    //         value: attr.value,
-    //         required: attr.required
-    //     },{parse: true});
-    // }
-
 
     // =========
     // = utils =
@@ -110,15 +65,28 @@ define([
     var leaveElement = function() {
         // restore this.el to what it looked like before
         // attacking it.  
-        this._detachedEl.html(this.model.getValue());
+        this._detachedEl.html(this.model.get('value'));
         this._detachedEl.insertBefore(this.el);
         this.$el.detach();
     };
-
+    var ControlView = {
+        initialize: function() {
+            this.listenTo(this.model, 'change:name', this.onNameChange, this);    
+            this.listenTo(this.model, 'change:disabled', this.onDisabledChange, this);
+        },
+        onDisabledChange: function(model, disabled) {
+            this.$el.toggleClass('disabled', disabled);
+        },
+        onNameChange: function(model, name) {
+            this.$el.attr('name', this.model.get('name'));
+        }        
+    };
     
-    // =========
-    // = Views =
-    // =========
+
+
+    // ============
+    // = Controls =
+    // ============
     var Text = Tools.View.extend({
         className: 'tiki-text',
         attributes: {
@@ -128,6 +96,7 @@ define([
         events: {
             'keypress': 'onKeyPress',
             'focus': 'onFocus',
+            'mousefocus': 'onMouseFocus',
             'blur': 'onBlur'
         },
         hotkeys: {
@@ -135,7 +104,7 @@ define([
             'keydown left': 'onLeftKeyDown',
             'keydown right': 'onRightKeyDown'
         },
-        defaultmodel: controlmodels.StringModel,
+        defaultmodel: ControlModels.String,
     
         initialize: function(config) {
             config = config || {};
@@ -153,7 +122,8 @@ define([
             if(!isInvalid)
                 this.$el.attr('name', name).html(html);
             this.$el.toggleClass('invalid', isInvalid);
-            this.$el.toggleClass('tiki-disabled', !this.model.get('enabled'));
+            this.$el.toggleClass('disabled', this.model.get('disabled'));
+            this.$el.attr('contenteditable', this.model.get('disabled') ? 'false':'true')
             return this;
         },
         renderValue: function() {
@@ -170,7 +140,7 @@ define([
         // = Control interface =
         // ===================
         focus: function() {
-            if(this.$el.closest('.tiki-disabled')[0]) 
+            if(this.$el.closest('.disabled')[0]) 
                 return; // ie7/8
             this.$el.moveCursorToEnd();
             this.$el.selectAll();
@@ -223,7 +193,7 @@ define([
             //     e.preventDefault(); // prevent page from scrolling left
         },
         onIEMouseDown: function(e) {
-            if(this.$el.closest('.tiki-disabled').length) {
+            if(this.$el.closest('.disabled').length) {
                 e.preventDefault(); // don't focus
                 var focusable = this.$el.parent().closest('*:focusable');
                 window.setTimeout(function() { focusable.focus(); }, 1); 
@@ -251,7 +221,7 @@ define([
 
             this.$el.attr('name', name).html(Util.makePreText(html || ''));
             this.$el.toggleClass('invalid', !!this.model.validationError);
-            this.$el.toggleClass('tiki-disabled', !this.model.get('enabled'));
+            this.$el.toggleClass('disabled', this.model.get('disabled'));
             return this;
         },
         onFocus: function(e) {
@@ -296,7 +266,7 @@ define([
 
     var Hidden = Tools.View.extend({
         className: 'tiki-hidden',
-        defaultmodel: controlmodels.StringModel,
+        defaultmodel: ControlModels.String,
     
         initialize: function(config) {
             config = config || {};
@@ -317,7 +287,10 @@ define([
 
 
 
-    var Checkbox = Tools.View.extend({
+
+
+    var Checkbox = {};
+    Checkbox.View = Tools.View.extend('Controls.Checkbox.View', {
         className: 'tiki-checkbox',
         events: {
             'click': 'onClick',
@@ -331,36 +304,46 @@ define([
         attributes: {
             tabindex: 0
         },
-        defaultmodel: controlmodels.BoolModel,
+        defaultmodel: ControlModels.Selected,
     
         initialize: function(config)  {
-            this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
-            this.listenTo(this.model, 'change:value', this.onModelChange, this);
-            if(config.el) {
-                this.$el.attr(this.attributes || {});
-                this.$el.addClass(this.className);                
-            }
+            if(!this.model)
+                this.model = new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
+                
+            this.listenTo(this.model, 'change:name', this.onNameChange, this);    
+            this.listenTo(this.model, 'change:text', this.onTextChange, this);    
+            this.listenTo(this.model, 'change:selected', this.onSelectedChange, this);
+            this.listenTo(this.model, 'change:disabled', this.onDisabledChange, this);
         },
         render: function() {
-            this.$el.toggleClass('tiki-checked', this.model.get('value'));
+            this.$el.toggleClass('checked', !!this.model.get('selected'));
+            this.$el.toggleClass('disabled', !!this.model.get('disabled'));
             this.$el.html(this.model.get('text') || '');
             this.$el.attr('name', this.model.get('name'));
-            // this.el.hideFocus = true;
             return this;
         },
         attackElement: attackElement,
         leaveElement: leaveElement,
-        onModelChange: function(model) {
-            this.$el.toggleClass('tiki-checked', model.get('value'));            
+        onTextChange: function(model, text) {
+            this.$el.html(text);
+        },
+        onSelectedChange: function(model, selected) {
+            console.log('CHANGE', model.id, selected)
+            this.$el.toggleClass('checked', selected);
+        },
+        onDisabledChange: function(model, disabled) {
+            this.$el.toggleClass('disabled', disabled);
+        },
+        onNameChange: function(model, name) {
+            this.$el.attr('name', this.model.get('name'));
         },
         onClick: function(e) {             
             e.preventDefault();
-            if(this.$el.closest('.tiki-disabled').length) {
+            if(this.$el.closest('.disabled').length) {
                 e.preventDefault(); // don't focus
                 return;
             }
-
-            this.model.set('value', !this.model.get('value'));
+            this.model.set('selected', !this.model.get('selected'));
             this.$el.removeClass('active');
         },
         onSpaceKeyDown: function(e) {
@@ -371,52 +354,52 @@ define([
             e.preventDefault();
         },
         onMouseDown: function(e) {
-            if(!this.$el.closest('.tiki-disabled')[0]) {
+            if(!this.$el.closest('.disabled')[0]) {
                 this.$el.addClass('active');
             }
         }
     });
 
-    var Radio = Checkbox.extend({
+
+    var Radio = {};
+    Radio.View = Checkbox.View.extend({
         className: 'tiki-radio',
-        initialize: function(config)  {
-            this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
-            this.listenTo(this.model, 'change:value', this.onModelChange, this);
-            this.$el.attr(this.attributes || {}).addClass(this.className);
-        },
+        // initialize: function(config)  {
+        //     this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
+        //     this.listenTo(this.model, 'change:value', this.onModelChange, this);
+        //     this.$el.attr(this.attributes || {}).addClass(this.className);
+        // },
         onClick: function(e) {             
             e.preventDefault();
-            if(this.$el.closest('.tiki-disabled')[0])
+            if(this.$el.closest('.disabled')[0])
                 return;
-            this.model.set('value', true);
+            this.model.set('selected', true);
             this.$el.removeClass('active');
         }
     });
 
 
-    var CheckboxGroup = Tools.View.extend({
+
+    var CheckboxGroup = {};
+    CheckboxGroup.View = Tools.View.extend({
         tagName: 'ul',
         className: 'tiki-checkboxgroup',
-        defaultmodel: controlmodels.SelectionModel,
+        defaultmodel: ControlModels.MultiSelection,
     
         initialize: function(config)  {
-            _.bindAll(this, 'onCheckboxValueChange', 'render');
             config = config || {};
-            this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
+            if(!this.model)
+                this.model = new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
 
             this.views = {};
-            this.listenTo(this.model, 'change', this.render);
-            this.listenTo(this.model.get('options'), 'all', this.render);
-            this.listenTo(this.model.get('value'), 'all', this.render);
+            var options = this.model.get('options');
+            this.listenTo(options, 'add', this.addOne, this);
+            this.listenTo(options, 'remove', this.addRemove, this);
         },
         render: function() {
             // console.log('RE-RENDER all checkboxes')
-            
-            this.model.get('options').each(function(model) {
-                this.removeOne(model);
-            }, this);
-            
-            this.$el.empty().attr('name', this.model.get('name'));
+            this.empty().$el.empty();
+            this.$el.attr('name', this.model.get('name'));
             this.model.get('options').each(function(model) {
                 this.addOne(model);
             }, this);
@@ -424,13 +407,9 @@ define([
         },
         addOne: function(model) {
             if(!this.views[model.cid]) {
-                this.views[model.cid] = new Checkbox({model: model});
-                this.listenTo(model, 'change:value', this.onCheckboxValueChange);
+                this.views[model.cid] = new Checkbox.View({model: model});
             }
-            var view = this.views[model.cid],    
-                isAdded = !!this.model.get('value').get(model.id);
-            view.model.set('value', isAdded, {silent: true});
-            
+            var view = this.views[model.cid];
             var li = $('<li></li>').append(view.render().el);
             view.delegateEvents();
             this.$el.append(li);
@@ -442,71 +421,27 @@ define([
         },
         attackElement: attackElement,
         leaveElement: leaveElement,
-        onCheckboxValueChange: function(model) {
-            var checked = model.get('value');
-            this.model.get('value')[checked ? 'add':'remove'](model);
-        }
     });
 
 
-
-
-
-    var RadioGroup = Tools.View.extend({
-        tagName: 'ul',
+    var RadioGroup = {};
+    RadioGroup.View = CheckboxGroup.View.extend('Controls.RadioGroup.View', {
         className: 'tiki-radiogroup',
-        // Todo: Write a SingleSelectionModel
-        defaultmodel: controlmodels.SelectionModel,
-    
-        initialize: function(config)  {
-            _.bindAll(this, 'onRadioValueChange');
-            config = config || {};
-            this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
-
-            this.views = {};
-            this.listenTo(this.model, 'change', this.render, this);
-        },
-        render: function() {
-            this.$el.empty().attr('name', this.model.get('name'));
-            this.model.get('options').each(function(model) {
-                this.addOne(model);
-            }, this);
-            return this;
-        },
+        defaultmodel: ControlModels.SingleSelectionM,        
         addOne: function(model) {
             if(!this.views[model.cid]) {
-                this.views[model.cid] = new Radio({model: model});                
-                this.listenTo(model, 'change:value', this.onRadioValueChange);
+                this.views[model.cid] = new Radio.View({model: model});   // <--- diff
             }
-            var view = this.views[model.cid],    
-                isAdded = !!this.model.get('value').get(model.id);
-            view.model.set('value', isAdded, {silent: true});
-            
+            var view = this.views[model.cid];
             var li = $('<li></li>').append(view.render().el);
             view.delegateEvents();
             this.$el.append(li);
-        },
-        removeOne: function(model) {
-            Util.pop(this.views, model.cid).remove();
-        },
-        attackElement: attackElement,
-        leaveElement: leaveElement,
-        onRadioValueChange: function(model) {
-            var checked = model.get('value');
-            if(checked) {
-                // Unselect current radio, if any
-                var curr = this.model.get('value').at(0);
-                if(curr)
-                    curr.set('value', false);
-                // Update the selection. Todo: finish the singleselectionmodel
-                this.model.get('value').set(model);
-            }
         }
     });    
 
 
-
-    var Dropdown = Tools.View.extend({
+    var Dropdown = {};
+    Dropdown.View = Tools.View.extend({
         className: 'tiki-dropdown',
         attributes: {
             tabindex: 0
@@ -524,39 +459,41 @@ define([
         hotkeys: {
             'keydown down': 'onDownKeyDown'
         },
-        defaultmodel: controlmodels.SingleSelectionModel,
+        defaultmodel: ControlModels.SingleSelectionM,
+        mixins: [ControlView],
     
         initialize: function(config) {       
             config = config || {};
             _.bindAll(this, 'onMenuSelect', 'onMenuHide');
-            this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
-            this.listenTo(this.model, 'change', this.render, this);
-            this.listenTo(this.model.get('options'), 'reset add remove', this.onOptionsChange, this)
+            if(!this.model)
+                this.model = new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
+
+            ControlView.initialize.call(this);
+            var options = this.model.get('options');
+            this.listenTo(options, 'change:selected', this.onSelectedChange, this);
             
+
             // Create the dropdown menu
             this.menu = new Menu.Menu({
-                options: config.options
+                options: options
             });
             this.menu.on('select', this.onMenuSelect);
             this.menu.on('hide', this.onMenuHide);
             this.menu.render();
         },   
-        onOptionsChange: function() {
-            this.menu.model.get('options').set(this.model.get('options').toJSON());
-        },  
         render: function() {
             this.$el.attr('name', this.model.get('name'));
             
             var value = this.model.get('value');
             var text = value ? value.get('text') : '';            
             this.$el.html(this.template({text: text}));
+            this.$el.toggleClass('disabled', this.model.get('disabled'));
         
             if($.browser.ltie9) {
                 this.$('*').add(this.el).attr('unselectable', 'on');
             }
             return this;
         },
-
         focus: function() {
             this.$el.focus();
         },
@@ -572,7 +509,7 @@ define([
         leaveElement: leaveElement,
         
         onMouseDown: function(e) {
-            if(this.$el.closest('.tiki-disabled').length) {
+            if(this.$el.closest('.disabled').length) {
                 e.preventDefault(); // don't focus
                 return;
             }
@@ -581,8 +518,12 @@ define([
             e.stopPropagation();
             e.preventDefault();
         },
-        onMenuSelect: function(model) {
-            this.model.set('value', model);
+        onMenuSelect: function(optionModel) {
+            this.model.set('value', optionModel);
+        },
+        onSelectedChange: function(model, selected) {
+            if(selected)
+                this.$el.html(this.template({text: model.get('text')}));            
         },
         onMenuHide: function() {
             this.focus();
@@ -616,7 +557,7 @@ define([
             'keydown esc': 'onEscKeyDown',
             'keydown down': 'onDownKeyDown'
         },
-        defaultmodel: controlmodels.DateModel,
+        defaultmodel: ControlModels.Date,
     
         initialize: function(config)  {
             config = config || {};
@@ -630,7 +571,7 @@ define([
             this.$el.empty().append('<button class="calendar" tabindex="-1"></button>');
             this.$el.append(this.textcontrol.render().el);
             this.textcontrol.delegateEvents();
-            this.$el.toggleClass('tiki-disabled', !this.model.get('enabled'));
+            this.$el.toggleClass('disabled', this.model.get('disabled'));
             this.$el.toggleClass('invalid', !!this.model.validationError);
             return this;
         },
@@ -687,13 +628,13 @@ define([
             e.stopPropagation();            
         },
         onButtonClick: function(e) {
-            if(this.$el.closest('.tiki-disabled').length) {
+            if(this.$el.closest('.disabled').length) {
                 return;                
             }
             this.showDatePicker();            
         },
         onMouseDown: function(e) {
-            if(this.$el.closest('.tiki-disabled').length)
+            if(this.$el.closest('.disabled').length)
                 e.preventDefault(); // don't focus
         },
         onDatePickerKeyDown: function(e) {
@@ -714,7 +655,7 @@ define([
         attributes: {
             tabindex: 0
         },
-        defaultmodel: controlmodels.DateModel,
+        defaultmodel: ControlModels.Date,
     
         initialize: function(config)  {
             config = config || {};
@@ -800,22 +741,23 @@ define([
             text: Text,
             textarea: TextArea,
             hidden: Hidden,
-            checkbox: Checkbox,
-            checkboxgroup: CheckboxGroup,
-            radio: Radio,
-            radiogroup: RadioGroup,
-            dropdown: Dropdown,
+            checkbox: Checkbox.View,
+            checkboxgroup: CheckboxGroup.View,
+            radio: Radio.View,
+            radiogroup: RadioGroup.View,
+            dropdown: Dropdown.View,
             date: Date,
             datepicker: DatePicker
         },
         Text: Text,
         TextArea: TextArea,
         Hidden: Hidden,
-        Checkbox: Checkbox,
-        CheckboxGroup: CheckboxGroup,
-        Radio: Radio,
-        RadioGroup: RadioGroup,
-        Dropdown: Dropdown,
+        Checkbox: Checkbox.View,
+        CheckboxGroup: CheckboxGroup.View,
+        Radio: Radio.View,
+        RadioGroup: RadioGroup.View,
+        RadioGroupModel: RadioGroup.Model,        
+        Dropdown: Dropdown.View,
         Date: Date,
         DatePicker: DatePicker
     };
