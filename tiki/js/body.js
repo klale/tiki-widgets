@@ -2,8 +2,9 @@ define([
     'jquery',
     'underscore',
     'backbone',
-    'tiki/util'
-], function($, _, Backbone, util) {
+    'tiki/util',
+    'tiki/tools'
+], function($, _, Backbone, util, Tools) {
     'use strict';
 
     /*
@@ -20,15 +21,22 @@ define([
     It also stores this._keyDownEvent for each keydown, reaching this 
     element - iseful in subsequent keypress and keyup handlers.
     */
-    var Body = Backbone.View.extend({
+    var body = {}
+    
+    body.Body = Tools.View.extend({
         events: {
             'keydown': 'onKeyDown',
             'keyup': 'onKeyUp',
             'focusin': 'onFocusIn',
-            'focusout': 'onFocusOut'
+            'focusout': 'onFocusOut',
+            'mousedown': 'onMouseDown',
+            'mouseup': 'onMouseUp'
         },
+        mixins: [Tools.TabChain],
         initialize: function(config) {
             this.$el.attr('tabindex', '-1');            
+            
+            Tools.TabChain.initialize.call(this);
         },
         render: function() {
             return this;
@@ -68,11 +76,21 @@ define([
         onFocusOut: function(e) {
             // Something that had focus, lost it, but we don't now to what yet            
             this.justLostFocus = e.target;
+        },
+        onMouseDown: function(e) {
+            this.mouseDownEvent = e;
+            body.mouseDownEvent = e;
+            
+            $(e.target).closest(':focusable').each(function() {
+                $(this).trigger('mousefocus', e);
+            });
+        },
+        onMouseUp: function(e) {
+            this.mouseDownEvent = null;
+            body.mouseDownEvent = null;
         }
     });
 
 
-    return {
-        Body: Body
-    };
+    return body;
 });
