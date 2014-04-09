@@ -58,7 +58,20 @@ define([
             this.controls = new ControlsCollection(controls);
             this.fields = this.controls; // legacy
             this.values = Util.modelify(config.values);
-                        
+            this.setters = config.setters || {};
+            
+            // Bind any setters
+            _.each(this.setters, function(v,k) {
+                this.setters[k] = v.bind(this);
+            }, this);
+                                    
+            // Add and bind setters from short-hand syntax: set_myprop
+            _.each(config, function(v, k) {
+                if(k.substr(0, 4) == 'set_') 
+                    this.setters[k.substr(4)] = v.bind(this);
+            }, this); 
+
+            // Set the value off all controls
             _.each(this.values.attributes, function(v,k) {
                 var controlmodel = this.controls.get(k);
                 if(controlmodel)
@@ -66,6 +79,7 @@ define([
             }, this);
             
             
+            // Wire up change-listeners on all controls and `this.values`
             this.listenTo(this.controls, {
                 'change:value': this.onControlChange,
                 'invalid': this.onControlInvalid});
@@ -74,25 +88,34 @@ define([
                 'change': this.onValuesChange,
                 'invalid': this.oValuesInvalid});
         },
+        _set_value: function(control, value) {
+            // Use dedicated setter if declared, otherwise
+            // just set value directly on `this.values`
+            if(control.id in this.setters)
+                this.setters[control.id](value);
+            else
+                this.values.set(control.id, value);
+        },
         onControlChange: function(control, value) {
             // control changes propagate to the model using control.get('name') as key.
             this.values.off('change', this.onValuesChange);
-            // this.values.set(control.id, control.get('value'));
-            this.values.set(control.id, value);            
+            this._set_value(control, value);
             this.values.on('change', this.onValuesChange);
-        },        
+        },
         onValuesChange: function(model) {
             // A change to 'this.values' triggers control.set('value', newvalue), which in turn
             // refreshes the view
             this.controls.off('change:value', this.onControlChange); // temporary stop propagation
             this.values.off('change', this.onValuesChange);
+
             _.each(model.changedAttributes(), function(v, k) {
                 var control = this.controls.get(k);
                 if(control) {
                     control.set('value', v);
-                    this.values.set(k, control.getValue()); // {silent:true}
+                    this.values.set(k, control.get('value')); // {silent:true}
                 }
             }, this);
+
             this.values.on('change', this.onValuesChange);
             this.controls.on('change:value', this.onControlChange); // resume
         },
