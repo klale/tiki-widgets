@@ -32,7 +32,8 @@ define([
         traits: {
             type: new traits.String(),
             name: new traits.String(),
-            disabled: new traits.Bool()
+            disabled: new traits.Bool(),
+            value: new traits.Trait()
         },
         defaults: {
             disabled: false
