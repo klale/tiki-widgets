@@ -47,7 +47,7 @@ define([
     });    
         
     
-    var Options = Backbone.Collection.extend({
+    var Options = Tools.Collection.extend('Menu.Options', {
         model: Option.Model
     });
     
