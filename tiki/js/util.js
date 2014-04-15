@@ -168,9 +168,9 @@ define([
         if (protoProps && _.has(protoProps, 'constructor')) {
             child = eval(name+'=protoProps.constructor');
         } else {
-            child = eval(name+'=function(){ return parent.apply(this, arguments); }');
-        }    
-    
+            child = eval(name+'=function() { // '+name+'\nreturn parent.apply(this, arguments); }');
+        }
+        
         // Add static properties to the constructor function, if supplied.
         _.extend(child, parent, staticProps);
     
