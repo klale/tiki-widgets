@@ -117,15 +117,17 @@ define([
         },
         render: function() {
             var renderer = this.model.get('renderer'),
-                name = this.model.get('name'),
                 html = renderer ? renderer(this) : this.renderValue(),
                 isInvalid = !!this.model.validationError;
 
             if(!isInvalid)
-                this.$el.attr('name', name).html(html);
+                this.$el.html(html);
             this.$el.toggleClass('invalid', isInvalid);
             this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
-            this.$el.attr('contenteditable', this.model.get('disabled') ? 'false':'true')
+            this.$el.attr({
+                'name': this.model.get('id'),
+                'contenteditable': this.model.get('disabled') ? 'false':'true'
+            });
             return this;
         },
         renderValue: function() {
@@ -219,11 +221,18 @@ define([
         render: function() {
             var renderer = this.model.get('renderer'),
                 name = this.model.get('name'),
-                html = renderer ? renderer(this) : this.renderValue();
-
-            this.$el.attr('name', name).html(Util.makePreText(html || ''));
-            this.$el.toggleClass('invalid', !!this.model.validationError);
-            this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
+                html = renderer ? renderer(this) : this.renderValue(),
+                isInvalid = !!this.model.validationError,
+                disabled = this.model.get('disabled');
+            if(!isInvalid)
+                this.$el.html(Util.makePreText(html || ''));
+                        
+            this.$el.toggleClass('invalid', isInvalid);
+            this.$el.toggleClass('tiki-disabled', disabled);
+            this.$el.attr({
+                'name': this.model.get('id'),
+                'contenteditable': disabled ? 'false':'true'
+            });
             return this;
         },
         onFocus: function(e) {
