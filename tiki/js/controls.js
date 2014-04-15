@@ -669,7 +669,7 @@ define([
             config = config || {};
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
             
-            this.calendar = new Calendar.MonthCalendar({date: this.model.get('value')});
+            this.calendar = new Calendar.MonthCalendar({date: this.model.get('value') || new window.Date()});
             this.$el.append(this.calendar.render().el);
             this.listenTo(this.model, 'change:value', this.onModelChange, this);
         },
