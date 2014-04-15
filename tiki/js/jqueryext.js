@@ -352,7 +352,7 @@ define([
     };
     
     $.fn.scrollIntoView = function(alignWithTop, scrollable) {
-        var el = scrollable || this[0].parentNode;
+        var el = scrollable || this[0].parentNode,
             item = this[0],
             scrollTop = el.scrollTop;
         if(!item) 
