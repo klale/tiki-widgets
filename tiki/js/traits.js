@@ -78,8 +78,18 @@ define([
                 constr = this;
             if(_.isFunction(proto.traits))
                 proto.traits = proto.traits.call(proto);
-            _.each(proto.traits, function(trait, k) {
-                trait.name = k;
+            _.each(proto.traits, function(trait, name) {
+                trait.name = name;
+                Object.defineProperty(proto, name, {
+                    get: function() { return this.get(name); },
+                    set: function(value) {
+                        var data = {};
+                        data[name] = value;
+                        this.set(data);
+                    },
+                    configurable: true,
+                    enumerable: true
+                });
             });
                         
             _.each(Util.arrayify(proto.merge), function(propname) {
