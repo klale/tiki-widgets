@@ -5,7 +5,8 @@ define([
     'moment',
     './base'
 ], function($, _, Backbone, moment) {
-    // 'use strict';
+    // Todo: Make Util.extend compatible with strict mode.
+    // 'use strict'; 
 
     var util = {};
 
