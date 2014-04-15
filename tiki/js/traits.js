@@ -21,7 +21,7 @@ define([
             throw new TypeError();        
         var timestamp = Util.interpretdate(v);
         if(!timestamp)
-            throw new ValueError('Invalid date format');
+            throw new Traits.ValueError('Invalid date format');
         return timestamp;
     };
 
@@ -35,8 +35,8 @@ define([
     };
     ErrorBase.extend = Util.extend;
     
-    var ValueError = ErrorBase.extend('ValueError', {name: 'ValueError'});
-    
+    Traits.ValueError = ErrorBase.extend('Traits.ValueError', {name: 'ValueError'});
+
 
     Traits.Model = Backbone.Model.extend({
         /*
@@ -97,13 +97,15 @@ define([
                 proto[propname] = _.extend({}, parentval, _.result(proto, propname));
             });
         },
-        get: function(attr) {
-            if(this['get_'+attr])
-                return this['get_'+attr]();
-            return this.attributes[attr];
+        get: function(name) {
+            if(this['get_'+name])
+                return this['get_'+name]();
+            if(this.traits && this.traits[name] && this.traits[name].get)
+                return this.traits[name].get(this, name)
+            return this.attributes[name];
         },        
         set: function(key, value, options) {
-            var attrs, attr, val, errors={},
+            var attrs, attr, val, errors={}, rollbacks=[], success=[];
                 options = _.extend(options || {}, {validate: true});
                 
             if(_.isObject(key) || key === null) {
@@ -122,16 +124,27 @@ define([
                 });
             }
             
-            
             _.each(attrslist, function(tup) {
-                var key = tup[0], value = tup[1];
+                var key = tup[0], value = tup[1], t,
+                    args = [value, attrs, options, key, errors, this];
                 if(typeof this['set_' + key] === 'function') {
-                    this['set_' + key](value, attrs, options, key, errors);
+                    this['set_' + key].apply(this, args);
                 }
                 else if(this.traits && this.traits[key]) {
                     if(this.catchErrors)
                         try {
-                            attrs[key] = this.traits[key].parse(value, this, attrs, key);
+                            // Run the value though the trait's parse
+                            t = this.traits[key];
+                            args.splice(0, 1, t.parse(value, this, attrs, key))
+                            if(t.rollback)
+                                rollbacks.push(t.rollback.bind.apply(t.rollback, [t].concat(args)));                                
+                            if(t.success)
+                                success.push(t.success.bind.apply(t.success, [t].concat(args)));
+
+                            if(t.set)
+                                t.set.apply(t, args);
+                            else
+                                attrs[key] = args[0];
                         }
                         catch(e) {
                             if(e.name == 'TypeError' || e.name == 'ValueError') {
@@ -147,8 +160,15 @@ define([
             
             if(_.isEmpty(errors)) {
                 this.validationError = null;
-                return Backbone.Model.prototype.set.call(this, attrs, options);
+                Backbone.Model.prototype.set.call(this, attrs, options);
+                if(!_.isEmpty(success))
+                    _.each(success, function(f) { f(); });                
+                return this;
             }
+            else if(!_.isEmpty(rollbacks)) {
+                _.each(rollbacks, function(f) { f(); });
+            }
+            
             this.validationError = errors;
             options.validationError = errors;
             this.trigger('invalid', this, errors, options);
@@ -175,10 +195,16 @@ define([
         initialize: function() {},
         toString: function() {
             return 'Traits.'+this.constructor.name+'(name='+Util.repr(this.name)+')';
+        },
+        parse: function(v) {
+            return v;
+        },
+        toJSON: function(v) {
+            return v;
         }
     });
     Trait.extend = Util.extend;
-        
+    Traits.Trait = Trait;
 
     
     Traits.String = Trait.extend('Traits.String', {
@@ -313,6 +339,34 @@ define([
     });
     
     
+    
+    /*
+    var Thing = Model.extend({
+        traits: {
+            title: t.String(),
+            columns: t.Collection(MySpecialCollection)
+        }
+    });
+    
+    var th = new Thing({
+        title: 'Foo',
+        columns: [{id: '1', name: 'sune'}]
+    })
+    
+    vat trait = new t.Collection();    
+    >>> trait.parse([{id: '1', name: 'sune'}])
+    <MySpecialCollection length=1>
+    
+    >>> trait.parse([{id: '1', name: 'sune'}])
+    <MySpecialCollection length=1>
+
+    >>> trait.parse(new Backbone.Collection([{id: '1', name: 'sune'}])
+    // throws ValueError - must be a MySpecialCollection.
+    
+    >>> var coll = new MySpecialCollection([{id: '1', name: 'sune'}];
+    >>> trait.parse(coll) === coll
+    true
+    */    
     Traits.Collection = Trait.extend('Traits.Collection', {
 
         constructor: function(config, options) {
@@ -323,14 +377,14 @@ define([
             this.Collection = Backbone.Collection;
             this.options = options;
 
-            if(config && config.prototype && config.prototype.add) { // ducktype collection
-                this.Collection = config;
-            }
+            if(_.isFunction(config))
+                this.Collection = config;                
         },
         parse: function(v, obj, attrs, key) {            
             // Convert eg 'foo' => [{id: 'foo'}]
             var Collection = this.Collection;
             if(_.isFunction(this.Collection) && !this.Collection.extend) {
+                // a callable, returing a collection class
                 Collection = this.Collection();
             }
             if(!v || v instanceof Collection) {
@@ -346,12 +400,8 @@ define([
                 v = _.map(Util.arrayify(v), function(o) {
                     if(_.isString(o))
                         return {id: o};
-                    else if(o.attributes)
-                        return o.attributes
                     return o;
                 }, this);
-            
-
                 
             if(v) {
                 return new Collection(v, this.options);
@@ -359,9 +409,10 @@ define([
         },
         toJSON: function(v, obj) {
             // 'v' is a Collection
-            return _.map(v.each(function(item) {
-                return item.toJSON();
-            }));
+            if(v && v.each)
+                return _.map(v.each(function(item) {
+                    return item.toJSON();
+                }));
         }
     });
     
@@ -451,7 +502,7 @@ define([
             if(!_.isString(v))
                 throw new TypeError('Expected string or number, got '+v);
             if(!v && v !== 0) 
-                throw new ValueError('No id')
+                throw new Traits.ValueError('No id')
             
             var s = this.source;
             if(_.isString(s)) {         
@@ -461,7 +512,7 @@ define([
             }
             var model = s.get(v);
             if(!model)
-                throw new ValueError(v + ' not in ' + this.source);
+                throw new Traits.ValueError(v + ' not in ' + this.source);
             return model;
         },
         toJSON: function(v, obj) {
