@@ -176,6 +176,7 @@ define([
             return this.get('selected');
         },
         set_value: function(v, attrs, options) {
+            delete attrs.value;
             this.set('selected', v);
         },
         onSelectedChange: function() {
@@ -266,6 +267,7 @@ define([
             }));
         },
         set_value: function(v, attrs, options) {
+            delete attrs.value;
             options = options || {};
             if(v == null)
                 v = [];
@@ -361,6 +363,7 @@ define([
             return this.get('options').findWhere({selected: true});
         },
         set_value: function(v, attrs, options) {
+            delete attrs.value;
             if(v && v.id)
                 v = v.id
             options = options || {};
