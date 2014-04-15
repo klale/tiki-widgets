@@ -12,6 +12,8 @@ define([
 
 
     util.idArray = function(models) {
+        if(models.models)
+            models = models.models;
         return _.map(util.arrayify(models), function(m) {
             if(m.id) return m.id;
             return m;
