@@ -123,17 +123,23 @@ define([
 
         initialize: function(config) {
             this.config = config;
-            this.sortables = config.sortables; // a selector string
+            
+            // legacy
+            if(config.sortables)
+                config.selector = config.sortables;
+
+            this.selector = config.selector;
             this.collection = config.collection; // optional
+            this.idAttr = config.idAttr || 'data-id';
             _.bindAll(this, 'onDragInit', 'onDragEnd', 'onDropOverHead', 'onDropOverTail', 'onDropOn', 'abort');
             
-            this.$el.on('dragdown', config.sortables, this.onDragDown);
-            this.$el.on('draginit', config.sortables, this.onDragInit);
-            this.$el.on('dragend', config.sortables, this.onDragEnd);
-            this.$el.on('dropover', config.sortables, this.onDropOver);
-            this.$el.on('dropmove', config.sortables, this.onDropMove);
-            this.$el.on('dropoverhead', config.sortables, this.onDropOverHead);
-            this.$el.on('dropovertail', config.sortables, this.onDropOverTail);            
+            this.$el.on('dragdown', config.selector, this.onDragDown);
+            this.$el.on('draginit', config.selector, this.onDragInit);
+            this.$el.on('dragend', config.selector, this.onDragEnd);
+            this.$el.on('dropover', config.selector, this.onDropOver);
+            this.$el.on('dropmove', config.selector, this.onDropMove);
+            this.$el.on('dropoverhead', config.selector, this.onDropOverHead);
+            this.$el.on('dropovertail', config.selector, this.onDropOverTail);            
             this.$el.on('dropon', this.onDropOn);
         },
         render: function() {
@@ -159,8 +165,8 @@ define([
             e.preventDefault();
         },    
         onDragInit: function(e, drag) {
-            if(this.collection)
-                drag.model = this.collection.at(drag.element.index());
+            if(this.collection) 
+                drag.model = this.collection.get(drag.element.attr('data-id'));
             
             this.drag = drag;
             drag.orgIndex = drag.element.index();
@@ -741,9 +747,10 @@ define([
             }
         },   
         onKeyDown: function(e) {
-            var sel = this.model;
+            var sel = this.model,
+                upOrDown = e.which == Util.keys.UP || e.which == Util.keys.DOWN;
                         
-            if(Util.isArrowKey(e)) {
+            if(Util.isArrowKey(e) && upOrDown) {
                 if(!e.ctrlKey && !e.metaKey && !e.altKey)
                     e.preventDefault();
             
