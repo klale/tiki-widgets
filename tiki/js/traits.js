@@ -416,6 +416,26 @@ define([
         }
     });
     
+    
+    Traits.CollectionM = Traits.Collection.extend('Traits.CollectionM', {
+        set: function(value, attrs, options, key, errors, obj) {
+            if(obj.attributes[key]) {
+                obj['_tmp_'+key] = obj.attributes[key].models;
+                obj.attributes[key].reset(this.parse(value || []).models, {silent:true});
+            }
+            else
+                attrs[key] = value;
+        },
+        rollback: function(value, attrs, options, key, errors, obj) {
+            obj.attributes[key].models = Util.pop(obj, '_tmp_'+key);
+        },
+        success: function(value, attrs, options, key, errors, obj) {
+            delete obj['_tmp_'+key];
+            obj.attributes[key].trigger('reset');
+        }
+    });    
+    
+    
     Traits.Subset = Trait.extend('Traits.Subset', {
         constructor: function(config) {
             if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Subset(config);
