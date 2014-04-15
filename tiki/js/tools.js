@@ -762,10 +762,14 @@ define([
                     next = head.nextAll(this.selector+':visible:first');
     
                 // within visible viewport?
-                if(up)
-                    prev.scrollIntoView(true, this.el);
-                else if(down)
-                    next.scrollIntoView(false, this.el);
+                // Todo: Add option to specify the element to scroll instead of
+                // assuming parentNode of the selected element.
+                if(up) {
+                    prev.scrollIntoView(true);                    
+                }
+                else if(down) {
+                    next.scrollIntoView(false);        
+                }
         
                 if(!e.shiftKey) {
                     var el;                    
