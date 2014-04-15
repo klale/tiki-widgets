@@ -196,7 +196,7 @@ define([
             if(len == 0)
                 // var A;
                 eval('var '+name);
-            else if(len == 1) { 
+            else if(len == 1)
                 // var A = {}
                 eval('var '+ns[0]+'={}');
             else
@@ -372,9 +372,9 @@ define([
 
     util.modelToStr = function(obj /*, keys*/) {
         var keys = Array.prototype.slice.call(arguments, 1),
-            s = _.map(keys, function(k) { return k+'='+util.repr(obj.get(k)); }).join(', ')
+            s = _.map(keys, function(k) { return k+'='+util.repr(obj.get(k)); }).join(', ');
         return obj.constructor.name +'('+s+')';
-    }
+    };
 
 
     util.isinstance = function(obj, klass) {
