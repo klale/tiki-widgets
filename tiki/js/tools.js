@@ -111,6 +111,8 @@ define([
     });
 
 
+    tools.Collection = Backbone.Collection.extend();
+    tools.Collection.extend = Util.extend;
 
 
 
