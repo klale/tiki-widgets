@@ -78,7 +78,7 @@ define([
             
             // Find the model with the longest match
             var match = _.sortBy(_.compact(collection.map(function(model) {
-                var match = (model.get('text') || '').match(re);
+                var match = (model.get(textAttr) || '').match(re);
                 if(!match) return;
                 match = match.slice(1);
                 var score = match.length - _.indexOf(match, model.get(textAttr));
