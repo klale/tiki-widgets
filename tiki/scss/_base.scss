@@ -5,7 +5,7 @@
 // ========
 // = Menu =
 // ========
-.base-menu {
+%base-menu {
     display: block;
     position: absolute;
     min-width: 150px;
@@ -63,7 +63,7 @@
 /* ============ */
 /* = Calendar = */
 /* ============ */
-.base-calendar {
+%base-calendar {
     outline: none;
     table {
         border-collapse:collapse;
@@ -148,7 +148,7 @@
 // ============
 // = Controls =
 // ============
-.base-text {
+%base-text {
     box-sizing: border-box;
     cursor: text;
     border: 1px solid #ccc;
@@ -178,13 +178,13 @@
     }
 }
 
-.base-password {
-    @extend .base-text;
+%base-password {
+    @extend %base-text;
     -webkit-text-security: disc;    
 }
 
-.base-textarea {
-    @extend .base-text;
+%base-textarea {
+    @extend %base-text;
     height: auto;
     line-height: 16px;
     white-space: normal;    
@@ -286,7 +286,7 @@
 }
 
 
-.base-dropdown {
+%base-dropdown {
     @include user-select(none);
     position: relative;
     display: inline-block;
@@ -371,13 +371,13 @@
     }    
 }
 
-.base-hidden {
+%base-hidden {
     display: none;
 }
 
 
 
-.base-checkboxgroup {
+%base-checkboxgroup {
     padding: 0px;
     list-style-type: none;
     li {
@@ -386,7 +386,7 @@
 }
 
 
-.base-radiogroup {
+%base-radiogroup {
     padding: 0px;
     list-style-type: none;    
     li {
@@ -395,7 +395,7 @@
 }
 
 
-.base-date {
+%base-date {
     position: relative;
     display: inline-block;
     width: 150px;
@@ -422,7 +422,7 @@
     }    
 }
 
-.base-datepicker {
+%base-datepicker {
     @include user-select(none);
     width: 250px;
 
@@ -454,7 +454,7 @@
 }
 
 
-.base-simpleform {
+%base-simpleform {
     > ul {
         padding: 0;
         margin: 0;
@@ -491,7 +491,7 @@
 // ============
 // = Sortable =
 // ============
-.base-spaceholder {
+%base-spaceholder {
     visibility: hidden;
 }
 

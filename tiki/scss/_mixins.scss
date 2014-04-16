@@ -20,7 +20,7 @@
 }
 
 
-.iconstyle {
+%iconstyle {
     font-family: 'icons';
     speak: none;
     font-style: normal;
@@ -31,7 +31,7 @@
 }
 
 @mixin icon($icon: '') {
-    @extend .iconstyle;
+    @extend %iconstyle;
     @if $icon {
         &:before {
             content: $icon;
@@ -40,7 +40,7 @@
 }
 
 @mixin icon-before($icon) {
-    @extend .iconstyle;
+    @extend %iconstyle;
 
     // ie7 uses an i-element holding the icon character
     i { 
@@ -59,7 +59,7 @@
 }
 
 @mixin icon-after($icon) {
-    @extend .iconstyle;
+    @extend %iconstyle;
     &:after {
         content: $icon;
     };
