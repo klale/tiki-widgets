@@ -10,7 +10,7 @@ define([
 
 
     var Option = {};
-    Option.Model = Traits.Model.extend({
+    Option.Model = Traits.Model.extend('Menu.Option.Model', {
         traits: function() {
             return {
                 enabled: Traits.Bool(),
@@ -23,7 +23,7 @@ define([
             expanded: false
         }
     });
-    Option.View = Backbone.View.extend({
+    Option.View = Tools.View.extend('Menu.Option.View', {
         className: 'selectable',
         tagName: 'li',
         template: Util.template('<span>${obj.text}</span><i>&#xe10a;</i>'),
