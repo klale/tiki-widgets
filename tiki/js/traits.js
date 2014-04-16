@@ -131,30 +131,27 @@ define([
                     this['set_' + key].apply(this, args);
                 }
                 else if(this.traits && this.traits[key]) {
-                    if(this.catchErrors)
-                        try {
-                            // Run the value though the trait's parse
-                            t = this.traits[key];
-                            args.splice(0, 1, t.parse(value, this, attrs, key))
-                            if(t.rollback)
-                                rollbacks.push(t.rollback.bind.apply(t.rollback, [t].concat(args)));                                
-                            if(t.success)
-                                success.push(t.success.bind.apply(t.success, [t].concat(args)));
+                    try {
+                        // Run the value though the trait's parse
+                        t = this.traits[key];
+                        args.splice(0, 1, t.parse(value, this, attrs, key))
+                        if(t.rollback)
+                            rollbacks.push(t.rollback.bind.apply(t.rollback, [t].concat(args)));                                
+                        if(t.success)
+                            success.push(t.success.bind.apply(t.success, [t].concat(args)));
 
-                            if(t.set)
-                                t.set.apply(t, args);
-                            else
-                                attrs[key] = args[0];
+                        if(t.set)
+                            t.set.apply(t, args);
+                        else
+                            attrs[key] = args[0];
+                    }
+                    catch(e) {
+                        if(this.catchErrors && (e.name == 'TypeError' || e.name == 'ValueError')) {
+                            errors[key] = e;
+                            console.warn(e);
                         }
-                        catch(e) {
-                            if(e.name == 'TypeError' || e.name == 'ValueError') {
-                                errors[key] = e;
-                                console.warn(e);
-                            }
-                            else throw e;
-                        }
-                    else
-                        attrs[key] = this.traits[key].parse(value, this, attrs, key);
+                        else throw e;
+                    }
                 }
             }, this);
             
@@ -422,9 +419,8 @@ define([
             if(obj.attributes[key]) {
                 obj['_tmp_'+key] = obj.attributes[key].models;
                 obj.attributes[key].reset(this.parse(value || []).models, {silent:true});
+                delete attrs[key];
             }
-            else
-                attrs[key] = value;
         },
         rollback: function(value, attrs, options, key, errors, obj) {
             obj.attributes[key].models = Util.pop(obj, '_tmp_'+key);
