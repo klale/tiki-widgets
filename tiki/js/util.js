@@ -208,7 +208,8 @@ define([
         // (the "constructor" property in your `extend` definition), or defaulted
         // by us to simply call the parent's constructor.
         if (protoProps && _.has(protoProps, 'constructor')) {
-            child = eval(name+'=protoProps.constructor');
+            var c = protoProps.constructor;
+            child = eval(name+'=function() { // '+name+'\nreturn c.apply(this, arguments); }');
         } else {
             child = eval(name+'=function() { // '+name+'\nreturn parent.apply(this, arguments); }');
         }
