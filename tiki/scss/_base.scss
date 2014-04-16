@@ -86,7 +86,7 @@
     }
     .nextmonth,
     .prevmonth {
-        @extend .iconstyle;
+        @extend %iconstyle;
         width: 15px;
         height: 15px;
         overflow: hidden;
