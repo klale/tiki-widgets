@@ -13,13 +13,13 @@ define([
     Option.Model = Traits.Model.extend('Menu.Option.Model', {
         traits: function() {
             return {
-                enabled: Traits.Bool(),
+                disabled: Traits.Bool(),
                 submenu: Traits.Instance(function() { return Menu.Model; }),
                 expanded: Traits.Bool()
             }
         },
         defaults: {
-            enabled: true,
+            disabled: false,
             expanded: false
         }
     });
@@ -34,7 +34,7 @@ define([
         },
         render: function() {
             this.$el.html(this.template(this.model.toJSON()));
-            if(!this.model.get('enabled'))
+            if(this.model.get('disabled'))
                 this.$el.addClass('disabled').removeClass('selectable');
             
             this.$el.toggleClass('submenu', !!this.model.get('submenu'));
@@ -72,7 +72,7 @@ define([
     var m = new menu.Menu({
         options: [
             {id: 'foo', text: 'Foo'},
-            {id: 'bar', text: 'Bar', enabled: false},
+            {id: 'bar', text: 'Bar', disabled: true},
             {id: 'lax', text: 'Lax'},
             '-',
             {id: 'filters', text: 'Filters', submenu: {
@@ -98,7 +98,7 @@ define([
     // Play with the options
     var opt = m.options.at(4);
     opt.set('expanded', true);
-    opt.set('enabled', false);
+    opt.set('disabled', true);
     m.model.get('options').add({id: 'helo', text: 'I am new option'})
 
     // Add handler
@@ -110,12 +110,19 @@ define([
     var Menu = {};
     Menu.Model = Traits.Model.extend({
         traits: {
-            options: new Traits.Collection(Options)
+            options: new Traits.CollectionM() // Options
         },
-        defaults: function() {
-            return {
-                options: null
-            };
+        initialize: function() {
+            _.bindAll(this, 'onSelectedChange')
+            this.listenTo(this.options, 'change:selected', this.onSelectedChange);
+        },
+        onSelectedChange: function(model, value, options) {
+            if(!value) return;
+            this.options.each(function(m) {
+                if(m != model && m.get('selected')) {
+                    m.set('selected', false)
+                }
+            }, this);
         }
     });    
     Menu.BaseView = Tools.View.extend({
@@ -146,7 +153,6 @@ define([
                 this.model = new Menu.Model(config);
             
             var options = this.model.get('options');
-            
                 
             // Observe the options-collection
             options.on('add', this.addOne, this);
@@ -159,6 +165,7 @@ define([
                 el: this.el,
                 selector: 'li.selectable',
                 collection: options,
+                selectOnNavigate: false
             });
 
             this.$el.scrollMeOnly();
@@ -206,15 +213,18 @@ define([
                 menu.hide();
         },
         _select: function() {
-            var model = this.selectable.getFirstSelected();
+            // var model = this.selectable.getFirstSelected();
+
+            var el = this.selectable.$(this.selectable.selector+'.active:first')            
+            var model = this.selectable.getModel(el)
             if(!model) return;
-            var el = this.selectable.getEl(model);
+            
             this._lock = true;
             el.blink(_.bind(function() {
                 this._hideAll();
                 this._lock = false;
-                this.trigger('select', model);                
-            }, this));
+                this.trigger('select', model);
+            }, this), {className: 'active selected'});
         },              
         show: function(options) {
             var opt = Util.defs(options, {
@@ -298,8 +308,7 @@ define([
                 sel = this.selectable;
             if(target.is('li.selectable')) {
                 var model = sel.getModel(target);
-                sel.reset(model);
-                target.addClass('head tail');
+                sel.reset(model, {propName: 'active'});
             }
         },
         onRightKeyDown: function(e) {

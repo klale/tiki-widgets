@@ -145,7 +145,7 @@ define([
         // ===================
         focus: function() {
             if(this.$el.closest('.tiki-disabled')[0]) 
-                return; // ie7/8
+                return;
             this.$el.moveCursorToEnd();
             this.$el.selectAll();
         },
@@ -450,6 +450,59 @@ define([
 
 
     var Dropdown = {};
+    Dropdown.Model = ControlModels.ControlModel.extend('Controls.Dropdown.Model', {
+        traits: {
+            options: new Traits.CollectionM(),
+        },
+        setorder: ['options', 'value'],
+        initialize: function() {
+            this.listenTo(this.get('options'), 'change:selected', this.onSelectedChange, this);
+        },
+        get_value: function() {
+            return this.get('options').findWhere({selected: true});
+        },
+        set_value: function(v, attrs, options) {
+            delete attrs.value;
+            if(v && v.id)
+                v = v.id
+            options = options || {};
+            var opt,
+                opts = attrs['options'] || this.get('options');
+            if(v) {
+                opt = opts.get(v);            
+                if(opt.get('selected'))
+                    return;
+            }
+            // unselect current, if any
+            var curr = opts.findWhere({selected: true});
+            if(curr) 
+                curr.set('selected', false);
+            
+            // select new
+            if(opt)
+                opt.set('selected', true, {mute:true})
+            
+            // No "change:value" when setting both 'options' and 'value' in one go.
+            if(!attrs.options && !options.silent)
+                this.trigger('change:value', this, this.value, options);            
+        },
+        onSelectedChange: function(model, selected, options)  {
+            // ignore unselect events
+            if(!selected || options.mute || options.internal) return;
+            // unselect current, if any
+            this.get('options').each(function(m) {
+                if(m.get('selected') && m.id != model.id) 
+                    m.set('selected', false);
+            });
+            this.trigger('change:value', this, this.get('value'), options);
+            
+        },
+        toString: function() {
+            return Util.modelToStr(this, 'name', 'disabled', 'options');
+        }        
+    });
+    
+    
     Dropdown.View = Tools.View.extend({
         className: 'tiki-dropdown',
         attributes: {
@@ -468,18 +521,20 @@ define([
         hotkeys: {
             'keydown down': 'onDownKeyDown'
         },
-        defaultmodel: ControlModels.SingleSelectionM,
+        // defaultmodel: ControlModels.SingleSelectionM,
+        defaultmodel: Dropdown.Model,
         mixins: [ControlView],
     
         initialize: function(config) {       
             config = config || {};
-            _.bindAll(this, 'onMenuSelect', 'onMenuHide');
+            _.bindAll(this, 'onMenuSelect', 'onMenuHide', 'render');
             if(!this.model)
                 this.model = new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
 
             ControlView.initialize.call(this, config);
             var options = this.model.get('options');
-            this.listenTo(options, 'change:selected', this.onSelectedChange, this);
+            this.listenTo(this.model, 'change', this.render);
+            this.listenTo(this.model, 'change:value', this.render);            
 
             // Create the dropdown menu
             this.menu = new Menu.Menu({
@@ -517,6 +572,10 @@ define([
         leaveElement: leaveElement,
         
         onMouseDown: function(e) {
+            if(this.menu.$el.is(':visible')) {
+                this.menu.hide();
+            }
+                
             if(this.$el.closest('.tiki-disabled').length) {
                 e.preventDefault(); // don't focus
                 return;
@@ -527,11 +586,7 @@ define([
             e.preventDefault();
         },
         onMenuSelect: function(optionModel) {
-            this.model.set('value', optionModel);
-        },
-        onSelectedChange: function(model, selected) {
-            if(selected)
-                this.$el.html(this.template({text: model.get('text')}));            
+            this.model.value = optionModel;
         },
         onMenuHide: function() {
             this.focus();

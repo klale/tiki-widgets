@@ -194,17 +194,19 @@ define([
         });
         return this;
     };
-    $.fn.blink = function(callback) {
+    $.fn.blink = function(callback, options) {
+        options || (options = {});
+        var className = options.className;
         this.each(function() {
             var count = 0,
                 el = this;
-            $(el).toggleClass('selected');
+            $(el).toggleClass(className);
             var timer = window.setInterval(function() {
-                $(el).toggleClass('selected', (count+1) % 2 === 0);
+                $(el).toggleClass(className, (count+1) % 2 === 0);
                 count++;
-                if(count == 3) {
+                if(count == 4) {
                     window.clearInterval(timer);
-                    $(el).toggleClass('selected', true)
+                    $(el).toggleClass(className, true)
                     callback();
                 }
             }, 60);        
@@ -352,6 +354,7 @@ define([
     };
     
     $.fn.scrollIntoView = function(alignWithTop, scrollable) {
+        if(!this[0]) return this;
         var el = scrollable || this[0].parentNode,
             item = this[0],
             scrollTop = el.scrollTop;

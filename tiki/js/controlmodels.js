@@ -294,11 +294,11 @@ define([
 
             // No "change:value" when setting both 'options' and 'value' in one go.
             if(!attrs.options && !options.silent)
-                this.trigger('change:value', this, this.get('value'));
+                this.trigger('change:value', this, this.get('value'), options);
         },
         onSelectedChange: function(model, value, options)  {
             if(!options.mute)
-                this.trigger('change:value', this, this.get('value'));
+                this.trigger('change:value', this, this.get('value'), options);
         },
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'options');
@@ -350,11 +350,11 @@ define([
     
     exp.SingleSelectionM = ControlModel.extend('ControlModels.SingleSelectionM', {
         traits: {
-            options: new traits.Collection(),
+            options: new traits.CollectionM(),
         },
-        defaults: {
-            options: []
-        },
+        // defaults: {
+        //     options: []
+        // },
         setorder: ['options', 'value'],
         initialize: function() {
             this.listenTo(this.get('options'), 'change:selected', this.onSelectedChange, this);
@@ -363,6 +363,7 @@ define([
             return this.get('options').findWhere({selected: true});
         },
         set_value: function(v, attrs, options) {
+            // remove this?
             delete attrs.value;
             if(v && v.id)
                 v = v.id
@@ -383,9 +384,10 @@ define([
             if(opt)
                 opt.set('selected', true, {mute:true})
 
+            attrs.value = opts.get(v);
             // No "change:value" when setting both 'options' and 'value' in one go.
             if(!attrs.options && !options.silent)
-                this.trigger('change:value', this, this.get('value'));
+                this.trigger('change:value', this, this.value, options);
         },
         onSelectedChange: function(model, selected, options)  {
             // ignore unselect events
@@ -396,7 +398,7 @@ define([
                 if(m.get('selected') && m.id != model.id) 
                     m.set('selected', false);
             });
-            this.trigger('change:value', this, this.get('value'));
+            this.trigger('change:value', this, this.get('value'), options);
         },
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'options');

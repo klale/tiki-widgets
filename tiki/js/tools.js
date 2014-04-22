@@ -517,6 +517,7 @@ define([
                 this.collection = config.selectables
                 
             this.listenTo(this.collection, 'change:selected', this.onSelectedChange);
+            this.listenTo(this.collection, 'change:active', this.onActiveChange);
             this.listenTo(this.collection, 'change:disabled', this.onDisabledChange);
         
             this.selector = config.selector;
@@ -525,6 +526,7 @@ define([
             this.dragselect = Util.pop(config, 'dragselect', true);
             this.idAttr = config.idAttr || 'data-id';
             this.textAttr = config.textAttr || 'text';
+            this.selectOnNavigate = config.selectOnNavigate !== false;
             this._typing = '';
             
             if(config.selected)
@@ -542,7 +544,7 @@ define([
         },
         render: function() {
             var self = this;
-            this.$(this.selector+'.selected').removeClass('selected head tail');
+            this.$(this.selector+'.selected').removeClass('selected active tail');
             _(this.getSelected()).each(function(m) { this.getEl(m).addClass('selected'); }, this);
             _(this.getDisabled()).each(function(m) { this.getEl(m).addClass('disabled'); }, this);            
         },
@@ -586,59 +588,50 @@ define([
         getDisabled: function() {            
             return this.collection.filter(function(m) { return m.get('disabled'); });
         },
-        reset: function(models) {
+        reset: function(models, options) {
             // Iterate selected
-            var coll = this.collection;
+            options || (options = {});
+            var propName = options.propName || 'selected',
+                coll = this.collection;
+                
             if(_.isEmpty(models)) 
                 models = [];
             else
                 models = Util.idArray(models);
             
-            this.$(this.selector+'.selected').each(_.bind(function(i, el) {
+            this.$(this.selector+'.'+propName).each(_.bind(function(i, el) {
                 var model = this.getModel(el);
                 var bool  = _.indexOf(models, model.id) !== -1;
-                model.set('selected', bool)
+                model.set(propName, bool, {internal: true})
             }, this));
 
             // Iterate models
             _(models).each(function(id) {
-                coll.get(id).set('selected', true);
+                coll.get(id).set(propName, true, {internal: true});
             });
             
-            // Update head and tail
+            // Update active and tail
             if(models.length==0)
-                this.$(this.selector+'.head '+this.selector+'.tail').removeClass('head tail');
+                this.$(this.selector+'.active '+this.selector+'.tail').removeClass('active tail');
             else {
-                this.$(this.selector+'.selected:first').make('head');
-                this.$(this.selector+'.selected:last').make('tail');
+                this.$(this.selector+'.'+propName+':first').make('active');
+                this.$(this.selector+'.'+propName+':last').make('tail');
             }
-            
-            // // Iterate entire collection
-            // this.collection.each(function(model) {
-            //     model.set('selected', _.indexOf(models, model) !== -1);
-            // });
         },
         getAllSelectedIDs: function() {
             return _.pluck(this.collection.filter(function(m) {return m.get('selected'); }), 'id');
         },
         selectFirst: function(options) {
-
-            this.reset();
+            // options || (options = {});
+            
+            this.reset([], options);
             var first = this.collection.find(function(model) { return !model.get('disabled')});
             if(first)
-                this.reset(first);
+                this.reset(first, options);
         },
         selectAll: function(options) {
             this.collection.each(function(m) { m.set('selected', true); });
         },
-        // selectOne: function(model, options) {
-        //     // Deselect all selected
-        //     this.$(this.selector+'.selected').each(_.bind(function(i, el) {
-        //         this.getModel(el).set('selected', false);
-        //     }, this));            
-        //     // Select the new
-        //     model.set('selected', true, options)
-        // },
         add: function(model, options) {
             model.set('selected', true, options);
         },
@@ -650,9 +643,7 @@ define([
         },
         isSelected: function(model) {
             return !!model.get('selected');
-        },
-
-        
+        },        
         
         // ================
         // = Model events =
@@ -660,6 +651,9 @@ define([
         onSelectedChange: function(model, selected) {
             this.getEl(model).toggleClass('selected', selected)
         },
+        onActiveChange: function(model, selected) {
+            this.getEl(model).toggleClass('active tail', selected)
+        },        
         onDisabledChange: function(model, disabled) {
             this.getEl(model).toggleClass('disabled', disabled)
         },
@@ -671,7 +665,7 @@ define([
         onMouseDown: function(e) {
             // Clicking directly on the container deselects all
             if(!$(e.target).closest(this.el, this.selector).length || e.target == this.el) {
-                this.model.get('selected').reset();
+                this.reset();
             }
         },
         onMouseUp: function(e) {
@@ -708,7 +702,7 @@ define([
             this.$(this.selector).slice(start, end+1).addClass('selected');
                 
             // sel.get('selected').reset(sel.get('selectables').slice(start, end+1));
-            el.make('head');                
+            el.make('active');                
         },
         onMetaAKeyDown: function(e) {
             this.selectAll();
@@ -720,7 +714,7 @@ define([
         
             if(e.metaKey) {
                 this.toggle(this.getModel(el));
-                el.make('head');
+                el.make('active');
             }
             else if(e.shiftKey) {
                 var a = this.$('.tail').index(),
@@ -729,7 +723,7 @@ define([
                     end = Math.max(a,b);
              
                 this.reset(this.collection.slice(start, end+1));
-                el.make('head');
+                el.make('active');
         
                 // Allow text selection, but no shift-click text selection
                 e.preventDefault();
@@ -748,25 +742,25 @@ define([
         },   
         onKeyDown: function(e) {
             var sel = this.model,
-                upOrDown = e.which == Util.keys.UP || e.which == Util.keys.DOWN;
+                upOrDown = e.which == Util.keys.UP || e.which == Util.keys.DOWN,
+                propName = this.selectOnNavigate ? 'selected' : 'active';
                         
             if(Util.isArrowKey(e) && upOrDown) {
                 if(!e.ctrlKey && !e.metaKey && !e.altKey)
                     e.preventDefault();
-            
-    
-            
-                if(this.$(this.selector+'.selected').length == 0) {
+                                
+                if(this.$(this.selector+'.'+propName).length == 0) {
                     // select first
-                    this.selectFirst();
+                    this.selectFirst({propName: propName});
                     return;
                 }
+
                 var up = e.which == Util.keys.UP,
                     down = e.which == Util.keys.DOWN,
-                    head = this.$('.head'),
+                    active = this.$('.active'),
                     tail = this.$('.tail'),
-                    prev = head.prevAll(this.selector+':visible:first'),
-                    next = head.nextAll(this.selector+':visible:first');
+                    prev = active.prevAll(this.selector+':visible:first'),
+                    next = active.nextAll(this.selector+':visible:first');
     
                 // within visible viewport?
                 // Todo: Add option to specify the element to scroll instead of
@@ -777,6 +771,8 @@ define([
                 else if(down) {
                     next.scrollIntoView(false);        
                 }
+                
+                
         
                 if(!e.shiftKey) {
                     var el;                    
@@ -789,30 +785,36 @@ define([
                         el = this.$(this.selector+':'+ (up ? 'first':'last'));
                     
                     if(el && el[0]) {
-                        this.reset(this.getModel(el));
+                        if(this.selectOnNavigate) 
+                            // $(el).make('head').make('selected').make('tail');
+                            this.reset(this.getModel(el));
+                        else
+                            // this.activate(this.getModel(el));
+                            this.reset(this.getModel(el), {propName: 'active'});
+
                     }
                 }
                 else {            
                     var below;
                     if(down && next[0]) {
-                        below = head.index() >= tail.index(); 
+                        below = active.index() >= tail.index(); 
                         if(below) {
                             this.add(this.getModel(next));
-                            next.make('head');
+                            next.make('active');
                             
                         } else {
-                            this.remove(this.getModel(head));
-                            next.make('head');
+                            this.remove(this.getModel(active));
+                            next.make('active');
                         }
                     }
                     else if(up && prev[0]) {
-                        below = head.index() > tail.index();
+                        below = active.index() > tail.index();
                         if(below) {
-                            this.remove(this.getModel(head));
-                            prev.make('head');
+                            this.remove(this.getModel(active));
+                            prev.make('active');
                         } else {
                             this.add(this.getModel(prev));
-                            prev.make('head');
+                            prev.make('active');
                         }
                     }
                 }
@@ -825,7 +827,7 @@ define([
             this._onKeyPressDeb();
             var model = this.getModelByStartingWith(this._typing)
             if(model) 
-                this.reset(model);
+                this.reset(model, {propName: this.selectOnNavigate ? 'selected' : 'active'});
         },
         _onKeyPressDeb: _.debounce(function() {
             this._typing = '';

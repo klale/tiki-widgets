@@ -11,6 +11,13 @@ define([
     var util = {};
 
 
+
+    util.arrayToObject = function(array, key) {
+        return _.object(_.map(array, function(item) {
+            return [item[key], item];
+        }));
+    };
+
     util.idArray = function(models) {
         if(models.models)
             models = models.models;

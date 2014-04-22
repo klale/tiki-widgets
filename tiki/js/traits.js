@@ -421,13 +421,18 @@ define([
                 obj.attributes[key].reset(this.parse(value || []).models, {silent:true});
                 delete attrs[key];
             }
+            else
+                attrs[key] = value;
         },
         rollback: function(value, attrs, options, key, errors, obj) {
-            obj.attributes[key].models = Util.pop(obj, '_tmp_'+key);
+            if(obj.attributes[key])
+                obj.attributes[key].models = Util.pop(obj, '_tmp_'+key);
         },
         success: function(value, attrs, options, key, errors, obj) {
-            delete obj['_tmp_'+key];
-            obj.attributes[key].trigger('reset');
+            if(obj.attributes[key]) {
+                delete obj['_tmp_'+key];
+                obj.attributes[key].trigger('reset');                
+            }
         }
     });    
     
