@@ -184,6 +184,12 @@ define([
     tools.Collection.extend = Util.extend;
 
 
+    tools.Events = function() {
+        if(this.initialize)
+            this.initialize.apply(this, arguments);
+    };
+    _.extend(tools.Events.prototype, Backbone.Events);
+    tools.Events.extend = Util.extend;
 
     tools.Sortable = Backbone.View.extend({
         hotkeys: {
