@@ -65,6 +65,20 @@ define([
             }
         }        
     };
+
+    /* 
+    A mixin for the common scenario of associating elements with models
+    using the attribute data-id */
+    tools.ModelToElement = {
+        getModel: function(el) {
+            return this.collection.get($(el).attr('data-id'));
+        },
+        getEl: function(model) {
+            return this.$el.find(this.selector+'[data-id="'+model.id+'"]').filter(':first');
+        }
+    };    
+    
+    
     tools.InterceptPaste = {
         initialize: function() {
             this.$el.bind('paste', $.proxy(this._onPaste, this));
