@@ -132,7 +132,7 @@ define([
             tabindex: 0
         },
         events: {
-            'mouseenter li': 'onMouseOver',
+            'mouseenter li.selectable': 'onSelectableMouseEnter',
             'keydown': 'onKeyDown',
             'keyup': 'onKeyUp',
             'mouseup': 'onMouseUp'
@@ -144,28 +144,32 @@ define([
             'keydown return': 'onReturnKeyDown'
         },
         _isroot: true,
+        mixins: [Tools.ModelToElement],
+        
         initialize: function(config) {
             config = config || {};
             _.bindAll(this, 'onShowTimeout', 'onKeyUpTimeout');
             this.views = {};
             
-            if(!this.model)
+            if(!this.model) {
+                if(!config.options)
+                    config.options = []
                 this.model = new Menu.Model(config);
+            }
             
             var options = this.model.get('options');
+            this.collection = options;
                 
             // Observe the options-collection
             options.on('add', this.addOne, this);
             options.on('remove', this.removeOne, this);
-            options.on('change:selected', this.onSelectedChange, this);
             options.on('change:expanded', this.onExpandedChange, this);
             
             // Create a Selectable
-            this.selectable = new Tools.SelectableMutate({
+            this.navigable = new Tools.Navigable({
                 el: this.el,
                 selector: 'li.selectable',
-                collection: options,
-                selectOnNavigate: false
+                collection: options
             });
 
             this.$el.scrollMeOnly();
@@ -213,10 +217,8 @@ define([
                 menu.hide();
         },
         _select: function() {
-            // var model = this.selectable.getFirstSelected();
-
-            var el = this.selectable.$(this.selectable.selector+'.active:first')            
-            var model = this.selectable.getModel(el)
+            var el = this.$('.active:first');
+            var model = this.getModel(el);
             if(!model) return;
             
             this._lock = true;
@@ -261,7 +263,6 @@ define([
             return this;
         },
         hide: function() {  
-            this.selectable.reset();
             if(!this.$el.is(':visible'))
                 return;
         
@@ -294,22 +295,11 @@ define([
                 this._hideSubmenu(model);
         },        
 
-        onSelectedChange: function(model) {
-            // var hasSubmenu = !_.isEmpty(model.get('submenu'));
-            // if(hasSubmenu) 
-            //     this.set('expanded', this.get('selected'));
-        },
-        onMouseOver: function(e) {
+        onSelectableMouseEnter: function(e) {
             // todo: detach mouseover listener instead of _lock property
             if(this._lock || this.$el.is(':animated'))
                 return;
-                
-            var target = $(e.currentTarget),
-                sel = this.selectable;
-            if(target.is('li.selectable')) {
-                var model = sel.getModel(target);
-                sel.reset(model, {propName: 'active'});
-            }
+            $(e.currentTarget).make('active');
         },
         onRightKeyDown: function(e) {
             var model = this.selectable.getFirstSelected();
@@ -342,7 +332,7 @@ define([
             window.setTimeout(this.onKeyUpTimeout, 100);
         },
         onMouseUp: function(e) {
-            if(this._okMouseUp)
+            if(this._okMouseUp && !$(e.target).closest('li.disabled').length)
                 this._select();
             this._okMouseUp = true;
         },

@@ -79,6 +79,67 @@ define([
     };    
     
     
+    
+    /*
+    A selection-api implementation, using model.attributes['selection']
+    to store the selection state. */
+    tools.AttributeBasedSelectable = {
+        getSelected: function() {
+            return this.collection.filter(function(m) { return m.get('selected'); });
+        },
+        getFirstSelected: function() {
+            return this.collection.find(function(m) { return m.get('selected'); });
+        },        
+        getDisabled: function() {            
+            return this.collection.filter(function(m) { return m.get('disabled'); });
+        },
+        reset: function(models, options) {
+            options || (options = {});
+            var coll = this.collection;
+                
+            if(_.isEmpty(models))
+                models = [];
+            else
+                models = Util.idArray(models);
+
+            this.collection.each(function(model) {
+                var isSelected = model.get('selected');
+                if(isSelected && !~models.indexOf(model.id))
+                    model.set('selected', false, {byreset: true});
+                else if(!isSelected && ~models.indexOf(model.id))
+                    model.set('selected', true, {byreset: true});
+            });            
+            this.trigger('selectionreset', models, options);
+        },        
+        getAllSelectedIDs: function() {
+            return _.pluck(this.collection.filter(function(m) {return m.get('selected'); }), 'id');
+        },
+        selectFirst: function(options) {
+            var first = this.collection.find(function(model) { return !model.get('disabled');});
+            this.reset(first || [], options);
+        },
+        selectAll: function(options) {
+            this.collection.each(function(m) { m.set('selected', true); });
+            this.trigger('selectionreset', this.collection.models, options);            
+        },
+        add: function(model, options) {
+            model.set('selected', true, options);
+            this.trigger('selectionadd', model, options);
+        },
+        remove: function(model, options) {            
+            model.set('selected', false, options);
+            this.trigger('selectionremove', model, options);
+        },
+        toggle: function(model, options) {
+            var method = model.get('selected') ? 'remove' : 'add';
+            this[method](model, options)            
+        },
+        isSelected: function(model) {
+            return !!model.get('selected');
+        }        
+    };
+
+
 
     /*
     A mixin for intercepting paste (ctrl+v) operations.
@@ -180,6 +241,8 @@ define([
     });
 
 
+    /*
+    A vanilla collection, using Tiki's Util.extend. */
     tools.Collection = Backbone.Collection.extend();
     tools.Collection.extend = Util.extend;
 
@@ -191,6 +254,15 @@ define([
     _.extend(tools.Events.prototype, Backbone.Events);
     tools.Events.extend = Util.extend;
 
+
+    /*
+    Rearrange elements by dragging and dropping them within a
+    container.
+    
+    Example
+    -------
+    [Put example here]
+    */
     tools.Sortable = Backbone.View.extend({
         hotkeys: {
             'keydown esc': 'onEscKeyDown'
@@ -198,7 +270,6 @@ define([
 
         initialize: function(config) {
             this.config = config;
-            
             // legacy
             if(config.sortables)
                 config.selector = config.sortables;
@@ -244,6 +315,7 @@ define([
                 drag.model = this.collection.get(drag.element.attr('data-id'));
             
             this.drag = drag;
+            drag.allowDrop = true;
             drag.orgIndex = drag.element.index();
             drag.spaceholder = drag.element.clone();
             drag.spaceholder.addClass('tiki-spaceholder');
@@ -266,12 +338,12 @@ define([
         
         // Drop events
         onDropOver: function(e, drop, drag) {
-            if(drag.allowDrop === false) 
+            if(!drag.allowDrop) 
                 return;
             drag.currOver = {el: drop.element, part: null};
         },        
         onDropMove: function(e, drop, drag) {
-            if(drag.allowDrop === false) 
+            if(!drag.allowDrop) 
                 return;
             var dragel = drag.element,
                 dropel = drop.element;
@@ -306,8 +378,9 @@ define([
             if(!drag.allowDrop || drop.element[0] != drag.delegate)
                 return;
             
-            if(this.collection)
+            if(this.collection) {
                 this.collection.move(drag.model, drag.index);
+            }
             drag.success = true;
         },
         onDragEnd: function(e, drag) {
@@ -334,666 +407,209 @@ define([
 
 
 
-    tools.Selectable = tools.View.extend('Selectable', {
+    /*
+    Make elements navigable by keyboard.
+    Todo: Add support for 2-dimensional navigation.
+    */
+    tools.Navigable = tools.View.extend('Tools.Navigable', {
+        mixins: [tools.ModelToElement],
         initialize: function(config) {
-            _.bindAll(this, 'onSelectableMouseDown', 'onKeyDown', 'onMetaAKeyDown', 'onSelectedAdd',
-                      'onSelectedRemove', 'onSelectedReset', 'onKeyPress', 'onMouseUp', 'onSelectableMouseOver');
-        
-            // Implicitly create a model if not set
-            if(!config.model)
-                this.model = new Models.Selection({
-                    selectables: config.selectables,
-                    selected: config.selected,
-                });
-                
-            this.listenTo(this.model.get('selected'), {
-                'add': this.onSelectedAdd,
-                'remove': this.onSelectedRemove,
-                'reset': this.onSelectedReset
-            });
-        
-            this.selector = config.selector;
-            this.views = config.views;
-            this.keynav = Util.pop(config, 'keynav', true);
-            this.dragselect = Util.pop(config, 'dragselect', true);
-            this.idAttr = config.idAttr || 'data-id';
-            this.textAttr = config.textAttr || 'text';
+            _.bindAll(this, 'onItemMouseDown', 'onKeyDown', 'onKeyPress');
+            this.selector = config.selector + ':visible';
             this._typing = '';
-                    
-            // Bind dom handlers
-            this.$el.on('mousedown', this.selector, this.onSelectableMouseDown);
-            this.$el.on('mouseover', this.selector, this.onSelectableMouseOver);            
-            this.$el.on('mouseup', this.onMouseUp)
-            if(this.keynav) {
-                this.$el.on('keydown', null, 'meta+a', this.onMetaAKeyDown);
-                this.$el.on('keydown', this.onKeyDown);
-                this.$el.on('keypress', this.onKeyPress);
-            }
-        },
-        render: function() {
-            this.$(this.selector+'.selected').removeClass('selected head tail');
-            this.model.get('selected').each(function(model) {
-                this.getEl(model).addClass('selected');
-            }, this);
-        },
-        selectClosestStartingWith: function(text) {
-            if(!text.length)
-                return;
-            var coll = this.model.get('selectables'),
-                model = Util.getClosestStartingWith(coll, text, this.textAttr);
-            if(model) 
-                this.model.selectOne(model)
-        },
-
-        // Default implementations
-        getModelByStartingWith: function(text) {
-            if(!text.length) return;
-            return Util.getClosestStartingWith(this.model.get('selectables'), 
-                                               text, this.textAttr);            
-        },
-        getModel: function(el) {
-            var idAttr = this.idAttr;
-            return this.model.get('selectables').get($(el).attr(idAttr));
-        },
-        getEl: function(model) {
-            return this.$el.find(this.selector+'['+this.idAttr+'="'+model.id+'"]').filter(':first');
-        },
-        
-        // Collection events
-        onSelectedReset: function() {
-            var selected = this.model.get('selected');
-            this.$(this.selector+'.selected').removeClass('selected head tail');
-
-            if(selected.length) {
-                selected.each(function(model) {
-                    this.getEl(model).addClass('selected');
-                }, this);
-                this.getEl(selected.at(0)).addClass('head tail');
-            }
-        },
-        onSelectedAdd: function(model, coll, options) {
-            this.getEl(model).addClass('selected');
-        },
-        onSelectedRemove: function(model, coll, options) {
-            this.getEl(model).removeClass('selected');
-        },
-
-        // Dom events
-        onMouseDown: function(e) {
-            // Clicking directly on the container deselects all
-            if(!$(e.target).closest(this.el, this.selector).length || e.target == this.el) {
-                this.model.get('selected').reset();
-            }
-        },
-        onMouseUp: function(e) {
-            if(this._dragSelecting) {
-                this._dragSelecting = false;
-                // you cannot change selection when drag-selecting
-                this.$el.css('user-select', 'text');
-
-
-                var hasChanged = this.$('.selected').length != this.model.get('selected').models.length;
-
-                if(hasChanged) {
-                    var models = this.$('.selected').map(_.bind(function(i, el) {
-                        return this.getModel(el);
-                    }, this)).toArray();
-                    this.model.get('selected').reset(models);
-                }
-            }
-        },
-        onSelectableMouseOver: function(e) {
-            if(!this._dragSelecting) 
-                return;
-            this.$el.css('user-select', 'none');
-            e.preventDefault();
-            var el = $(e.target);
             
-            var a = this.$('.tail').index(),
-                b = el.index(),
-                start = Math.min(a,b),
-                end = Math.max(a,b);
-            
-            // Todo: improve this
-            this.$(this.selector).removeClass('selected');
-            this.$(this.selector).slice(start, end+1).addClass('selected');
-                
-            // sel.get('selected').reset(sel.get('selectables').slice(start, end+1));
-            el.make('head');                
+            this.$el.on('mousedown', this.selector, this.onItemMouseDown);
+            this.$el.on('keydown', this.onKeyDown);
+            this.$el.on('keypress', this.onKeyPress);
         },
-        onMetaAKeyDown: function(e) {
-            this.model.selectAll();
-            e.preventDefault();
-        },
-        onSelectableMouseDown: function(e) {
+        onItemMouseDown: function(e) {
             var el = $(e.currentTarget),
-                sel = this.model;
-        
-            if(e.metaKey) {
-                sel.toggle(this.getModel(el));
-                el.make('head');
-            }
-            else if(e.shiftKey) {
-                var a = this.$('.tail').index(),
-                    b = el.index(),
-                    start = Math.min(a,b),
-                    end = Math.max(a,b);
-                                    
-                sel.get('selected').reset(sel.get('selectables').slice(start, end+1));
-                el.make('head');
-        
-                // Allow text selection, but no shift-click text selection
-                e.preventDefault();
-                Util.iepreventTextSelection(e);
-            }
-            else {
-                if(this.dragselect)
-                    this._dragSelecting = true;
-                var m = this.getModel(el);
-                // No action if clicking the only selected item multiple times
-                if(sel.isSelected(m) && sel.get('selected').length == 1)
-                    return;
-
-                sel.get('selected').reset(this.getModel(el));
-            }
-        },   
-        onKeyDown: function(e) {
-            var sel = this.model;
-                        
-            if(Util.isArrowKey(e)) {
-                if(!e.ctrlKey && !e.metaKey && !e.altKey)
-                    e.preventDefault();
-            
-
-            
-                if(sel.get('selected').length == 0) {
-                    sel.selectFirst();
-                    return;
-                }
-                var up = e.which == Util.keys.UP,
-                    down = e.which == Util.keys.DOWN,
-                    head = this.$('.head'),
-                    tail = this.$('.tail'),
-                    prev = head.prevAll(this.selector+':visible:first'),
-                    next = head.nextAll(this.selector+':visible:first');
-
-                // within visible viewport?
-                if(up)
-                    prev.scrollIntoView(true, this.el);
-                else if(down)
-                    next.scrollIntoView(false, this.el);
-        
-                if(!e.shiftKey) {
-                    var el;                    
-                    if(down && next[0]) 
-                        el = tail.nextAll(this.selector+':first');
-                    else if(up && prev[0]) 
-                        el = tail.prevAll(this.selector+':first');
-
-                    if(!el || !el[0]) {
-                        el = this.$(this.selector+':'+ (up ? 'first':'last'));
-                    }
-
-                    if(el && el[0])
-                        sel.get('selected').reset(this.getModel(el))
-                        
-                }
-                else {            
-                    var below;
-                    if(down && next[0]) {
-                        below = head.index() >= tail.index(); 
-                        if(below) {
-                            sel.get('selected').add(this.getModel(next));
-                            next.make('head');
-                            
-                        } else {
-                            sel.get('selected').remove(this.getModel(head));
-                            next.make('head');
-                        }
-                    }
-                    else if(up && prev[0]) {
-                        below = head.index() > tail.index();
-                        if(below) {
-                            sel.get('selected').remove(this.getModel(head));
-                            prev.make('head');
-                        } else {
-                            sel.get('selected').add(this.getModel(prev));
-                            prev.make('head');
-                        }
-                    }
-                }
-            }
+                curr = this.$(this.selector+'.active');
+            el.make('active');
+            this.trigger('goto', e, el, this.getModel(el), curr);
         },
-        onKeyPress: function(e) {
-            if(e.which < 48) 
-                return;
-            this._typing += String.fromCharCode(e.charCode);
-            this._onKeyPressDeb();
-            var model = this.getModelByStartingWith(this._typing)
-            if(model) 
-                this.model.selectOne(model);
+        goto: function(el, e) {
+            var curr = this.$(this.selector+'.active');
+            $(el).make('active');
+            this.trigger('goto', e, el[0] || el, this.getModel(el), curr);
         },
-        _onKeyPressDeb: _.debounce(function() {
-            this._typing = '';
-        }, 500)
-    });    
-
-
-
-
-    
-    
-    tools.SelectableMutate = tools.View.extend('SelectableMutate', {
-        initialize: function(config) {
-            _.bindAll(this, 'onSelectableMouseDown', 'onKeyDown', 'onMetaAKeyDown', 
-                'onSelectedChange', 'onKeyPress', 'onMouseUp', 'onSelectableMouseOver');
-        
-            if(config.selectables)
-                this.collection = config.selectables
-                
-            this.listenTo(this.collection, 'change:selected', this.onSelectedChange);
-            this.listenTo(this.collection, 'change:active', this.onActiveChange);
-            this.listenTo(this.collection, 'change:disabled', this.onDisabledChange);
-        
-            this.selector = config.selector;
-            this.views = config.views;
-            this.keynav = Util.pop(config, 'keynav', true);
-            this.dragselect = Util.pop(config, 'dragselect', true);
-            this.idAttr = config.idAttr || 'data-id';
-            this.textAttr = config.textAttr || 'text';
-            this.selectOnNavigate = config.selectOnNavigate !== false;
-            this._typing = '';
-            
-            if(config.selected)
-                this.reset(config.selected, {silent:true});
-                    
-            // Bind dom handlers
-            this.$el.on('mousedown', this.selector, this.onSelectableMouseDown);
-            this.$el.on('mouseover', this.selector, this.onSelectableMouseOver);            
-            this.$el.on('mouseup', this.onMouseUp)
-            if(this.keynav) {
-                this.$el.on('keydown', null, 'meta+a', this.onMetaAKeyDown);
-                this.$el.on('keydown', this.onKeyDown);
-                this.$el.on('keypress', this.onKeyPress);
-            }
-        },
-        render: function() {
-            var self = this;
-            this.$(this.selector+'.selected').removeClass('selected active tail');
-            _(this.getSelected()).each(function(m) { this.getEl(m).addClass('selected'); }, this);
-            _(this.getDisabled()).each(function(m) { this.getEl(m).addClass('disabled'); }, this);            
-        },
-        selectClosestStartingWith: function(text) {
-            if(!text.length)
-                return;
-            var coll = this.model.get('selectables'),
-                model = Util.getClosestStartingWith(coll, text, this.textAttr);
-            if(model) 
-                this.model.selectOne(model)
-        },
-    
-    
-
-        // =========================
-        // = Model <-> DOM Element =
-        // =========================
-        getModel: function(el) {
-            return this.collection.get($(el).attr(this.idAttr));
-        },
-        getEl: function(model) {
-            return this.$el.find(this.selector+'['+this.idAttr+'="'+model.id+'"]').filter(':first');
-        },
-        getModelByStartingWith: function(text) {
-            if(!text.length) return;
-            return Util.getClosestStartingWith(this.collection, 
-                                               text, this.textAttr);            
-        },
-
-
-
-        // =================
-        // = Selection API =
-        // =================
-        getSelected: function() {
-            return this.collection.filter(function(m) { return m.get('selected'); });
-        },
-        getFirstSelected: function() {
-            return this.collection.find(function(m) { return m.get('selected'); });
-        },        
-        getDisabled: function() {            
-            return this.collection.filter(function(m) { return m.get('disabled'); });
-        },
-        reset: function(models, options) {
-            // Iterate selected
-            options || (options = {});
-            var propName = options.propName || 'selected',
-                coll = this.collection;
-                
-            if(_.isEmpty(models)) 
-                models = [];
-            else
-                models = Util.idArray(models);
-            
-            this.$(this.selector+'.'+propName).each(_.bind(function(i, el) {
-                var model = this.getModel(el);
-                var bool  = _.indexOf(models, model.id) !== -1;
-                model.set(propName, bool, {internal: true})
-            }, this));
-
-            // Iterate models
-            _(models).each(function(id) {
-                coll.get(id).set(propName, true, {internal: true});
-            });
-            
-            // Update active and tail
-            if(models.length==0)
-                this.$(this.selector+'.active '+this.selector+'.tail').removeClass('active tail');
-            else {
-                this.$(this.selector+'.'+propName+':first').make('active');
-                this.$(this.selector+'.'+propName+':last').make('tail');
-            }
-        },
-        getAllSelectedIDs: function() {
-            return _.pluck(this.collection.filter(function(m) {return m.get('selected'); }), 'id');
-        },
-        selectFirst: function(options) {
-            // options || (options = {});
-            
-            this.reset([], options);
-            var first = this.collection.find(function(model) { return !model.get('disabled')});
-            if(first)
-                this.reset(first, options);
-        },
-        selectAll: function(options) {
-            this.collection.each(function(m) { m.set('selected', true); });
-        },
-        add: function(model, options) {
-            model.set('selected', true, options);
-        },
-        remove: function(model, options) {            
-            model.set('selected', false, options);
-        },
-        toggle: function(model, options) {
-            model.set('selected', !model.get('selected'));
-        },
-        isSelected: function(model) {
-            return !!model.get('selected');
-        },        
-        
-        // ================
-        // = Model events =
-        // ================
-        onSelectedChange: function(model, selected) {
-            this.getEl(model).toggleClass('selected', selected)
-        },
-        onActiveChange: function(model, selected) {
-            this.getEl(model).toggleClass('active tail', selected)
-        },        
-        onDisabledChange: function(model, disabled) {
-            this.getEl(model).toggleClass('disabled', disabled)
-        },
-    
-    
-        // ==============
-        // = DOM events =
-        // ==============
-        onMouseDown: function(e) {
-            // Clicking directly on the container deselects all
-            if(!$(e.target).closest(this.el, this.selector).length || e.target == this.el) {
-                this.reset();
-            }
-        },
-        onMouseUp: function(e) {
-            if(this._dragSelecting) {
-                this._dragSelecting = false;
-                // you cannot change selection when drag-selecting
-                this.$el.css('user-select', 'text');
-    
-    
-                var hasChanged = this.$('.selected').length != this.getSelected().length;
-    
-                if(hasChanged) {
-                    var models = this.$('.selected').map(_.bind(function(i, el) {
-                        return this.getModel(el);
-                    }, this)).toArray();
-                    this.reset(models);
-                }
-            }
-        },
-        onSelectableMouseOver: function(e) {
-            if(!this._dragSelecting) 
-                return;
-            this.$el.css('user-select', 'none');
-            e.preventDefault();
-            var el = $(e.target);
-            
-            var a = this.$('.tail').index(),
-                b = el.index(),
-                start = Math.min(a,b),
-                end = Math.max(a,b);
-            
-            // Todo: improve this
-            this.$(this.selector).removeClass('selected');
-            this.$(this.selector).slice(start, end+1).addClass('selected');
-                
-            // sel.get('selected').reset(sel.get('selectables').slice(start, end+1));
-            el.make('active');                
-        },
-        onMetaAKeyDown: function(e) {
-            this.selectAll();
-            e.preventDefault();
-        },
-        onSelectableMouseDown: function(e) {
-            var el = $(e.currentTarget),
-                sel = this.model;
-        
-            if(e.metaKey) {
-                this.toggle(this.getModel(el));
-                el.make('active');
-            }
-            else if(e.shiftKey) {
-                var a = this.$('.tail').index(),
-                    b = el.index(),
-                    start = Math.min(a,b),
-                    end = Math.max(a,b);
-             
-                this.reset(this.collection.slice(start, end+1));
-                el.make('active');
-        
-                // Allow text selection, but no shift-click text selection
-                e.preventDefault();
-                Util.iepreventTextSelection(e);
-            }
-            else {
-                if(this.dragselect)
-                    this._dragSelecting = true;
-                var m = this.getModel(el);
-                // No action if clicking the only selected item multiple times
-                if(this.isSelected(m) && this.$(this.selector+'.selected').length == 1)
-                    return;
-    
-                this.reset(this.getModel(el));
-            }
-        },   
         onKeyDown: function(e) {
             var sel = this.model,
-                upOrDown = e.which == Util.keys.UP || e.which == Util.keys.DOWN,
-                propName = this.selectOnNavigate ? 'selected' : 'active';
+                upOrDown = e.which == Util.keys.UP || e.which == Util.keys.DOWN;
                         
             if(Util.isArrowKey(e) && upOrDown) {
                 if(!e.ctrlKey && !e.metaKey && !e.altKey)
                     e.preventDefault();
+
+                var up = e.which == Util.keys.UP,
+                    down = e.which == Util.keys.DOWN;
                                 
-                if(this.$(this.selector+'.'+propName).length == 0) {
-                    // select first
-                    this.selectFirst({propName: propName});
+                if(!this.$(this.selector+'.active').length) {
+                    this.$(this.selector+':'+(down ? 'first':'last')).addClass('active');
                     return;
                 }
 
-                var up = e.which == Util.keys.UP,
-                    down = e.which == Util.keys.DOWN,
-                    active = this.$('.active'),
-                    tail = this.$('.tail'),
-                    prev = active.prevAll(this.selector+':visible:first'),
-                    next = active.nextAll(this.selector+':visible:first');
+                var el, active = this.$(this.selector+'.active'),
+                    next = active.nextAll(this.selector+':first');
     
-                // within visible viewport?
+                // Within visible viewport?
                 // Todo: Add option to specify the element to scroll instead of
                 // assuming parentNode of the selected element.
                 if(up) {
-                    prev.scrollIntoView(true);                    
+                    el = active.prevAll(this.selector+':first');
+                    el.scrollIntoView(true);
+                    el.make('active');
+                    this.trigger('goup', e, el, this.getModel(el), active);
                 }
-                else if(down) {
-                    next.scrollIntoView(false);        
-                }
-                
-                
-        
-                if(!e.shiftKey) {
-                    var el;                    
-                    if(down && next[0]) 
-                        el = tail.nextAll(this.selector+':first');
-                    else if(up && prev[0]) 
-                        el = tail.prevAll(this.selector+':first');
-    
-                    if(!el || !el[0])
-                        el = this.$(this.selector+':'+ (up ? 'first':'last'));
-                    
-                    if(el && el[0]) {
-                        if(this.selectOnNavigate) 
-                            // $(el).make('head').make('selected').make('tail');
-                            this.reset(this.getModel(el));
-                        else
-                            // this.activate(this.getModel(el));
-                            this.reset(this.getModel(el), {propName: 'active'});
-
-                    }
-                }
-                else {            
-                    var below;
-                    if(down && next[0]) {
-                        below = active.index() >= tail.index(); 
-                        if(below) {
-                            this.add(this.getModel(next));
-                            next.make('active');
-                            
-                        } else {
-                            this.remove(this.getModel(active));
-                            next.make('active');
-                        }
-                    }
-                    else if(up && prev[0]) {
-                        below = active.index() > tail.index();
-                        if(below) {
-                            this.remove(this.getModel(active));
-                            prev.make('active');
-                        } else {
-                            this.add(this.getModel(prev));
-                            prev.make('active');
-                        }
-                    }
+                else {
+                    el = active.nextAll(this.selector+':first');
+                    el.scrollIntoView(false);
+                    el.make('active');
+                    this.trigger('godown', e, el, this.getModel(el), active);
                 }
             }
+        },
+        getModelByStartingWith: function(text) {
+            if(!text.length) return;
+            return Util.getClosestStartingWith(this.collection, text, 'text');
         },
         onKeyPress: function(e) {
             if(e.which < 48) 
                 return;
             this._typing += String.fromCharCode(e.charCode);
             this._onKeyPressDeb();
-            var model = this.getModelByStartingWith(this._typing)
-            if(model) 
-                this.reset(model, {propName: this.selectOnNavigate ? 'selected' : 'active'});
+            var model = this.getModelByStartingWith(this._typing);
+            if(model) {
+                var el = this.getEl(model);
+                el.make('active');
+                this.trigger('goto', e, el, model);
+            }
         },
         _onKeyPressDeb: _.debounce(function() {
             this._typing = '';
         }, 500)
-    });    
-
-
-
-        
+    });
     
 
     /*
-    A mixin for intercepting paste (ctrl+v) operations.
-    When user hits ctrl+v, the default paste is cancelled, and
-    instead an event "paste" is triggered, carrying the browser
-    event and the pasted text.
-
-    Example
-    --------------------
-    var MyTextField = form.Text.extend({
-        mixins: [form.Field, tools.InterceptPaste],
-    
-        initialize: function(config) {
-            form.Text.prototype.initialize.call(this, config);
-            tools.InterceptPaste.initialize.call(this);
-            this.on('paste', this.onPaste, this);
+    Make elements selectable.
+    */
+    tools.Selectable = tools.View.extend('Tools.Selectable', {
+        events: {
+            'mouseup': 'onMouseUp'
         },
-        onPaste: function(e) {
-            var data = e.data.replace(/kalle/g, 'hassan');
-            WysiHat.Commands.insertHTML(data);
+        hotkeys: {
+            'keydown meta+a': 'onMetaAKeyDown'            
+        },
+        mixins: [
+            tools.ModelToElement,
+            tools.AttributeBasedSelectable
+        ],
+        initialize: function(config) {
+            this.dragselect = Util.pop(config, 'dragselect', true);
+            this.keynav = new tools.Navigable({
+                el: config.el,
+                collection: config.collection,
+                selector: config.selector
+            });
+            this.selector = config.selector;
+            this.listenTo(this.keynav, 'goup', this.onGoUp, this);
+            this.listenTo(this.keynav, 'godown', this.onGoDown, this);
+            this.listenTo(this.keynav, 'goto', this.onGoTo, this);
+            this.listenTo(this.collection, 'change:selected', this.onSelectedChange, this);
+            this.$el.on('mouseover', this.selector, this.onSelectableMouseOver.bind(this));
+        },
+        onGoUp: function(e, el, model, prev) {
+            if(!model) return;
+            if(e.shiftKey) {
+                if(el.index() < this.anchor.index()) // above anchor
+                    this.add(model);
+                else 
+                    this.remove(this.getModel(prev));
+            }
+            else {
+                this.reset(model);
+                this.anchor = el;
+            }
+        },
+        onGoDown: function(e, el, model, prev) {
+            if(!model) return;
+            if(e.shiftKey) {
+                if(el.index() > this.anchor.index()) // below anchor
+                    this.add(model);
+                else
+                    this.remove(this.getModel(prev));
+            }
+            else {
+                this.reset(model);
+                this.anchor = el;
+            }
+        },
+        onGoTo: function(e, el, model, prev) {
+            if(!e.shiftKey)
+                this.anchor = el;            
+            if(e.type == 'mousedown' && e.shiftKey) {
+                var selector = this.$(this.selector),
+                    // a = selector.index(this.anchor),
+                    a = this.anchor.index(),
+                    b = this.collection.indexOf(model),
+                    slice = this.collection.slice(Math.min(a,b), Math.max(a,b)+1);
+
+                this._isMouseDown = false;    
+                this.reset(slice);
+                e.preventDefault();
+                console.log('ping:', _(slice).pluck('id'))
+            }
+            else if(e.type == 'mousedown' && e.metaKey) {
+                this.toggle(model);
+            }
+            else {
+                if(e.type == 'mousedown' && this.dragselect) {
+                    this._isMouseDown = true;
+                    el.make('selected'); // fake it
+                }
+                else
+                    this.reset(model);                
+            }
+        },
+        onSelectedChange: function(model, selected) {
+            this.getEl(model).toggleClass('selected', selected);
+        },   
+        onMetaAKeyDown: function(e) {
+            this.selectAll();
+            e.preventDefault();
+        },             
+        onMouseUp: function(e) {
+            if(this._isMouseDown) {
+                this._isMouseDown = false;
+                var models = this.$(this.selector+'.selected').map(function(i, el) {
+                    return this.getModel(el);
+                }.bind(this)).toArray();
+               
+                this.$el.css('user-select', 'text'); // restore text-selection
+                this.reset(models);    
+            }
+        },
+        onSelectableMouseOver: function(e) {
+            if(!this._isMouseDown) return;
+            var el = $(e.target),
+                selectables = this.$(this.selector),
+                // a = this.anchor.index(),
+                // b = el.index(),
+                a = selectables.index(this.anchor),
+                b = selectables.index(el),
+            
+                
+                start = Math.min(a,b),
+                end = Math.max(a,b);
+            
+            this.$(this.selector).removeClass('selected');
+            this.$(this.selector).slice(start, end+1).addClass('selected');
+            el.make('active');
+            this.$el.css('user-select', 'none'); // no text-selection while drag-selecting
+            e.preventDefault();
         }
     });
-    */
-    tools.InterceptPaste = {
-        initialize: function() {
-            this.$el.bind('paste', $.proxy(this._onPaste, this));
-        },
-        _onPaste: function(e) {
-            var ev = e.originalEvent,
-                el = $('<div></div>')[0],
-                savedcontent = el.innerHTML,
-                data = '';
-            if(ev && ev.clipboardData && ev.clipboardData.getData) { // Webkit
-                if (/text\/html/.test(ev.clipboardData.types)) {
-                    data = ev.clipboardData.getData('text/html');
-                }
-                else if (/text\/plain/.test(ev.clipboardData.types)) {
-                    data = ev.clipboardData.getData('text/plain');
-                }
-                this.trigger('paste', {e: e, data: data});
-                e.stopPropagation();
-                e.preventDefault();
-                return false;
-            } else {
-                var wait = function() {
-                    if(el.childNodes && el.childNodes.length > 0)
-                        this.processPaste(el.innerHTML);
-                    else
-                        setTimeout(wait,1000);         
-                };
-                wait();
-                return true;
-            }        
-        }
-    };
-    
-    
-    /*
-    A mixin for tabbing between elements within a single view.
-    */
-    tools.TabChain = {
-        initialize: function() {
-            this.$el.on('keydown', _.bind(this._onKeyDown, this));
-        },
-        _onKeyDown: function(e) {
-            if(e.which == Util.keys.TAB) {
-                var set = this.$('*:tabable'),
-                    index = set.index(e.target),
-                    next = set[index + (e.shiftKey ? -1 : 1)];
-                (next || set[e.shiftKey ? set.length-1 : 0]).focus();
-                e.preventDefault();
-            }
-        }
-    };
-
-
-
-
-
 
     return tools;
-
 });
-
