@@ -65,6 +65,38 @@ define([
             }
         }        
     };
+    tools.InterceptPaste = {
+        initialize: function() {
+            this.$el.bind('paste', $.proxy(this._onPaste, this));
+        },
+        _onPaste: function(e) {
+            var ev = e.originalEvent,
+                el = $('<div></div>')[0],
+                savedcontent = el.innerHTML,
+                data = '';
+            if(ev && ev.clipboardData && ev.clipboardData.getData) { // Webkit
+                if (/text\/html/.test(ev.clipboardData.types)) {
+                    data = ev.clipboardData.getData('text/html');
+                }
+                else if (/text\/plain/.test(ev.clipboardData.types)) {
+                    data = ev.clipboardData.getData('text/plain');
+                }
+                this.trigger('paste', {e: e, data: data});
+                e.stopPropagation();
+                e.preventDefault();
+                return false;
+            } else {
+                var wait = function() {
+                    if(el.childNodes && el.childNodes.length > 0)
+                        this.processPaste(el.innerHTML);
+                    else
+                        setTimeout(wait,1000);         
+                };
+                wait();
+                return true;
+            }        
+        }
+    };
     
     
     
