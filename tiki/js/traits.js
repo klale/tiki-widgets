@@ -381,10 +381,10 @@ define([
             // Convert eg 'foo' => [{id: 'foo'}]
             var Collection = this.Collection;
             if(_.isFunction(this.Collection) && !this.Collection.extend) {
-                // a callable, returing a collection class
+                // it's a callable, assumed to return a collection class
                 Collection = this.Collection();
             }
-            if(!v || v instanceof Collection) {
+            if(!v || (_.isFunction(v) && v instanceof Collection)) {
                 return v;
             }
                 
@@ -415,14 +415,63 @@ define([
     
     
     Traits.CollectionM = Traits.Collection.extend('Traits.CollectionM', {
+        constructor: function(config, options) {
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.CollectionM(config, options);
+        },
+        initialize: function(config, options) {
+            config = config || {};
+            this.Collection = Backbone.Collection;
+            this.options = options;
+
+            if(_.isFunction(config))
+                this.Collection = config;                
+        },        
+        parse: function(v, obj, attrs, key) {            
+            // Convert eg 'foo' => [{id: 'foo'}]
+            var Collection = this.Collection;
+            if(_.isFunction(this.Collection) && !this.Collection.extend) {
+                // it's a callable, assumed to return a collection class
+                Collection = this.Collection();
+            }
+            if(!v || (_.isFunction(v) && v instanceof Collection)) {
+                return v;
+            }
+                
+            if(v instanceof Backbone.Collection) {
+                return v;
+            }
+            else if(v)
+                v = _.map(Util.arrayify(v), function(o) {
+                    if(_.isString(o))
+                        return {id: o};
+                    return o;
+                }, this);
+
+            return v;
+        },        
         set: function(value, attrs, options, key, errors, obj) {
             if(obj.attributes[key]) {
+                // backup the original set of models
                 obj['_tmp_'+key] = obj.attributes[key].models;
-                obj.attributes[key].reset(this.parse(value || []).models, {silent:true});
+                // 
+                var value = this.parse(value || []), // CollectionM.parse can return a Collection or an array of models.
+                    models = value.models || value;  // duck-type a collection
+                    
+                obj.attributes[key].reset(models, {silent:true});
                 delete attrs[key];
             }
-            else
+            else {
+                if(_.isArray(value)) {
+                    // Todo: code duplication
+                    var Collection = this.Collection;
+                    if(_.isFunction(this.Collection) && !this.Collection.extend) {
+                        // it's a callable, assumed to return a collection class
+                        Collection = this.Collection();
+                    }                    
+                    value = new Collection(value)
+                }
                 attrs[key] = value;
+            }
         },
         rollback: function(value, attrs, options, key, errors, obj) {
             if(obj.attributes[key])
