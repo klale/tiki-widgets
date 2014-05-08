@@ -263,7 +263,7 @@ define([
 
     $.fn.make = function(className) {
         this.each(function() {
-            $(this).parent().children('.'+className).removeClass(className);
+            $(this).siblings('.'+className).removeClass(className);
             $(this).addClass(className);
         });
         return this;
