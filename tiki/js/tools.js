@@ -79,6 +79,29 @@ define([
     };    
     
     
+
+    /*
+    A mixin for intercepting paste (ctrl+v) operations.
+    When user hits ctrl+v, the default paste is cancelled, and
+    instead an event "paste" is triggered, carrying the browser
+    event and the pasted text.
+
+    Example
+    --------------------
+    var MyTextField = form.Text.extend({
+        mixins: [form.Field, tools.InterceptPaste],
+    
+        initialize: function(config) {
+            form.Text.prototype.initialize.call(this, config);
+            tools.InterceptPaste.initialize.call(this);
+            this.on('paste', this.onPaste, this);
+        },
+        onPaste: function(e) {
+            var data = e.data.replace(/kalle/g, 'hassan');
+            WysiHat.Commands.insertHTML(data);
+        }
+    });
+    */
     tools.InterceptPaste = {
         initialize: function() {
             this.$el.bind('paste', $.proxy(this._onPaste, this));
