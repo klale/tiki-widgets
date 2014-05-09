@@ -226,7 +226,7 @@ define([
                 this._hideAll();
                 this._lock = false;
                 this.trigger('select', model);
-            }, this), {className: 'active selected'});
+            }, this), {className: 'active'});
         },              
         show: function(options) {
             var opt = Util.defs(options, {
