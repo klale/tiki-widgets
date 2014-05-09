@@ -197,6 +197,26 @@ define([
     };
     
     
+    /*
+    A mixin for tabbing between elements within a single view.
+    */
+    tools.TabChain = {
+        initialize: function() {
+            this.$el.on('keydown', _.bind(this._onKeyDown, this));
+        },
+        _onKeyDown: function(e) {
+            if(e.which == Util.keys.TAB) {
+                var set = this.$('*:tabable'),
+                    index = set.index(e.target),
+                    next = set[index + (e.shiftKey ? -1 : 1)];
+                (next || set[e.shiftKey ? set.length-1 : 0]).focus();
+                e.preventDefault();
+            }
+        }
+    };
+    
+    
+    
     
     /*
     Extension of Backbone.View adding support for "merge" and "hotkeys"
