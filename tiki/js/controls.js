@@ -452,57 +452,45 @@ define([
     var Dropdown = {};
     Dropdown.Model = ControlModels.ControlModel.extend('Controls.Dropdown.Model', {
         traits: {
-            options: new Traits.CollectionM(),
+            options: new Traits.CollectionM()
         },
         setorder: ['options', 'value'],
-        initialize: function() {
-            this.listenTo(this.get('options'), 'change:selected', this.onSelectedChange, this);
-        },
-        get_value: function() {
-            return this.get('options').findWhere({selected: true});
-        },
         set_value: function(v, attrs, options) {
-            delete attrs.value;
-            if(v && v.id)
-                v = v.id
-            options = options || {};
-            var opt,
-                opts = attrs['options'] || this.get('options');
-            if(v) {
-                opt = opts.get(v);            
-                if(opt.get('selected'))
-                    return;
+            /*
+            Value is null, undefined or referencing a model of `this.options`.
+            
+            model.value = null
+            model.value = undefined
+            model.value = 123        // id
+            model.value = 'foo'      // id
+            model.value = 'c123'     // cid
+            model.value = {id: 'foo'}
+            model.value = <MyModel id=foo>
+            
+            model.value = 'i-dont-exists; // ValueError
+            model.value = NaN; // TypeError
+            model.value = new Date(); // TypeError
+            model.value = false // TypeError
+            */
+            if(v == null) {
+                attrs[v] = v;
+                return;
             }
-            // unselect current, if any
-            var curr = opts.findWhere({selected: true});
-            if(curr) 
-                curr.set('selected', false);
-            
-            // select new
-            if(opt)
-                opt.set('selected', true, {mute:true})
-            
-            // No "change:value" when setting both 'options' and 'value' in one go.
-            if(!attrs.options && !options.silent)
-                this.trigger('change:value', this, this.value, options);            
-        },
-        onSelectedChange: function(model, selected, options)  {
-            // ignore unselect events
-            if(!selected || options.mute || options.internal) return;
-            // unselect current, if any
-            this.get('options').each(function(m) {
-                if(m.get('selected') && m.id != model.id) 
-                    m.set('selected', false);
-            });
-            this.trigger('change:value', this, this.get('value'), options);
-            
+            if(_.isObject(v) && (v.id || v.cid))
+                v = v.id || v.cid;
+            if(_.isString(v) || _.isNumber(v)) {
+                var model = (attrs.options || this.options).get(v);
+                if(!model) 
+                    throw new Traits.ValueError('Option "'+v+'" does not exist');
+                attrs.value = model
+            }
+            else throw new TypeError('Invalid type: '+v);  
         },
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'options');
-        }        
+        }
     });
-    
-    
+        
     Dropdown.View = Tools.View.extend({
         className: 'tiki-dropdown',
         attributes: {
