@@ -498,6 +498,18 @@ define([
             options: new Traits.CollectionM()
         },
         setorder: ['options', 'value'],
+        initialize: function() {
+            // If value is not specifield, look for a selected option.
+            if(this.value == null) {
+                var selected = this.options.findWhere({selected: true});
+                this.set('value', selected, {silent: true});
+            }
+            // When options is set for the first time, listen to its options.
+            if(this.options)
+                this.listenTo(this.options, 'change:selected', this.onSelectedChange, this);
+            else
+                throw new Error('Dropdown.Model has no initial options');
+        },
         set_value: function(v, attrs, options) {
             /*
             Value is null, undefined or referencing a model of `this.options`.
@@ -522,19 +534,31 @@ define([
             if(_.isObject(v) && (v.id || v.cid))
                 v = v.id || v.cid;
             if(_.isString(v) || _.isNumber(v)) {
-                var model = (attrs.options || this.options).get(v);
-                if(!model) 
+                var optionModel = (attrs.options || this.options).get(v);
+                if(!optionModel) 
                     throw new Traits.ValueError('Option "'+v+'" does not exist');
-                attrs.value = model
+                
+                attrs.value = optionModel
             }
             else throw new TypeError('Invalid type: '+v);  
         },
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'options');
+        onValueChange: function(model, selectedOption) {
+            // selectedOption can be null, undefined or a models of `this.options`.
+            var prevOption = this.model.previousAttributes().value;
+            if(prevOption)
+                prevOption.set('selected', false, {mute: true});
+            if(selectedOption)
+                selectedOption.set('selected', true, {mute: true})
+        },
+        onSelectedChange: function(optionModel, selected, options) {
+            if(!options.mute)
+                this.set('value', selected ? optionModel : null);
         }
     });
         
-    Dropdown.View = Tools.View.extend({
+    Dropdown.View = Tools.View.extend('Dropdown.View', {
         className: 'tiki-dropdown',
         attributes: {
             tabindex: 0
@@ -565,7 +589,6 @@ define([
             ControlView.initialize.call(this, config);
             var options = this.model.get('options');
             this.listenTo(this.model, 'change', this.render);
-            this.listenTo(this.model, 'change:value', this.render);            
 
             // Create the dropdown menu
             this.menu = new Menu.Menu({
