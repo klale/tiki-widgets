@@ -89,9 +89,7 @@ define([
                 'invalid': this.oValuesInvalid});
         },
         valuesToJSON: function() {
-            console.log('serialize to json, using our form controls');
-            
-            var out = {}
+            var out = {};
             this.controls.each(function(control) {
                 out[control.id] = control.valueToJSON();
             });
