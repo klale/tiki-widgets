@@ -88,6 +88,15 @@ define([
                 'change': this.onValuesChange,
                 'invalid': this.oValuesInvalid});
         },
+        valuesToJSON: function() {
+            console.log('serialize to json, using our form controls');
+            
+            var out = {}
+            this.controls.each(function(control) {
+                out[control.id] = control.valueToJSON();
+            });
+            return out;
+        },
         _set_value: function(control, value) {
             // Use dedicated setter if declared, otherwise
             // just set value directly on `this.values`
@@ -171,7 +180,7 @@ define([
         
         // or create one implicitly
         var myform = new SimpleForm({
-            model: new Backbone.Model(null, {
+            values: new Backbone.Model(null, {
                 url: '/foo/bar'
             }),
             controls: [
@@ -245,13 +254,25 @@ define([
     // ==============
     // = CustomForm =
     // ==============
+    var viewOptions = ['model', 'collection', 'el', 'id', 'attributes', 'className', 'tagName', 'events'];
+    
     var CustomForm = Tools.View.extend('Tiki.Form.CustomForm', {
     
         initialize: function(config) {
             this.views = {};
 
+            // Todo also reserve "initialize", "addOne" etc? Move into namespace? ..rather not, try to keep simplicity..
+            // Rather raise exception/warn if adding conflicting methods in the future. If that's feasible.
+            _.each(config, function(v, k) {
+                if(!~viewOptions.indexOf(k)) {
+                    this[k] = v;
+                }
+            }, this);
+
+
             // Search `config.el` for elements that look like controls
             var controls = [];
+            var self = this;
             this.$('div[name]').each(function() {
                 var div = $(this),
                     name = div.attr('name'),
@@ -271,7 +292,7 @@ define([
                             Type = ControlModels.register[Type];
 
                         control = new Type(_.extend({}, control, {id: name}));
-                    }
+                    }   
                 }
                 else {
                     // create the control config from a DOM element and its attributes
@@ -281,7 +302,7 @@ define([
                     if(_.isString(Type))
                         Type = ControlModels.register[Type];
                 
-                    control = Type.createFromElement(this);                    
+                    control = Type.createFromElement(this, self);                    
                 }
                 controls.push(control);
             });
@@ -291,7 +312,7 @@ define([
             if(config.values)
                 _(controls).each(function(controlmodel) {
                     var value = config.values[controlmodel.id];
-                    if(value != null) // null or undefined
+                    if(value != null) // null or undefined 
                         controlmodel.set('value', value);
                 });
 
@@ -302,10 +323,13 @@ define([
                 var el = this.$('div[name="'+model.id+'"]'),
                     View = Controls.register[model.get('type')];
 
-                var view = new View({model:model});
+                var view = new View({el: el, model:model});
                 this.views[model.cid] = view;
+                if(View.prototype.attributes)
+                    view.$el.attr(View.prototype.attributes)
+                view.$el.addClass(View.prototype.className)
                 
-                view.attackElement(el);
+                // view.attackElement(el);
                 view.render();
                 view.delegateEvents();
             }, this);        

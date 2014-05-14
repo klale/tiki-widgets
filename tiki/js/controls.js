@@ -544,6 +544,12 @@ define([
         },
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'options');
+        },
+        valueToJSON: function() {
+            if(this.value)
+                return this.value.id;
+            return null;
+        },
         onValueChange: function(model, selectedOption) {
             // selectedOption can be null, undefined or a models of `this.options`.
             var prevOption = this.model.previousAttributes().value;

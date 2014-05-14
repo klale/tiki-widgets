@@ -11,16 +11,6 @@ define([
 
     var exp = {};
 
-    var createFromElement = function(el) {
-        var attr = $(el).getAllAttributes();
-        return new this({
-            id: attr.name,
-            type: attr.type,
-            value: attr.value || $(el).html(),
-            disabled: !!attr.disabled,
-            format: attr.format
-        });
-    };
 
 
 
@@ -41,25 +31,39 @@ define([
         merge: ['defaults', 'traits'],
         catchErrors: true,
         
-        
-        // legacy
-        getValue: function() {
+
+        valueToJSON: function() {
             return this.get('value');
         },
+        // legacy
+        getValue: function() {
+            return this.valueToJSON();
+        },     
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'value')
         }
     });
-    ControlModel.createFromElement = function(el) {
+    ControlModel.createFromElement = function(el, obj) {
         /* Construct a model from attributes and possibly child <br/>
         elements of `el` */
-        var attr = $(el).getAllAttributes();
-        return new this({
-            id: attr.name,
-            type: attr.type,
-            value: attr.value || $(el).html(),
-            disabled: !!attr.disabled
-        });
+
+        var attr = $(el).getAllAttributes(),
+            value = attr.value || $(el).html(),
+            config = {
+                id: attr.name,
+                type: attr.type,
+                disabled: !!attr.disabled
+            };
+        
+        if(value)
+            config.value = value;
+        if(attr.format)
+            config.format = attr.format;
+        if(attr.options)
+            config.options = obj[attr.options];
+        
+        
+        return new this(config);
     };
 
     exp.Bool = ControlModel.extend('ControlModels.Bool', {      
@@ -85,8 +89,6 @@ define([
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
         }
-    },{
-        createFromElement: createFromElement
     });
     
 
@@ -108,8 +110,6 @@ define([
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
         }
-    },{
-        createFromElement: createFromElement
     });
 
 
@@ -121,8 +121,6 @@ define([
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
         }
-    },{
-        createFromElement: createFromElement
     });
     
     
@@ -138,13 +136,11 @@ define([
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
         },
-        getValue: function() {
+        valueToJSON: function() {
             var val = this.get('value');
             if(val)
                 return this.traits.value.toJSON(this.get('value'));
         }
-    },{
-        createFromElement: createFromElement
     });
 
     exp.DateTime = ControlModel.extend('ControlModels.DateTime', {
@@ -158,11 +154,9 @@ define([
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
         },
-        getValue: function() {
+        valueToJSON: function() {
             return this.traits.value.toJSON(this.get('value'));
         }
-    },{
-        createFromElement: createFromElement
     });
     
     exp.DateTime.extend = Util.extend;    
@@ -217,7 +211,7 @@ define([
             value: null,
             options: []
         },
-        getValue: function() {
+        valueToJSON: function() {
             var val = this.get('value');
             if(val)
                 return val.pluck('id');
@@ -300,6 +294,9 @@ define([
             if(!options.mute)
                 this.trigger('change:value', this, this.get('value'), options);
         },
+        valueToJSON: function() {
+            return _.pluck(this.value, 'id');
+        },
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'options');
         }
@@ -329,11 +326,12 @@ define([
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'options', 'value');
         },
-        getValue: function() {
+        valueToJSON: function() {
             var val = this.get('value');
             if(val)
                 return val.id;
         }
+        
     },{
         createFromElement: function(el) {
             var attr = $(el).getAllAttributes();
@@ -357,6 +355,9 @@ define([
         // },
         setorder: ['options', 'value'],
         initialize: function() {
+            if(!this.get('options')) {
+                this.attributes.options = new Backbone.Collection();
+            }
             this.listenTo(this.get('options'), 'change:selected', this.onSelectedChange, this);
         },
         get_value: function() {
@@ -399,6 +400,10 @@ define([
                     m.set('selected', false);
             });
             this.trigger('change:value', this, this.get('value'), options);
+        },
+        valueToJSON: function() {
+            var v = this.get('value');
+            return v ? v.id : v;
         },
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'options');
@@ -443,11 +448,11 @@ define([
             if(!(attrs.value instanceof this.valuemodel))
                 return "Value is not instance of "+this.valuemodel;
         },
-        getValue: function() {
+        valueToJSON: function() {
             /* Serialize to plain json */
             return _.object(_.map(this.get('value').attributes, function(val, key) {
-                if(val.getValue) 
-                    val = val.getValue();
+                if(val.valueToJSON) 
+                    val = val.valueToJSON();
                 return [key, val];
             }, this));
         },
