@@ -299,8 +299,51 @@ define([
 
 
 
-
+    function parseBool(s) {
+        if(s && s.toLowerCase() == 'true')
+            return true;
+        return false;
+    }
+    
     var Checkbox = {};
+    Checkbox.Model = ControlModels.ControlModel.extend('Checkbox.Model', {      
+        initialize: function() {
+            this.on('change:selected', this.onSelectedChange, this)
+        },
+        get_value: function() {
+            return this.get('selected');
+        },
+        set_value: function(v, attrs, options) {
+            delete attrs.value;
+            this.set('selected', v);
+        },
+        onSelectedChange: function() {
+            this.trigger('change:value', this, this.get('value'));
+        }
+    }, {
+        createFromElement: function(el, obj) {
+            var attr = $(el).getAllAttributes(),
+                checked = attr.checked,
+                value = false;
+            
+            if(checked != null) {
+                $(el).removeAttr('checked');
+                value = true;
+            }
+            else if(attr.value)
+                value = parseBool(attr.value)
+                
+            return new this({
+                id: attr.name,
+                type: attr.type,
+                text: attr.text || $(el).html(),
+                value: value,
+                disabled: !!attr.disabled,
+                format: attr.format
+            });
+        }        
+    });
+    
     Checkbox.View = Tools.View.extend('Controls.Checkbox.View', {
         className: 'tiki-checkbox',
         events: {
@@ -315,7 +358,7 @@ define([
         attributes: {
             tabindex: 0
         },
-        defaultmodel: ControlModels.Selected,
+        defaultmodel: Checkbox.Model,
     
         initialize: function(config)  {
             if(!this.model)
