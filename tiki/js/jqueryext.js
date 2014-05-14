@@ -312,20 +312,9 @@ define([
     $.fn.getAllAttributes = function() {
         var el = this[0];
         var attributes = {}; 
-        if($.browser.ltie9) {
-            // Todo: Temp, stupid ie
-            var attrs = el.attributes,
-                names = ['name', 'factory', 'class', 'style', 'value', 'disabled'];
-            for(var i=0; i<names.length; i++) {
-                if(attrs[names[i]])
-                    attributes[names[i]] = attrs[names[i]].nodeValue;
-            }
-        } else {
-            // w3c NamedNodeMap
-            $.each(el.attributes, function(index, attr) {
-                attributes[attr.name] = attr.value;
-            });
-        }
+        $.each(el.attributes, function(index, attr) {
+            attributes[attr.name] = attr.value;
+        });
         return attributes;
     };
     $.fn.attrs = function(attrs) {
