@@ -344,6 +344,39 @@ define([
         this.focus();
         window.scrollTo(x, y);
     };
+
+    $.fn.focusWithoutScrollingParent = function(scrollParent){
+        // `scrollParent` is optional.
+        // Hackish, but there's currenlty no other way to do it.
+        // Store the current scroll position
+        var el = this[0],
+            parent = scrollParent || this.scrollParent()[0],
+            left = parent.scrollLeft,
+            top = parent.scrollTop;
+
+        // shift focus
+        el.focus();
+        
+        // Restore scroll position
+        parent.scrollLeft = left;
+        parent.scrollTop = top;
+    };
+
+    // From jQuery UI Core 1.8
+    $.fn.scrollParent = function() {
+        var position = this.css( "position" ),
+            excludeStaticParent = position === "absolute",
+            scrollParent = this.parents().filter( function() {
+                var parent = $( this );
+                if ( excludeStaticParent && parent.css( "position" ) === "static" ) {
+                    return false;
+                }
+                return (/(auto|scroll)/).test( parent.css( "overflow" ) + parent.css( "overflow-y" ) + parent.css( "overflow-x" ) );
+            }).eq( 0 );
+
+        return position === "fixed" || !scrollParent.length ? $( this[ 0 ].ownerDocument || document ) : scrollParent;
+    };
+
     
     $.fn.scrollMeOnly = function() {
         this.on('wheel', function(e) {
