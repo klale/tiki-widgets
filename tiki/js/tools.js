@@ -436,6 +436,7 @@ define([
         initialize: function(config) {
             _.bindAll(this, 'onItemMouseDown', 'onKeyDown', 'onKeyPress');
             this.selector = config.selector + ':visible';
+            this.textAttr = config.textAttr || 'text';
             this._typing = '';
             
             this.$el.on('mousedown', this.selector, this.onItemMouseDown);
@@ -491,7 +492,7 @@ define([
         },
         getModelByStartingWith: function(text) {
             if(!text.length) return;
-            return Util.getClosestStartingWith(this.collection, text, 'text');
+            return Util.getClosestStartingWith(this.collection, text, this.textAttr);
         },
         onKeyPress: function(e) {
             if(e.which < 48) 
