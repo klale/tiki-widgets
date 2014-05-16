@@ -191,6 +191,11 @@
     div, p {
         margin: 0 !important; /* ie required important, todo: who's overriding? */
     }
+    // Make empty elements occupy one row of height
+    p:empty::before,
+    div:empty::before {
+        content: '\00200B';
+    }
 }
 
 

@@ -255,8 +255,7 @@ define([
             
             var text = el.getPreText(),
                 wasInvalid = !!this.model.validationError;
-            // Remove exactly 1 leading newline
-            text = text.replace(/\n/, '');
+                        
             this.model.set({'value': text}, {validate: true});
             if(wasInvalid && !this.model.validationError)
                 // there is a small change the new value above is the same as

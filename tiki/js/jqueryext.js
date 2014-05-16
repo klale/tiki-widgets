@@ -144,13 +144,19 @@ define([
 
 
     $.fn.getPreText = function (trim) {
-        var ce = this.clone();
-        if($.browser.webkit || $.browser.chrome)
+        var ce = this.clone(), text;
+        if($.browser.webkit || $.browser.chrome) {
             ce.find("div").replaceWith(function() { return "\n" + this.innerHTML; });
-        else if($.browser.msie)
-            ce.find("p").replaceWith(function() { return "\n" + this.innerHTML; });        
+            text = ce.text().replace(/^\n/, ''); // Remove 1 leading newline
+        }
+        else if($.browser.msie) {
+            ce.find("p").replaceWith(function() { return "\n" + this.innerHTML; });
+            text = ce.text().replace(/^\n/, ''); // Remove 1 leading newline
+        }
         else {
-            ce.find("br").replaceWith("\n");
+            ce.find("br").replaceWith("__NEWLINE__");
+            text = ce.text();
+            text = text.replace(/__NEWLINE__/g, '\n')
         }
 
         if(trim) {
@@ -160,9 +166,7 @@ define([
             }));
             return lines.join('\n');
         }
-        else
-            return ce.text();
-    
+        return text;
     };    
 
 

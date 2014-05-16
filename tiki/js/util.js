@@ -567,18 +567,18 @@ define([
 
     
     util.makePreText = function(plaintext) {
-        plaintext = (plaintext || '').trim();
+        plaintext = (plaintext || '');
         var html;
         
         if($.browser.webkit || $.browser.chrome) {
             // Wrap each textline inside <div>line</div>
-            html = plaintext.split('\n').map(function(item) { return '<div>'+(item || '&nbsp;')+'</div>'; }).join('');
+            html = plaintext.split('\n').map(function(item) { return '<div>'+item+'</div>'; }).join('');
         }
         else if($.browser.msie) {
             html = plaintext.split('\n').map(function(item) { return '<p>'+item+'</p>'; }).join('');
         }
         else {
-            html = plaintext.replace('/\n/g', '<br>');
+            html = plaintext.replace(/\n/g, '<br>');
         }
         return html;
     };
