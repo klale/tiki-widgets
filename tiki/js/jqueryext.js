@@ -45,10 +45,14 @@ define([
      var match = /(chrome)[ \/]([\w.]+)/.exec( ua ) ||
          /(webkit)[ \/]([\w.]+)/.exec( ua ) ||
          /(opera)(?:.*version|)[ \/]([\w.]+)/.exec( ua ) ||
-         /(msie) ([\w.]+)/.exec( ua ) ||
+         /(msie) ([\w.]+)/.exec( ua ) ||  // <= IE10
+         /(trident).*?rv:([\w.]+)/.exec( ua ) || // >= IE11
          ua.indexOf("compatible") < 0 && /(mozilla)(?:.*? rv:([\w.]+)|)/.exec( ua ) ||
          [];
-    
+
+     if(match[1] && match[1] == 'trident')
+       return {browser: 'msie', version: match[2]};
+     
      return {
          browser: match[ 1 ] || "",
          version: match[ 2 ] || "0"
