@@ -52,7 +52,7 @@ define([
             config = {
                 id: attr.name,
                 type: attr.type,
-                disabled: !!attr.disabled
+                disabled: attr.disabled != null
             };
         
         if(value)
@@ -346,7 +346,7 @@ define([
                 id: attr.name,
                 type: attr.type,
                 value: attr.value,
-                disabled: !!attr.disabled,
+                disabled: attr.disabled != null,
                 options: attr.options ? window[attr.options] : null
             });
         }

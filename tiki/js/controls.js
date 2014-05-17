@@ -216,7 +216,7 @@ define([
                 config = {
                     id: attr.name,
                     type: attr.type,
-                    disabled: !!attr.disabled
+                    disabled: attr.disabled != null
                 };
 
             if(value)
@@ -358,7 +358,7 @@ define([
                 type: attr.type,
                 text: attr.text || $(el).html(),
                 value: value,
-                disabled: !!attr.disabled,
+                disabled: attr.disabled != null,
                 format: attr.format
             });
         }        
