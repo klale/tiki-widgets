@@ -133,13 +133,20 @@ define([
         defaults: {
             format: 'd'
         },
+        set_value: function(v, attrs, options) {
+            if(v === '') v = null;
+            attrs.value = traits.Date.prototype.parse(v)
+        },
+        get_value: function() {
+            return this.attributes.value;
+        },
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
         },
         valueToJSON: function() {
-            var val = this.get('value');
-            if(val)
-                return this.traits.value.toJSON(this.get('value'));
+            var val = this.value;
+            if(val) 
+                return traits.Date.prototype.toJSON.call(this, val)
         }
     });
 
