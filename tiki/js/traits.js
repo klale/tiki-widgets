@@ -78,9 +78,34 @@ define([
                 constr = this;
             if(_.isFunction(proto.traits))
                 proto.traits = proto.traits.call(proto);
+
+
+            // Make all get_*/set_* properties
+            var properties = {};
+            _.each(proto, function(v, k)  {
+                var prefix = k.slice(0,4), 
+                    name = k.slice(4),
+                    isSetOrGet = prefix == 'get_' || prefix == 'set_';
+                    
+                if(isSetOrGet && !properties[name])
+                    properties[name] = {
+                        configurable: true,
+                        enumerable: true,
+                        get: function() { return this.get(name); },
+                        set: function(value) {
+                            var data = {};
+                            data[name] = value;
+                            this.set(data);
+                        }                        
+                    };
+                if(prefix == 'get_') 
+                    properties[name].get = v;
+            });
+            
+            // Make all traits properties
             _.each(proto.traits, function(trait, name) {
                 trait.name = name;
-                Object.defineProperty(proto, name, {
+                properties[name] = {
                     get: function() { return this.get(name); },
                     set: function(value) {
                         var data = {};
@@ -89,9 +114,15 @@ define([
                     },
                     configurable: true,
                     enumerable: true
-                });
+                };
             });
-                        
+            
+            _.each(properties, function(v, name) {
+                Object.defineProperty(proto, name, properties[name]);
+            });
+            
+
+            
             _.each(Util.arrayify(proto.merge), function(propname) {
                 var parentval = constr.__super__[propname] || {};
                 proto[propname] = _.extend({}, parentval, _.result(proto, propname));
