@@ -206,8 +206,28 @@ define([
     });
 
 
+    var TextArea = {};
+    TextArea.Model = ControlModels.ControlModel.extend('TextArea.Model', {}, {
+        createFromElement: function(el, obj) {
+            /* Construct a model from attributes and possibly child <br/>
+            elements of `el` */
+            var attr = $(el).getAllAttributes(),
+                value = $(el).html(),
+                config = {
+                    id: attr.name,
+                    type: attr.type,
+                    disabled: !!attr.disabled
+                };
 
-    var TextArea = Text.extend({
+            if(value)
+                config.value = value;
+
+            return new this(config);
+        }
+    });
+    
+
+    TextArea.View = Text.extend({
         className: 'tiki-textarea',
         hotkeys: {
             'keydown return': 'onReturnKeyDown'
@@ -217,6 +237,7 @@ define([
             contentEditable: true
         },
         merge: ['hotkeys'],
+        defaultmodel: TextArea.Model,
 
         render: function() {
             var renderer = this.model.get('renderer'),
@@ -861,7 +882,7 @@ define([
     return {
         register: {
             text: Text,
-            textarea: TextArea,
+            textarea: TextArea.View,
             hidden: Hidden,
             checkbox: Checkbox.View,
             checkboxgroup: CheckboxGroup.View,
@@ -872,7 +893,7 @@ define([
             datepicker: DatePicker
         },
         Text: Text,
-        TextArea: TextArea,
+        TextArea: TextArea.View,
         Hidden: Hidden,
         Checkbox: Checkbox.View,
         CheckboxGroup: CheckboxGroup.View,

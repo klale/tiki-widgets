@@ -48,7 +48,7 @@ define([
         elements of `el` */
 
         var attr = $(el).getAllAttributes(),
-            value = attr.value || $(el).html(),
+            value = attr.value,
             config = {
                 id: attr.name,
                 type: attr.type,
