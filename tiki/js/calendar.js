@@ -41,8 +41,8 @@ define([
         ),
         templateHeader: _.template(''+
             '<div class="monthname"><%= monthname %>, <%= year %></div>'+
-            '<div class="prevmonth">&#xf060;</div>'+
-            '<div class="nextmonth">&#xf061;</div>'        
+            '<button class="prevmonth"></button>'+
+            '<button class="nextmonth"></button>'        
         ),
         templateDay: _.template(''+
             '<td class="<%= cls %>" data-ymd="<%= ymd %>">'+
