@@ -11,6 +11,28 @@ define([
     var util = {};
 
 
+    
+    /* `Util.withModule` currently requires the Q promise library */
+    util.withModule = function(path, callback) {
+        var deferred, result;
+        return function() {
+            if(result) return result;
+            else if(deferred) return deferred.promise;
+            
+            var args = Array.prototype.slice.call(arguments),
+                deferred = Q.defer();
+            
+            require([path], function(Module) {
+                // prepend the module to the list of arguments
+                args.splice(0,0, Module);
+                result = callback.apply(this, args)
+                deferred.resolve(result);
+            }.bind(this));
+            return deferred.promise;
+        }
+    };
+
+
 
     util.arrayToObject = function(array, key) {
         return _.object(_.map(array, function(item) {
