@@ -76,7 +76,7 @@ define([
         },
     
         render: function() {
-            var date = moment(this.model.get('date')),
+            var date = moment(this.model.get('date') || new Date()),
                 m = date.clone(),
                 month = m.month(),
                 today = moment(new Date()),
