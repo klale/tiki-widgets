@@ -448,6 +448,176 @@ define([
     });
 
 
+    tools.Dropdown = tools.View.extend('Tools.Dropdown', {
+        /*
+        This is a very common pattern consisting of two elements
+        - target
+        - dropdown
+        
+        The `dropdown` is shown below `target`.
+        Pressing the tab key switches focus between the two. Also pressing down/up key
+        might do the same.
+        
+        If either of the two loses focus to something else on the page,
+        hide the dropdown.
+        
+        Use cases:
+        - menu.js
+        - The hypergene searchbox
+        - My future textarea for tagging stuff, eg "Lalalal @carlpers.."  <-- now show a nice filtering dropdown of users
+                                                                              Here the target is a <span class="user">carlpers</span>
+        - Hypergene sheet, calculated column, eg "@mycol + 10" could show an auto-complete
+          for the column name.
+          
+        
+        When i write "@", then immediately create both the <span>@</span> and a new auto-complete 
+        view (using a Dropdown internally). 
+        
+        Example
+        =======
+        this.dd = new Dropdown({
+            el: this.el,
+            target: targetEl,
+            makeDropdown: this.makeDropdown
+        });
+        
+        
+        */
+        initcls: function() {
+            var proto = this.prototype, 
+                constr = this;            
+            
+            Object.defineProperty(proto, 'dropdown', {
+                get: function() {
+                    if(!this._dropdown)
+                        this._dropdown = this._makeDropdown();
+                    return this._dropdown;
+                },
+                configurable: true,
+                enumerable: true
+            });
+        },
+        initialize: function(config) {
+            _.bindAll(this, 'onDropdownTabKeyDown', 'onDropdownBlur', 'onTargetBlur', 
+                'onTargetTabKeyDown', 'onDropdownMouseDown', 'onTargetMouseDown', 'onEscKeyDown');
+            this.target = $(config.target);
+            this.target.on('keydown', null, 'tab shift+tab up down', this.onTargetTabKeyDown);
+            this.target.on('keydown', null, 'esc', this.onEscKeyDown);
+            this.target.on('blur', null, 'blur', this.onTargetBlur);
+            this.target.on('mousedown', this.onTargetMouseDown);
+            
+            this.makeDropdown = config.makeDropdown
+        },
+        _makeDropdown: function() {
+            var dd = this.makeDropdown(this);
+
+            dd.render();
+            dd.$el.on('keydown', null, 'tab shift+tab', this.onDropdownTabKeyDown);
+            dd.$el.on('blur', this.onDropdownBlur);
+            dd.$el.on('mousedown', this.onDropdownMouseDown);
+            dd.$el.on('keydown', null, 'esc', this.onEscKeyDown);
+            return dd;
+        },
+        showDropdown: function() {
+            var dd = this.dropdown,
+                triggerEvent = false;
+            if(!dd.el.parentNode) {
+                document.body.appendChild(dd.el);
+                triggerEvent = true;
+            }
+            dd.$el.show();
+            this.fitDropdown();
+            
+            if(triggerEvent)
+                this.trigger('dropdownshow');
+        },
+        hideDropdown: function() {
+            this.dropdown.$el.hide();
+            this.strategy = null;
+            this.trigger('dropdownhide');
+        },
+        fitDropdown: function() {
+            // Call this every time you suspect the content of the dropdown has changed
+            // to recalculate its size.
+            
+            // Remove explicit height
+            var dd = this.dropdown;
+            dd.$el.css('height', 'auto');
+
+            var target = this.target,
+                scrollTop = document.body.scrollTop,
+                winHeight = $(window).height(),
+                targetOffset = target.offset(),
+                targetHeight = target.outerHeight(),
+                spaceAbove = targetOffset.top - scrollTop,
+                spaceBelow = winHeight - (spaceAbove + targetHeight),
+                ddHeight = dd.$el.outerHeight();
+            
+            if(!this.strategy)
+                // If it does not fit below, choose the largest of above and below
+                this.strategy = ddHeight <= spaceBelow ? 'below' : (spaceAbove > spaceBelow ? 'above' : 'below');
+            
+            // Now we know we have strategy, update the position and size
+            var css = {
+                top: targetOffset.top + targetHeight,
+                left: targetOffset.left,
+                height: Math.min(ddHeight, spaceBelow)
+            };
+            if(this.strategy == 'above') {   
+                css.height = Math.min(ddHeight, spaceAbove);
+                css.top = (spaceAbove - css.height) + scrollTop;
+            }
+            dd.$el.css(css);
+            this.trigger('dropdownfit');
+        },      
+        focusDropdown: function(e) {
+            if(document.activeElement != this.dropdown.el) {
+                this.dropdown.el.focus();
+                this.trigger('dropdownfocus', e);
+            }
+        },
+        focusTarget: function(e) {
+            if(document.activeElement != this.target.ui) {
+                this.target.focus();
+                this.trigger('targetfocus', e);
+            }
+        },
+        onEscKeyDown: function(e) {
+            if(this.dropdown.$el.is(':visible')) {
+                this.hideDropdown();
+                this.focusTarget(e)
+            }
+        },
+        onTargetTabKeyDown: function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.focusDropdown(e);
+        },
+        onDropdownTabKeyDown: function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.focusTarget(e);
+        },
+        onTargetBlur: function(e) {
+            setTimeout(_.bind(function(e) {
+                if(document.activeElement != this.dropdown.el)
+                    this.hideDropdown();
+            }, this), 1);
+        },
+        onDropdownBlur: function(e) {
+            setTimeout(_.bind(function(e) {
+                if(document.activeElement != this.target[0])
+                    this.hideDropdown();
+            }, this), 1);
+        },
+        onTargetMouseDown: function(e) {
+            this.focusTarget(e)
+        },
+        onDropdownMouseDown: function(e) {
+            this.focusDropdown(e);
+        }
+    });
+
 
 
     /*
