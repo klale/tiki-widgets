@@ -793,7 +793,6 @@ define([
                 this._isMouseDown = false;    
                 this.reset(slice);
                 e.preventDefault();
-                console.log('ping:', _(slice).pluck('id'))
             }
             else if(e.type == 'mousedown' && e.metaKey) {
                 this.toggle(model);
