@@ -385,6 +385,7 @@ define([
     
     $.fn.scrollIntoView = function(alignWithTop, scrollable) {
         if(!this[0]) return this;
+        if(scrollable && scrollable[0]) scrollable = scrollable[0];
         var el = scrollable || this[0].parentNode,
             item = this[0],
             scrollTop = el.scrollTop;
