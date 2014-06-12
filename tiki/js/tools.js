@@ -4,8 +4,11 @@ define([
     'backbone',
     'moment',    
     'globalize/globalize',
+
     './util',
-    './models'
+    './models',
+    './jqueryext',
+    'jquery.hotkeys',
 ], function($, _, Backbone, moment, Globalize, Util, Models) {
     'use strict';
 
@@ -37,6 +40,7 @@ define([
         // Maps to Resig's jquery-hotkeys
         hotkeys: {
             'keydown alt+c': 'onAltCKeyDown'
+            'keydown space .foo.bar': 'onFooBarSpaceDown'
         },
         // Merge this Class' events with any events of parent Class
         merge: ['events']    
@@ -65,6 +69,19 @@ define([
             }
         }        
     };
+    
+    tools.UI = {
+        bindUI: function() {
+            var proto = Object.getPrototypeOf(this)
+            if(!proto.ui) return;
+            // Populate this.ui with the result of each selector
+            this.ui = _.chain(proto.ui).map(function(v,k) { 
+                return [k, this.$(v)];
+            }, this).object().value();
+            return this;
+        }
+    };
+    
 
     /* 
     A mixin for the common scenario of associating elements with models
@@ -238,6 +255,10 @@ define([
     })    
     */
     tools.View = Backbone.View.extend({        
+        constructor: function() {
+            this.views = {};
+            Backbone.View.apply(this, arguments);
+        },
         initcls: function() {
             var proto = this.prototype, 
                 constr = this;
@@ -248,12 +269,14 @@ define([
                 proto[propname] = _.extend({}, parentval, _.result(proto, propname));
             });  
         },
-        // Mixin support for Hotkeys
-        delegateEvents: tools.Hotkeys.delegateEvents,                
-        empty: function(html) {
+        // Mixin support for `hotkeys` and `ui`
+        delegateEvents: tools.Hotkeys.delegateEvents,
+        bindUI: tools.UI.bindUI,
+        empty: function() {
             _(this.views).each(function(view) {
                 view.remove();
             });
+            this.views = {};
             return this;
         }
     },{
