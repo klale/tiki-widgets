@@ -259,6 +259,11 @@ define([
         // Set a convenience property in case the parent's prototype is needed
         // later.
         child.__super__ = parent.prototype;
+
+        // Define `util.prop` properties
+        for(var k in protoProps) 
+            if(protoProps[k] instanceof util.prop)
+                Object.defineProperty(child.prototype, k, protoProps[k]);
         
         // Call all initcls
         for(var i=0, l=inits.length; i<l; i++)
@@ -266,6 +271,46 @@ define([
     
         return child;
     };
+    
+    
+
+    util.prop = function(config) {
+        /*
+        Helper for defining ECMAScript 5 properties. 
+        The `extend` must be `Util.extend`.
+
+        Example
+        -------
+        var MyClass = Tools.Events.extend({
+
+            // Explicit syntax
+            title: Util.prop({
+                get: function() {
+                    return this._title;
+                },
+                set: function(v) {
+                    this._title = v;
+                },
+                configurable: true,
+                enumerable: true
+            }),
+
+            // Short syntax, defining a getter
+            firstName: Util.prop(function() {
+                return this._firstName;
+            })
+        })
+        */
+        if(_.isFunction(config))
+            config = {get: config};
+
+        if(this instanceof util.prop)
+            _.extend(this, config);
+        else
+            return new util.prop(config);
+    };
+    
+    
     
 
     var tests = {
