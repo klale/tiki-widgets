@@ -111,18 +111,6 @@ define([
     Menu.Model = Traits.Model.extend({
         traits: {
             options: new Traits.CollectionM() // Options
-        },
-        initialize: function() {
-            _.bindAll(this, 'onSelectedChange')
-            this.listenTo(this.options, 'change:selected', this.onSelectedChange);
-        },
-        onSelectedChange: function(model, value, options) {
-            if(!value) return;
-            this.options.each(function(m) {
-                if(m != model && m.get('selected')) {
-                    m.set('selected', false)
-                }
-            }, this);
         }
     });    
     Menu.BaseView = Tools.View.extend({
