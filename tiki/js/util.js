@@ -674,6 +674,8 @@ define([
     util.modelify = function(obj, klass) {
         if(obj instanceof Backbone.Model)
             return obj;
+        if(_.isString(obj) || _.isNumber(obj))
+            obj = {id: obj}
         return new (klass || Backbone.Model)(obj || {});
     };
 
