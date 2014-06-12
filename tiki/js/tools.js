@@ -623,14 +623,26 @@ define([
     /*
     Make elements navigable by keyboard.
     Todo: Add support for 2-dimensional navigation.
-    */
+    */    
     tools.Navigable = tools.View.extend('Tools.Navigable', {
         mixins: [tools.ModelToElement],
         initialize: function(config) {
             _.bindAll(this, 'onItemMouseDown', 'onKeyDown', 'onKeyPress');
-            this.selector = config.selector + ':visible';
+            // Item selector, eg "> ul > li"
+            // this.selector = config.selector + ':visible';
+            this.selector = config.selector;            
+
+            // Poor-man's css selector splitter.
+            var selector = this.selector.replace(/\s?>\s?=/g, '>');
+            this.itemSelector = selector.split(/>|\s/).slice(-1)[0];
+            
+            // The element with overflow: auto|scroll
+            this.scrollable = config.scrollable || this.$el;
+            // Name of a model attribute to use when navigating by typing the
+            // leading letter(s) of an item to jump to.
             this.textAttr = config.textAttr || 'text';
             this._typing = '';
+
             
             this.$el.on('mousedown', this.selector, this.onItemMouseDown);
             this.$el.on('keydown', this.onKeyDown);
@@ -642,10 +654,18 @@ define([
             el.make('active');
             this.trigger('goto', e, el, this.getModel(el), curr);
         },
-        goto: function(el, e) {
+        goto: function(el, e, scrollIntoView) {
             var curr = this.$(this.selector+'.active');
             $(el).make('active');
+            if(scrollIntoView != undefined) {
+                $(el).scrollIntoView(scrollIntoView, this.scrollable);
+            }
             this.trigger('goto', e, el[0] || el, this.getModel(el), curr);
+        },
+        getActiveModel: function() {
+            var curr = this.$(this.selector+'.active');
+            if(curr[0])
+                return this.getModel(curr);
         },
         onKeyDown: function(e) {
             var sel = this.model,
@@ -657,27 +677,28 @@ define([
 
                 var up = e.which == Util.keys.UP,
                     down = e.which == Util.keys.DOWN;
-                                
+                
                 if(!this.$(this.selector+'.active').length) {
                     this.$(this.selector+':'+(down ? 'first':'last')).addClass('active');
                     return;
                 }
 
                 var el, active = this.$(this.selector+'.active'),
-                    next = active.nextAll(this.selector+':first');
+                    next = active.nextAll(this.itemSelector+':first');
     
                 // Within visible viewport?
                 // Todo: Add option to specify the element to scroll instead of
                 // assuming parentNode of the selected element.
                 if(up) {
-                    el = active.prevAll(this.selector+':first');
-                    el.scrollIntoView(true);
+                    el = active.prevAll(this.itemSelector+':first');
+                    el.scrollIntoView(true, this.scrollable);
                     el.make('active');
                     this.trigger('goup', e, el, this.getModel(el), active);
                 }
                 else {
-                    el = active.nextAll(this.selector+':first');
-                    el.scrollIntoView(false);
+
+                    el = active.nextAll(this.itemSelector+':first');
+                    el.scrollIntoView(false, this.scrollable);
                     el.make('active');
                     this.trigger('godown', e, el, this.getModel(el), active);
                 }
