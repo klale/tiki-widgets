@@ -112,8 +112,6 @@ define([
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
             this.listenTo(this.model, 'change', this.render, this);
             ControlView.initialize.call(this, config);
-            if($.browser.ltie9)
-                this.$el.on('mousedown', _.bind(this.onIEMouseDown, this));
         },
         render: function() {
             var renderer = this.model.get('renderer'),
@@ -195,13 +193,6 @@ define([
             // var curr = $.Range.current();
             // if(curr.range.collapsed && curr.start().offset == 0)
             //     e.preventDefault(); // prevent page from scrolling left
-        },
-        onIEMouseDown: function(e) {
-            if(this.$el.closest('.tiki-disabled').length) {
-                e.preventDefault(); // don't focus
-                var focusable = this.$el.parent().closest('*:focusable');
-                window.setTimeout(function() { focusable.focus(); }, 1); 
-            }
         }
     });
 
