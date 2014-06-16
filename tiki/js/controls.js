@@ -136,7 +136,7 @@ define([
             
             if(format)
                 return Globalize.format(value || '', format);                
-            return value;
+            return _.escape(value);
         },
         
 
