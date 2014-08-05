@@ -133,7 +133,7 @@ define([
                 value = this.model.get('value');
             
             if(format)
-                return Globalize.format(value || '', format);                
+                return Globalize.format(value, format);                
             return _.escape(value);
         },
         
