@@ -220,6 +220,9 @@ define([
             this.initialize.apply(this, arguments);
     };
     _.extend(Trait.prototype, Backbone.Events, {
+        constructor: function(config) {
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Trait(config);
+        },        
         initialize: function() {},
         toString: function() {
             return 'Traits.'+this.constructor.name+'(name='+Util.repr(this.name)+')';
