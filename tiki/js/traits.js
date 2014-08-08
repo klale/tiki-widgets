@@ -215,9 +215,10 @@ define([
 
 
 
-    var Trait = function() {
-        if(this.initialize)
-            this.initialize.apply(this, arguments);
+    var Trait = function(config) {
+        if(!(this instanceof Trait)) 
+            return new Traits.Trait(config);        
+        this.initialize.call(this, config); 
     };
     _.extend(Trait.prototype, Backbone.Events, {
         constructor: function(config) {
