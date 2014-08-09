@@ -32,6 +32,12 @@ define([
         }
     };
 
+    util.merge = function() {
+        /* A variant if Underscore's `extend` that does not mutate the first object. */
+        Array.prototype.splice.call(arguments, 0, 1, _.clone(arguments[0]))
+        _.extend.apply(this, arguments);
+        return arguments[0];
+    };
 
 
     util.arrayToObject = function(array, key) {
