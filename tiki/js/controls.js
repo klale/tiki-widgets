@@ -713,7 +713,6 @@ define([
         onModelChangeValue: function(model, value) {
             if(model.previous('value') == null && value == null)  // traits2
                 return;
-            console.log('CHANGE')
             this.hideDatePicker();
             this.render();
             this.$el.trigger('change', {value: value})
