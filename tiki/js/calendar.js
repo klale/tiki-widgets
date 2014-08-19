@@ -5,8 +5,9 @@ define([
     'moment',
     'globalize/globalize',
     './tools',
+    './menu',
     './traits'
-], function($, _, Backbone, moment, Globalize, Tools, Traits) {
+], function($, _, Backbone, moment, Globalize, Tools, Menu, Traits) {
     'use strict';
     var exp = {};    
 
