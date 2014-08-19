@@ -125,8 +125,9 @@ define([
         events: {
             'mouseenter li.selectable': 'onSelectableMouseEnter',
             'keydown': 'onKeyDown',
-            'keyup': 'onKeyUp',
-            'mouseup': 'onMouseUp'
+            'mousedown': 'onMouseDown',
+            'mouseup': 'onMouseUp',
+            'scroll': 'onScroll'
         },
         hotkeys: {
             'keydown right': 'onRightKeyDown',
@@ -136,10 +137,9 @@ define([
         },
         _isroot: true,
         mixins: [Tools.ModelToElement],
-        
         initialize: function(config) {
             config = config || {};
-            _.bindAll(this, 'onShowTimeout', 'onKeyUpTimeout');
+            _.bindAll(this, 'onShowTimeout');            
             this.views = {};
             
             if(!this.model) {
@@ -154,12 +154,14 @@ define([
             // Observe the options-collection
             options.on('add', this.addOne, this);
             options.on('remove', this.removeOne, this);
+            options.on('reset', this.render, this);
             options.on('change:expanded', this.onExpandedChange, this);
             
+            this.selector = 'li.selectable';
             // Create a Selectable
             this.navigable = new Tools.Navigable({
                 el: this.el,
-                selector: 'li.selectable',
+                selector: this.selector,
                 collection: options
             });
 
@@ -227,7 +229,8 @@ define([
                 left: false,
                 top: false});
                
-            var availHeight = $(this.el.ownerDocument.documentElement).height() - 10; // ~10px dropshadow
+                           
+            var availHeight = $(window).height();
             this.$el.css('max-height', availHeight);
                         
             if(opt.hideOther && Menu.BaseView.active) 
@@ -250,6 +253,7 @@ define([
             }
             this._okMouseUp = false;
             window.setTimeout(this.onShowTimeout, 350);            
+            this._lock = true;
             this.trigger('show', this);
             return this;
         },
@@ -316,26 +320,29 @@ define([
         },
         onKeyDown: function(e) {
             this._okMouseUp = true;
-            if(Util.isArrowKey(e))
-                this._lock = true;
         },
-        onKeyUp: function() {
-            window.setTimeout(this.onKeyUpTimeout, 100);
+        onScroll: function(e) {
+            if(this._mousedown)
+                // This means we're dragging the scrollbar. Ignore the upcoming mouseup
+                this._okMouseUp = false;
+            this._lock = true;
+            this.onScrollDebounce();
+        },
+        onScrollDebounce: _.debounce(function() {
+            this._lock = false;
+        }, 150),
+        onMouseDown: function(e) {
+            this._mousedown = e
         },
         onMouseUp: function(e) {
             if(this._okMouseUp && !$(e.target).closest('li.disabled').length)
                 this._select();
             this._okMouseUp = true;
-        },
-        onBeforeChoose: function(e) {
-            e.cancel = !this._okMouseUp;
+            this._mousedown = false;
         },
         onShowTimeout: function() {
             this._okMouseUp = true;
         },
-        onKeyUpTimeout: function() {
-            this._lock = false;
-        }
     });
 
     Menu.View = Menu.BaseView.extend({
