@@ -254,8 +254,8 @@ define([
             
 
             // Scroll down to options.active
-            if(options.alignTo && options.active) {
-                var alignTo = options.alignTo.of,
+            if(opt.alignTo && opt.active) {
+                var alignTo = opt.alignTo.of,
                     active = this.getEl(options.active);
                 if(active[0] && availHeight < this.$('>ul').height()) {
                     active.make('active');
@@ -266,7 +266,6 @@ define([
             
             this._okMouseUp = false;
             window.setTimeout(this.onShowTimeout, 350);            
-            this._lock = true;
             this.trigger('show', this);
             return this;
         },
