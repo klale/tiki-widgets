@@ -251,6 +251,19 @@ define([
                 if(opt.focus)
                     this.$el.focus();                
             }
+            
+
+            // Scroll down to options.active
+            if(options.alignTo && options.active) {
+                var alignTo = options.alignTo.of,
+                    active = this.getEl(options.active);
+                if(active[0] && availHeight < this.$('>ul').height()) {
+                    active.make('active');
+                    var spanOffset = alignTo.offset().top - $(window).scrollTop();
+                    this.$el.scrollTop(active.position().top - spanOffset);
+                }
+            }
+            
             this._okMouseUp = false;
             window.setTimeout(this.onShowTimeout, 350);            
             this._lock = true;
