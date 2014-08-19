@@ -91,7 +91,8 @@ define([
             return this.collection.get($(el).attr('data-id'));
         },
         getEl: function(model) {
-            return this.$el.find(this.selector+'[data-id="'+model.id+'"]').filter(':first');
+            var id = model.id != null ? model.id : model;
+            return this.$el.find(this.selector+'[data-id="'+id+'"]').filter(':first');
         }
     };    
     
