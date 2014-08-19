@@ -699,7 +699,7 @@ define([
             // Pass this.model into the text control
             this.textcontrol = new Text({model: this.model});
             this.listenTo(this.textcontrol, 'controlblur', this.onTextControlBlur, this);
-            this.listenTo(this.model, 'change', this.onModelChange, this);
+            this.listenTo(this.model, 'change:value', this.onModelChangeValue, this);
         },
         render: function() {
             this.$el.empty().append('<button class="calendar" tabindex="-1"></button>');
@@ -707,11 +707,16 @@ define([
             this.textcontrol.delegateEvents();
             this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
             this.$el.toggleClass('invalid', !!this.model.validationError);
+            this.delegateEvents();
             return this;
         },
-        onModelChange: function() {
+        onModelChangeValue: function(model, value) {
+            if(model.previous('value') == null && value == null)  // traits2
+                return;
+            console.log('CHANGE')
             this.hideDatePicker();
             this.render();
+            this.$el.trigger('change', {value: value})
         },
         onTextControlBlur: function() {
             this.$el.toggleClass('invalid', !!this.model.validationError);
@@ -727,7 +732,7 @@ define([
                 
                 this.datepicker.alignTo(this.$('button.calendar'), {my: 'left top', at: 'left bottom'});
                 this.datepicker.$el.on('keydown', _.bind(this.onDatePickerKeyDown, this));
-                this.datepicker.$el.on('focusleave', _.bind(this.hideDatePicker, this));
+                this.datepicker.$el.on('focusleave', _.bind(this.onDatePickerFocusLeave, this));
                 this.datepicker.$el.addClass('flying');
             }
             return this.datepicker;
@@ -739,6 +744,16 @@ define([
             datepicker.render().$el.appendTo(body).css('opacity', 1).show();
             datepicker.alignTo(this.el, {my: 'left top', at: 'left bottom'});
             datepicker.el.focus();
+        },
+        onDatePickerFocusLeave: function(e, data) {
+            var newFocused = data.newFocused,
+                calendar = this.datepicker.calendar,
+                yeardd = calendar.yearDropdown || {},
+                monthdd = calendar.monthDropdown || {};
+            
+            // don't hide if losing focus to a year or month dropdown
+            if(newFocused != yeardd.el && newFocused != monthdd.el)
+                this.hideDatePicker();
         },
         hideDatePicker: function() {
             if(this.datepicker) {
@@ -796,6 +811,7 @@ define([
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
             
             this.calendar = new Calendar.MonthCalendar({date: this.model.get('value') || new window.Date()});
+            this.listenTo(this.calendar, 'dropdownhide', this.focus);
             this.$el.append(this.calendar.render().el);
             this.listenTo(this.model, 'change:value', this.onModelChange, this);
         },
@@ -821,6 +837,9 @@ define([
             this.$el.position(options);
             return this.$el;
         },
+        focus: function() {
+            this.el.focus();
+        },
         onModelChange: function(model) {
             this.calendar.model.set('date', model.get('value'));
             this.render();
@@ -839,7 +858,11 @@ define([
                 select,
                 keys = Util.keys,
                 key = e.keyCode,
-                arrows = [keys.LEFT, keys.RIGHT, keys.UP, keys.DOWN];
+                arrows = [keys.LEFT, keys.RIGHT, keys.UP, keys.DOWN],
+                left = key == keys.LEFT,
+                right = key == keys.RIGHT,
+                up = key == keys.UP,
+                down = key == keys.DOWN;
         
             if(key == keys.RIGHT) {
                 select = curr.nextAll('td:first');
@@ -859,6 +882,18 @@ define([
             if(select && select.hasClass('day')) {
                 curr.removeClass('selected');
                 select.addClass('selected');
+            }
+            else {
+                // Change month when navigating off the left or right edge.
+
+                if(left || right) {
+                    var rowNum = $(curr[0].parentElement).index(),
+                        cal = this.calendar;
+                    curr.removeClass('selected');                
+                    cal[left ? 'showPrevMonth' : 'showNextMonth']();
+                    cal.$('tr:nth-child('+(rowNum+1)+') td.day:'+ 
+                        (left ? 'last' : 'first')).addClass('selected');
+                }
             }
         },
         onClickDay: function(e) {

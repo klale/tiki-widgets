@@ -80,10 +80,27 @@
             height: 30px;
         }
         .monthname {
-            font-size: 14px;
             text-align: center;
+            font-size: 14px;
+            >*{
+                display: inline-block;
+                &::after {
+                    content: '\00a0▼';
+                    font-size: 8px;
+                }                
+            }
+            .month {
+                &::after {
+                    content: '\00a0▼';
+                    font-size: 8px;
+                }
+                padding-right: 10px;
+            }
+            
         }
     }
+    .nextyear,
+    .prevyear,
     .nextmonth,
     .prevmonth {
         @extend %iconstyle;
@@ -97,9 +114,16 @@
         color: #777;
         font-size: 15px;
     }
+    .prevmonth {
+        left: 27px;
+    }
+    .nextyear {
+        left: auto;
+        right: 5px;        
+    }
     .nextmonth {
         left: auto;
-        right: 5px;
+        right: 25px;
     }
     td,tr.weekdays th {
         border: 1px solid #ddd;
@@ -432,7 +456,6 @@
     width: 250px;
 
     background-color: #fff;
-    z-index: 1000;
     cursor: default;
 
     &.flying {

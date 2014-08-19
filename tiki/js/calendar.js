@@ -3,9 +3,10 @@ define([
     'underscore',
     'backbone',
     'moment',
+    'globalize/globalize',
     './tools',
     './traits'
-], function($, _, Backbone, moment, Tools, Traits) {
+], function($, _, Backbone, moment, Globalize, Tools, Traits) {
     'use strict';
     var exp = {};    
 
@@ -40,9 +41,14 @@ define([
             '</table>'
         ),
         templateHeader: _.template(''+
-            '<div class="monthname"><%= monthname %>, <%= year %></div>'+
+            '<div class="monthname">'+
+                '<span class="month"><%= monthname %></span>'+
+                '<span class="year"><%= year %></span>'+
+            '</div>'+
+            '<button class="prevyear"></button>'+
             '<button class="prevmonth"></button>'+
-            '<button class="nextmonth"></button>'        
+            '<button class="nextmonth"></button>'+
+            '<button class="nextyear"></button>'
         ),
         templateDay: _.template(''+
             '<td class="<%= cls %>" data-ymd="<%= ymd %>">'+
@@ -52,10 +58,18 @@ define([
             '</td>'
         ),
         events: {
-            // 'keydown': 'onKeyDown',
+            'click .prevyear': 'showPrevYear',
+            'click .nextyear': 'showNextYear',
             'click .prevmonth': 'showPrevMonth',
-            'click .nextmonth': 'showNextMonth'
+            'click .nextmonth': 'showNextMonth',
+            'mousedown .monthname .month': 'showMonthDropdown',
+            'mousedown .monthname .year': 'showYearDropdown',
         },
+        ui: {
+            monthname: '.monthname .month',
+            yearname: '.monthname .year'
+        },
+
 
         initialize: function(config) {
             config = config || {};
@@ -74,14 +88,50 @@ define([
             var date = this.model.get('date');
             this.model.set('date', moment(date).clone().subtract({months: 1}).toDate());
         },
-    
+        showNextYear: function() {
+            var date = this.model.get('date');
+            this.model.set('date', moment(date).clone().add({years: 1}).toDate());
+        },
+        showPrevYear: function() {
+            var date = this.model.get('date');
+            this.model.set('date', moment(date).clone().subtract({years: 1}).toDate());
+        },        
+        showMonthDropdown: function(e) {
+            e.preventDefault();                
+            if(!this.monthDropdown) {
+                var names = Globalize.cultures.default.calendar.months.names;
+                this.monthDropdown = new Menu.Menu({
+                    options: _.map(_.range(12), function(i) { return {id: i, text: names[i]}; })
+                })
+                this.listenTo(this.monthDropdown, {
+                    'select': this.onMonthDropdownSelect,
+                    'hide': this.onDropdownHide
+                });
+            }
+            this.monthDropdown.show({alignTo: {of: this.ui.monthname}});
+        },
+        showYearDropdown: function(e) {
+            e.preventDefault();
+            if(!this.yearDropdown) {
+                var options = _.map(_.range(1900, 2101), function(i) { return {id: i, text: i+''}; })
+                this.yearDropdown = new Menu.Menu({
+                    options: options
+                })
+                this.listenTo(this.yearDropdown, {
+                    'select': this.onYearDropdownSelect,
+                    'hide': this.onDropdownHide
+                });
+            }
+            this.yearDropdown.show({alignTo: {of: this.ui.yearname}, active: this.model.date.getFullYear()});
+        },
         render: function() {
             var date = moment(this.model.get('date') || new Date()),
                 m = date.clone(),
                 month = m.month(),
                 today = moment(new Date()),
                 today_month = today.month(),
-                today_date = today.date();
+                today_date = today.date(),
+                dayNames = Globalize.cultures.default.calendar.days.namesShort;
         
             // Start at first day of month
             m.date(1);
@@ -91,7 +141,7 @@ define([
             m.subtract('days', firstWeekdayOfMonth);
     
             // Create the main table
-            var table = $(this.template({monthname: date.format('MMMM')}));
+            var table = $(this.template());
             var tbody = table.children('tbody');
     
             // Render the header
@@ -99,11 +149,12 @@ define([
                 monthname: date.format('MMMM'),
                 year: date.format('YYYY')
             }));
+            
     
             // Add the weekday names
-            var tr = $('<tr class="weekdays"></tr>').appendTo(table.find('thead'));                
+            var tr = $('<tr class="weekdays"></tr>').appendTo(table.find('thead'));
             for(var i=0,days=[1,2,3,4,5,6,0]; i<days.length; i++) {
-                tr.append($('<th>'+moment.weekdaysShort()[days[i]]+'</th>'));
+                tr.append($('<th>'+dayNames[days[i]]+'</th>'));
             }
         
             // Add all the days
@@ -130,7 +181,6 @@ define([
                     // Only show days in this month
                     tr.append('<td class="empty"><div>&nbsp;</div></td>');
                 } else {
-                    // tr.append('<td class="'+cls.join(' ')+'"><div>'+(m.date())+'</div></td>');                        
                     var html = $(this.templateDay({
                         cls: cls.join(' '),
                         date: m.date(),
@@ -143,10 +193,20 @@ define([
         
             $(this.el).empty().append(table);    
         
-        
+            this.bindUI();
             return this;    
-        }
-
+        },
+        onDropdownHide: function(e) {
+            this.trigger('dropdownhide');
+        },
+        onMonthDropdownSelect: function(e) {
+            var date = moment(this.model.date);
+            this.model.date = date.month(e.id).toDate();
+        },
+        onYearDropdownSelect: function(e) {
+            var date = moment(this.model.date);
+            this.model.date = date.year(e.id).toDate();            
+        },
 
     
     });
