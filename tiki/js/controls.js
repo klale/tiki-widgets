@@ -167,13 +167,13 @@ define([
             this.$el.trigger('controlblur');
         },
         onReturnKeyDown: function(e) {        
+            // Don't allow newlines in a text control
+            e.preventDefault();            
             // Set value immediately when pressing Return, as the event
             // may continue upwards to a form, triggering a submit.
             var v = this.$el.getPreText();
             this.model.set('value', v);
             this.render();
-            // Don't allow newlines in a text control
-            e.preventDefault();
         },
         onKeyPress: function(e) {
             // On eg future numeric text control, type is supposed to only 
