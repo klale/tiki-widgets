@@ -36,6 +36,9 @@ define([
             this.$el.html(this.template(this.model.toJSON()));
             if(this.model.get('disabled'))
                 this.$el.addClass('disabled').removeClass('selectable');
+
+            if(this.model.get('selected'))
+                this.$el.addClass('active')
             
             this.$el.toggleClass('submenu', !!this.model.get('submenu'));
             if($.browser.ltie9) {

@@ -716,6 +716,7 @@ define([
             var model = this.getModelByStartingWith(this._typing);
             if(model) {
                 var el = this.getEl(model);
+                el.scrollIntoView(null, this.scrollable);
                 el.make('active');
                 this.trigger('goto', e, el, model);
             }

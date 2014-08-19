@@ -392,6 +392,10 @@ define([
         if(!item) 
             return;
 
+        if(alignWithTop === null)
+            alignWithTop = item.offsetTop < scrollTop
+
+        // Only change scrollTop if the element is not showing
         if(alignWithTop) {
             if(item.offsetTop < scrollTop)
                 el.scrollTop = item.offsetTop;
