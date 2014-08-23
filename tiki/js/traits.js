@@ -147,14 +147,15 @@ define([
                 attrs[key] = value;
             }
             
-            var attrslist = _(attrs).map(function(v,k) {return [k,v]})
+            var attrslist = _(attrs).map(function(v,k) {return [k,v]});
             if(this.setorder) {
                 var setorder = this.setorder;
                 attrslist = _.sortBy(attrslist, function(tup) {
-                    return _.indexOf(tup[0], setorder)
+                    var index = setorder.indexOf(tup[0]);
+                    return index === -1 ? attrs.length : index;
                 });
             }
-            
+                        
             _.each(attrslist, function(tup) {
                 var key = tup[0], value = tup[1], t,
                     args = [value, attrs, options, key, errors, this];
