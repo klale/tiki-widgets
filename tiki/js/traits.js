@@ -180,7 +180,6 @@ define([
                     catch(e) {
                         if(this.catchErrors && (e.name == 'TypeError' || e.name == 'ValueError')) {
                             errors[key] = e;
-                            console.warn(e);
                         }
                         else throw e;
                     }
