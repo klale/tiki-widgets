@@ -127,7 +127,6 @@ define([
     exp.Date = ControlModel.extend('ControlModels.Date', {
         /* Does not know about time and time zones */
         traits: {
-            value: new traits.Date(),
             format: new traits.String()            
         },
         defaults: {
