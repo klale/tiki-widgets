@@ -159,11 +159,11 @@ define([
             _.each(attrslist, function(tup) {
                 var key = tup[0], value = tup[1], t,
                     args = [value, attrs, options, key, errors, this];
-                if(typeof this['set_' + key] === 'function') {
-                    this['set_' + key].apply(this, args);
-                }
-                else if(this.traits && this.traits[key]) {
-                    try {
+                try {                    
+                    if(typeof this['set_' + key] === 'function') {
+                        this['set_' + key].apply(this, args);
+                    }
+                    else if(this.traits && this.traits[key]) {
                         // Run the value though the trait's parse
                         t = this.traits[key];
                         args.splice(0, 1, t.parse(value, this, attrs, key))
@@ -177,13 +177,13 @@ define([
                         else
                             attrs[key] = args[0];
                     }
-                    catch(e) {
-                        if(this.catchErrors && (e.name == 'TypeError' || e.name == 'ValueError')) {
-                            errors[key] = e;
-                        }
-                        else throw e;
-                    }
                 }
+                catch(e) {
+                    if(this.catchErrors && (e.name == 'TypeError' || e.name == 'ValueError')) {
+                        errors[key] = e;
+                    }
+                    else throw e;
+                }                    
             }, this);
             
             if(_.isEmpty(errors)) {
@@ -214,6 +214,39 @@ define([
 
 
 
+    /*    
+    Power constructors
+    ------------------
+    Source: http://stackoverflow.com/questions/1889014
+    
+    
+    var object = (function() {
+         function F() {}
+         return function(o) {
+             F.prototype = o;
+             return new F();
+         };
+    })();
+
+    function a(proto) {
+      var p = object(proto || a.prototype);
+      return p;
+    }
+
+    function b(proto) {
+      var g = object(a(proto || b.prototype));
+      return g;
+    }
+    b.prototype = object(a.prototype);
+    b.__proto__ = a.prototype;
+
+    var c = b();
+    c instanceof b // -> true
+    c instanceof a // -> true
+    b instanceof a // -> true
+    a() instanceof a // -> true
+    
+    */
 
     var Trait = function(config) {
         if(!(this instanceof Trait)) 
