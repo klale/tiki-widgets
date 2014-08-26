@@ -137,6 +137,9 @@ define([
         },
         _isroot: true,
         mixins: [Tools.ModelToElement],
+        ui: {
+            'ul': '>ul'
+        },
         initialize: function(config) {
             config = config || {};
             _.bindAll(this, 'onShowTimeout');            
@@ -171,6 +174,7 @@ define([
         },
         render: function() {
             this.empty().$el.html('<ul></ul>');
+            this.bindUI();
             this.model.get('options').each(function(option) {
                 this.addOne(option);
             }, this);
@@ -180,7 +184,7 @@ define([
             var View = (option.get('text') == '-' ? Spacer : Option.View),
                 view = new View({model: option});
             this.views[option.cid] = view;
-            this.$('>ul').append(view.render().el);
+            this.ui.ul.append(view.render().el);
             
             // render a submenu as well?
             if(option.get('submenu') && option.get('expanded'))
@@ -257,7 +261,7 @@ define([
             if(opt.alignTo && opt.active) {
                 var alignTo = opt.alignTo.of,
                     active = this.getEl(options.active);
-                if(active[0] && availHeight < this.$('>ul').height()) {
+                if(active[0] && availHeight < this.ui.ul.height()) {
                     active.make('active');
                     var spanOffset = alignTo.offset().top - $(window).scrollTop();
                     this.$el.scrollTop(active.position().top - spanOffset);
