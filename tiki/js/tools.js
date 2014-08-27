@@ -847,5 +847,118 @@ define([
         }
     });
 
+
+    
+
+    tools.Float = Backbone.View.extend({
+    
+        initialize: function(config) {
+            _.bindAll(this, 'onScroll');
+            this.atBottom = Util.pop(config, 'atBottom', false);
+            this.atTop = Util.pop(config, 'atTop', true);
+            this.doClone = config.doClone;
+            this.scrollX = $(config.scrollX || window.document)[0];
+            this.scrollY = $(config.scrollY || window.document)[0];
+
+            this.pos = this.$el.offset();
+            this.pos.left += this.scrollX.scrollLeft;
+            this.width = this.$el.width();
+            this.height = this.$el.height();
+            this.offsetTop = config.offsetTop;
+
+            // Add scroll listeners
+            $(this.scrollX).on('scroll', this.onScroll);
+            if(this.scrollX != this.scrollY)
+                $(this.scrollY).on('scroll', this.onScroll);
+            // Call onScroll once to kick things off, in case page happens 
+            // to be scrolled initially.
+            this.onScroll();
+        },
+        createClone: function() {
+            // $el.clone() does a deep clone. 
+            // Passing true clones events and data as well.
+            if(this.doClone)
+                return this.$el.clone(true).addClass('flying');
+            else 
+                return this.$el.addClass('flying')
+        },        
+        insertClone: function() {
+            if(this.doClone)
+                return this.clone.insertAfter(this.el)        
+        },
+        flyTop: function() {
+            this.clone = this.createClone();
+            this.clone.css({
+                position: 'fixed',
+                top: this.offsetTop,
+                left: this.pos.left + (this.scrollX.scrollLeft*-1),
+                width: this.width,
+                height: this.height
+            });
+            this.insertClone();
+            this.isFlying = true;
+            this.trigger('fly');
+        },
+        flyBottom: function() {
+            this.clone = this.createClone();            
+            this.clone.css({
+                position: 'fixed',
+                bottom: 0,
+                left: this.pos.left + (this.scrollX.scrollLeft*-1),
+                width: this.width,
+                height: this.height
+            });
+            this.insertClone();
+            this.isFlying = true;
+            this.trigger('fly');
+        },        
+        removeClone: function() {
+            if(this.doClone) {
+                this.clone.remove();
+            }
+            else {
+                this.$el.css({
+                    position: 'inherit',
+                    left: 'inherit',
+                    top: 'inherit',
+                    bottom: 'inherit',                    
+                    width: 'inherit',
+                    height: 'inherit'
+                });
+            }
+        },
+        land: function() {
+            this.removeClone();
+            this.isFlying = false;
+            this.clone = null;
+            this.trigger('land');
+        },
+        onScroll: function(e) {
+            if(!this.el.parentElement) return;            
+            this.width = this.$el.width();
+            this.height = this.$el.height();
+            this.position = this.$el.css('position');
+        
+            var scrollTop = document.body.scrollTop,
+                viewportHeight = $(window).height(),
+                above = this.pos.top < scrollTop+this.offsetTop,
+                below = this.pos.top+this.height > scrollTop + viewportHeight;             
+
+            if(this.isFlying)
+                this.clone.css('left', (this.scrollX.scrollLeft*-1)+this.pos.left);
+
+            if(this.atTop && above && !this.isFlying) {
+                this.flyTop();
+            }
+            else if(this.atBottom && below && !this.isFlying) {
+                this.flyBottom();                
+            }
+            else if(!above && !below && this.isFlying) {
+                this.land();
+            }
+        },        
+    });
+
+
     return tools;
 });
