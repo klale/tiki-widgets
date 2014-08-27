@@ -635,7 +635,7 @@ define([
     _.extend(util.Events.prototype, Backbone.Events, {
         initialize: function() {}
     });
-    util.Events.extend = Backbone.Model.extend;
+    util.Events.extend = util.extend;    
 
 
     
