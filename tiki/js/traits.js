@@ -633,7 +633,7 @@ define([
             */
             if(v == null || v === '') 
                 return null;            
-            if(v.id)
+            if(v.id != null)
                 v = v.id
             if(_.isNumber(v))
                 v = String(v);
