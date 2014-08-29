@@ -904,6 +904,282 @@ define([
     });
 
 
+    
+
+    // ==========
+    // = Slider =
+    // ==========
+    var Drag = Tools.Events.extend('Drag', {
+        initialize: function(conf) {
+            // Pre-bind some handlers
+            this._onbodymousemove = $.proxy(this.onBodyMouseMove, this);
+            this._onbodymouseup = $.proxy(this.onBodyMouseUp, this);
+            this._onbodymouseover = $.proxy(this.onBodyMouseOver, this);
+            this._onbodymouseout = $.proxy(this.onBodyMouseOut, this);
+            this._body = $(document);
+            this.dragging = false;
+        },
+        start: function(conf) {
+            /* Optional: conf.distance, drag at least `distance` pixels to initate a drag
+            Todo: Finish docs
+            */
+            this._body.bind('mousemove', this._onbodymousemove);
+            this._body.bind('mouseover', this._onbodymouseover);
+            this._body.bind('mouseout', this._onbodymouseout);
+            this._body.bind('mouseup', this._onbodymouseup);
+
+            this.prefix = conf.prefix || '';
+
+            // offset relative to first positioned parent (margins, borders, ..)
+            var left = 0,
+                top = 0,
+                selector = $(conf.ev.target).parentsUntil('*:floating').andSelf();
+            selector.each(function() {
+                var pos = $(this).position();
+                left += pos.left || 0;
+                top += pos.top || 0;
+            });
+
+            // FF: ev.clientX === undefined, #8523
+            var ev = conf.ev;
+            var offsetX = (ev.offsetX || ev.clientX - $(ev.target).offset().left);
+            var offsetY = (ev.offsetY || ev.clientY - $(ev.target).offset().top);
+
+            // Update the drag metadata object
+            conf = _.extend(conf, {
+                clientX: conf.ev.clientX,
+                clientY: conf.ev.clientY,
+                offsetX: offsetX + left,
+                offsetY: offsetY + top
+            });
+            this.conf = conf;
+
+            this.dragging = true;
+
+            // no text selection while dragging
+            conf.ev.preventDefault();
+        },
+        onBodyMouseMove: function(e) {
+            var conf = this.conf,
+                el = $(this.conf.el);
+            if(el[0]) {
+
+                el[0].style.left = (e.pageX - this.conf.offsetX) + 'px';
+                el[0].style.top = (e.pageY - this.conf.offsetY) + 'px';
+            }
+            else if(conf.ondrag) {
+                conf.ondrag(e, conf);
+            }
+        },
+        onBodyMouseOver: function(e) {
+            if(this.dragging && this.prefix) {
+                var data = {conf: this.conf, drag: this};
+                $(e.target).trigger(this.prefix+'mouseover', [data]);
+            }
+        },
+        onBodyMouseOut: function(e) {
+            if(this.dragging && this.prefix) {
+                var data = {conf: this.conf, drag: this};
+                $(e.target).trigger(this.prefix+'mouseout', [data]);
+            }
+        },
+        onBodyMouseUp: function(e) {
+            // Detach drag-related listeners
+            this._body.unbind('mousemove', this._onbodymousemove);
+            this._body.unbind('mouseup', this._onbodymouseup);
+
+            if(this.dragging) {
+                e.drag = this;
+                e.pageX = e.clientX + this.scrollLeft;
+                e.pageY = e.clientY + this.scrollTop;
+                e.conf = this.conf;
+                if(this.conf.onend)
+                    this.conf.onend(e, this.conf);
+                this.dragging = false;
+                // Fire `[prefix]drop` and `drop` events
+                var data = {conf: this.conf, drag: this};
+                $(e.target).trigger(this.prefix+'drop', [data]);
+                $(e.target).trigger('drop', [data]);
+                this.trigger('dragend', data);
+            }
+            this.conf = {};
+            this.el = undefined;
+        }
+    });
+    var drag = new Drag();
+    
+    
+        
+    
+    var SliderModel = ControlModels.ControlModel.extend('SliderModel', {
+        traits: {
+            steps: Traits.Int(),
+            precision: Traits.Int(),
+            downScaleFactor: Traits.Float(),
+        },
+        defaults: {
+            downScaleFactor: 1.0
+        },
+        // the name "parse_value" has no magic meaning, but the view needed this method.
+        parse_value: function(v) {
+            // interpret a value with respect to steps and precision
+            // eg 0.41221 -> 0.4
+            // "52.242%"  -> 0.5
+            if(_.isString(v) && v.indexOf('%') !== -1)
+                v = parseFloat(v) / 100;
+            else
+                v = parseFloat(v);
+
+            if(v > 1)
+                v = 1;
+            else if(v < 0)
+                v = 0;
+
+            var precision = this.steps || this.precision || 100;
+            v = Math.round(v*precision) / precision;
+            return v;
+        },
+        set_value: function(v, attrs, options) {
+            attrs.value = this.parse_value(v);
+        },
+    })
+
+
+    var Slider = Tools.View.extend('Slider', {
+        className: 'tiki-slider',
+        attributes: {
+            tabindex: 0
+        },
+        template: _.template(''+
+            '<div class="range"></div>'+
+            '<div class="range-min"></div>'+
+            '<div class="range-max"></div>'+
+            '<div class="container">'+
+                '<div class="handle"><div></div></div>'+
+            '</div>'
+        ),
+        events: {
+            'keydown': 'onKeyDown',
+            'mousedown': 'onMouseDown'
+        },
+        defaultmodel: SliderModel,
+        initialize: function(config) {
+            config = config || {};
+            if(!this.model)
+                this.model = new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
+            
+            this.listenTo(this.model, 'change', this.render);
+        },
+        render: function() {
+            this.$el.html(this.template());
+            if($.browser.ltie9)
+                this.$('*').attr('unselectable', 'on');
+
+            var value = this.model.value;
+            if(value)  { // !== undefined
+                this.$('.handle').css('left', (value*100)+'%');
+                this.$('.range-min').css('width', (value*100)+'%');
+            }
+            return this;
+        },
+
+        _rangeWidth: function() {
+            return $(this.el).width() - this.$('.handle').outerWidth();
+        },
+        _calculateLeft: function(offsetleft) {
+            /* Returns a float between 0 and 1 from an offset in pixels
+            eg 122 -> 0.3241....
+            */
+            var width = this.$('.container').width(),
+                step = 1 / this.model.steps,
+                handleWidth = (this.$('.handle').outerWidth() / width);
+            if(offsetleft > width)
+                return 1;
+            else if(offsetleft < 0)
+                return 0;
+
+            var value = offsetleft / width;
+            // make it snap?
+            if(this.model.steps) {
+                var mod = value % step;
+                value -= mod;
+                if(mod > (step/2) + (handleWidth / 2))
+                    value += step;
+            }
+            return value;
+        },
+        onMouseDown: function(e) {
+            var parent = $(e.target.parentNode),
+                tgt = $(e.target);
+
+            // FF: e.offsetX === undefined
+            var offsetX = (e.offsetX || e.clientX - $(e.target).offset().left);
+
+            if(parent.hasClass('handle')) {
+                // clicking directly on the handle
+                var handleOffsetX = offsetX / this._rangeWidth();
+            } else {
+                // clicking elsewhere, jump to here, then start the drag
+                var left = this._calculateLeft(offsetX);
+                left = this.model.parse_value(left);
+                this.$('.handle').css('left', (left*100) + '%');
+                this.$('.range-min').css('width', (left*100)+'%');
+                var handleOffsetX = this.$('.handle').width() / 2;
+            }
+            handleOffsetX = handleOffsetX / this._rangeWidth();
+
+            // get slider position
+            var offset = this.$el.offset();
+            var conf = {
+                ev: e,
+                ondrag: $.proxy(this.onSliderDrag, this),
+                onend: $.proxy(this.onSliderDragEnd, this),
+                pos: {
+                    left: offset.left,
+                    offsetX: handleOffsetX
+                }
+            };
+            drag.start(conf);
+            e.preventDefault();
+            e.stopPropagation();
+            this.el.focus();
+        },
+        onSliderDrag: function(e, conf) {
+            var pos = conf.pos;
+            var offsetleft = (e.clientX - pos.left) - pos.offsetX;
+            var left = this._calculateLeft(offsetleft);
+            left = this.model.parse_value(left);
+            this.$('.handle').css('left', (left*100)+'%');
+            this.$('.range-min').css('width', (left*100)+'%');
+            this.trigger('drag', {slider: this, value: left});
+        },
+        onSliderDragEnd: function(e, conf) {
+            var left = this.$('.handle')[0].style.left; // eg "20%"
+            this.model.value = left;
+        },
+        onKeyDown: function(e) {
+            var key = e.keyCode,
+                keys = Util.keys,
+                step = 1/(this.model.steps || 100);
+
+            if(key == keys.ENTER) {
+                e.preventDefault();
+                return;
+            } else if(key == keys.ESC) {
+                this.abort();
+            } else if(key == keys.LEFT) {
+                this.model.value -= step;
+            } else if(key == keys.RIGHT) {
+                this.model.value += step;
+            }
+            e.stopPropagation();
+        }
+    });
+
+
+
+
+
     return {
         register: {
             text: Text,
