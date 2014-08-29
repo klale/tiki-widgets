@@ -513,6 +513,50 @@
 }
 
 
+%base-slider {
+    @include user-select(none);
+    outline: none;
+    height: 20px;
+    position: relative;
+    height: 20px;    
+
+    &:focus {
+        outline: none;
+    }
+    .container {
+        margin-right: 16px;
+        height: 20px;
+        position: relative;
+    }
+    .range,
+    .range-min {
+        position: absolute;
+        left: 0px;
+        top: 7px;
+        height: 6px;
+        border: 1px solid #bcbcbc;
+        border-radius: 3px;
+    }
+    .range {
+        right: 0px;
+        background-color: #fff;
+    }
+    .range-min {
+    }
+
+    .handle {
+        top: 0px;
+        width: 16px;
+        height: 20px;
+        position: absolute;
+        border-radius: 3px;
+        height: 20px;
+    }
+    .handle div {
+        height: 20px;
+    }    
+}
+
 
 
 
