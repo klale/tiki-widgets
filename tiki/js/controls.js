@@ -1206,7 +1206,9 @@ define([
         RadioGroupModel: RadioGroup.Model,        
         Dropdown: Dropdown.View,
         Date: Date,
-        DatePicker: DatePicker
+        DatePicker: DatePicker,
+        Slider: Slider,
+        SliderModel: SliderModel
     };
 
 
