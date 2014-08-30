@@ -137,7 +137,6 @@ define([
         },        
         set: function(key, value, options) {
             var attrs, attr, val, errors={}, rollbacks=[], success=[];
-                options = _.extend(options || {}, {validate: true});
                 
             if(_.isObject(key) || key === null) {
                 attrs = key;
@@ -146,6 +145,7 @@ define([
                 attrs = {};
                 attrs[key] = value;
             }
+            options = _.extend(options || {}, {validate: true})
             
             var attrslist = _(attrs).map(function(v,k) {return [k,v]});
             if(this.setorder) {
