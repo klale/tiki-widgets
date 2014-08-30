@@ -508,6 +508,9 @@ define([
         traits: {
             options: new Traits.CollectionM()
         },
+        defaults: {
+            options: []
+        },
         setorder: ['options', 'value'],
         initialize: function() {
             // If value is not specifield, look for a selected option.
