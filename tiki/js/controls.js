@@ -1179,7 +1179,175 @@ define([
         }
     });
 
+    
+    
+    var DropdownMulti = {};
+    DropdownMulti.Model = ControlModels.ControlModel.extend('DropdownMulti.Model', {
+        /*
+        var model = new DropdownMulti.Model({options: [...]});
+        model.value = ['foo', 'bar']
+        model.value = 'foo'
+        model.value = <Model id=foo>
+        model.value = null
+        model.value = []
+        model.value = Collection(...)
+        */
+        traits: {
+            options: new Traits.CollectionM(),
+        },
+        defaults: {
+            options: []
+        },
+        setorder: ['options', 'value'],
+        get_value: function() {
+            return this.options.where({selected:true});
+        },
+        set_value: function(v, attrs, options, key, errors, obj) {
+            delete attrs.value;
+            // options and value can be assigned in a single model.set(..)
+            var opts = attrs.options || obj.options; 
+            obj._deselect = {}, obj._select = {};
+            
+            // Deselect all and leave early
+            if(v == null || _.isEmpty(v)) { 
+                opts.each(function(opt) { if(opt.get('selected')) obj._deselect[opt.id] = opt; });
+                return;
+            }
+            
+            if(v instanceof Backbone.Collection)
+                v = v.models;
+            
+            // Iterate value, build a hash of models to select called _select.
+            _.each(Util.arrayify(v), function(v) {
+                if(v instanceof Backbone.Model)
+                    obj._select[v.id] = v;
+                else if(v) {
+                    // assume v is a model id 
+                    var m = opts.get(v); 
+                    if(!m) {
+                        throw new ValueError('"'+v+'" not in options');
+                    }
+                    obj._select[m.id] = m;
+                }
+            });
 
+            // Iterate all options. Any already-selected options, not in _select, are added to _deselect.                            
+            opts.each(function(opt) {
+                if(opt.get('selected') && !obj._select[opt.id]) 
+                    obj._deselect[opt.id] = opt;
+            });
+        },
+        rollback: function(attrs, options) {
+            Util.pop(obj, '_select', null);
+            Util.pop(obj, '_deselect', null);
+        },
+        success: function(attrs, options) {
+            _.each(Util.pop(this, '_deselect', null), function(opt) {
+                opt.set('selected', false)
+            });
+            _.each(Util.pop(this, '_select', null), function(opt) {
+                opt.set('selected', true);
+            });
+        }
+    });
+    
+    
+    DropdownMulti.DropdownView = Tools.View.extend('DropdownMulti.DropdownView', {
+        className: 'tiki-dropdownmulti-dropdown',
+        attributes: {
+            tabindex: -1
+        },
+        ui: {
+            ul: 'ul'
+        },
+        events: {
+            'click li': 'onLIClick'
+        },
+        mixins: [Tools.ModelToElement],
+        initialize: function() {
+            _.bindAll(this, 'addOne');
+            this.$el.scrollMeOnly();
+            this.$el.html('<ul></ul>');
+            this.bindUI();
+            this.collection = this.model.options;
+        },
+        render: function() {
+            this.ui.ul.empty();
+            this.model.options.each(this.addOne);
+            return this;
+        },
+        addOne: function(model) {            
+            var el = $('<li data-id="'+model.id+'" class="tiki-checkbox">'+model.get('text')+'</li>')
+            el.toggleClass('checked', !!model.get('selected'));
+            this.ui.ul.append(el);
+        },
+        onLIClick: function(e) {
+            var model = this.getModel(e.currentTarget);
+            model.set('selected', !model.get('selected'));
+            this.render();
+        }
+    });
+            
+    DropdownMulti.View = Tools.View.extend('DropdownMulti', {
+        className: 'tiki-dropdownmulti',
+        attributes: {
+            tabindex: 0
+        },
+        template: _.template(''+
+            '<span><%= obj.text || "&nbsp;" %></span>'+
+            '<button tabindex="-1"></button>'
+        ),
+        events: {
+            'mousedown': 'onMouseDown',
+            'mouseup': 'onMouseUp',
+            'keydown': 'onKeyDown',
+            'blur': 'onBlur',
+            'focus': 'onFocus'
+        },
+        defaultmodel: DropdownMulti.Model,
+        mixins: [ControlView],
+    
+        initialize: function(config) {       
+            config = config || {};
+            if(!this.model)
+                this.model = new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);        
+            ControlView.initialize.call(this, config);
+
+            // Create the dropdown
+            this.dd = new Tools.Dropdown({
+                target: this.el,
+                makeDropdown: this.makeDropdown.bind(this),
+            });            
+            
+            this.listenTo(this.model, 'change', this.render);
+            this.listenTo(this.model.options, 'change:selected', this.render);
+        },   
+        render: function() {
+            this.$el.attr('name', this.model.get('name'));
+            
+            var value = this.model.value;
+            var text = _.map(value, function(m) { return m.get('text'); }).join(', ');
+            this.$el.html(this.template({text: text}));
+            this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
+        
+            if($.browser.ltie10) {
+                this.$('*').add(this.el).attr('unselectable', 'on');
+            }
+            return this;
+        },
+        makeDropdown: function() {
+            var dd = new DropdownMulti.DropdownView({model: this.model, collection: this.model.options});
+            return dd;            
+        },
+        onMouseDown: function() {
+            this.dd.dropdown.$el.css('min-width', this.$el.outerWidth())
+            this.dd.showDropdown();
+
+        },
+        onMouseUp: function() {
+            this.dd.focusDropdown();            
+        }
+    });
 
 
 
@@ -1205,6 +1373,9 @@ define([
         RadioGroup: RadioGroup.View,
         RadioGroupModel: RadioGroup.Model,        
         Dropdown: Dropdown.View,
+        DropdownModel: Dropdown.Model,
+        DropdownMulti: DropdownMulti.View,
+        DropdownMultiModel: DropdownMulti.Model,
         Date: Date,
         DatePicker: DatePicker,
         Slider: Slider,
