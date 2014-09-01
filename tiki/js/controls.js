@@ -73,6 +73,14 @@ define([
         initialize: function(config) {
             this.listenTo(this.model, 'change:name', this.onNameChange, this);    
             this.listenTo(this.model, 'change:disabled', this.onDisabledChange, this);
+            if(config.el) {
+                // Prepend class, eg "tiki-text", if missing on supplied el
+                if(!this.$el.hasClass(this.className)) 
+                    this.$el.attr('class', [this.className, this.$el.attr('classs')].join(' '));            
+                // Set attributes for supplied el
+                if(this.attributes)
+                    this.$el.attr(this.attributes);
+            }
         },
         onDisabledChange: function(model, disabled) {
             this.$el.toggleClass('tiki-disabled', disabled);
@@ -370,15 +378,15 @@ define([
             tabindex: 0
         },
         defaultmodel: Checkbox.Model,
+        mixins: [ControlView],
     
         initialize: function(config)  {
             if(!this.model)
                 this.model = new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
-                
-            this.listenTo(this.model, 'change:name', this.onNameChange, this);    
+            
+            ControlView.initialize.call(this, config);    
             this.listenTo(this.model, 'change:text', this.onTextChange, this);    
             this.listenTo(this.model, 'change:selected', this.onSelectedChange, this);
-            this.listenTo(this.model, 'change:disabled', this.onDisabledChange, this);
         },
         render: function() {
             this.$el.toggleClass('checked', !!this.model.get('selected'));
@@ -394,12 +402,6 @@ define([
         },
         onSelectedChange: function(model, selected) {
             this.$el.toggleClass('checked', selected);
-        },
-        onDisabledChange: function(model, disabled) {
-            this.$el.toggleClass('tiki-disabled', disabled);
-        },
-        onNameChange: function(model, name) {
-            this.$el.attr('name', this.model.get('name'));
         },
         onClick: function(e) {             
             e.preventDefault();
@@ -449,13 +451,14 @@ define([
         tagName: 'ul',
         className: 'tiki-checkboxgroup',
         defaultmodel: ControlModels.MultiSelection,
+        mixins: [ControlView],
     
         initialize: function(config)  {
             config = config || {};
             if(!this.model)
                 this.model = new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
 
-            this.views = {};
+            ControlView.initialize.call(this, config);
             var options = this.model.get('options');
             this.listenTo(options, 'add', this.addOne, this);
             this.listenTo(options, 'remove', this.addRemove, this);
@@ -695,10 +698,12 @@ define([
             'keydown down': 'onDownKeyDown'
         },
         defaultmodel: ControlModels.Date,
+        mixins: [ControlView],
     
         initialize: function(config)  {
             config = config || {};
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
+            ControlView.initialize.call(this, config);
             // Pass this.model into the text control
             this.textcontrol = new Text({model: this.model});
             this.listenTo(this.textcontrol, 'controlblur', this.onTextControlBlur, this);
@@ -807,10 +812,12 @@ define([
             tabindex: 0
         },
         defaultmodel: ControlModels.Date,
+        mixins: [ControlView],
     
         initialize: function(config)  {
             config = config || {};
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
+            ControlView.initialize.call(this, config);
             
             this.calendar = new Calendar.MonthCalendar({date: this.model.get('value') || new window.Date()});
             this.listenTo(this.calendar, 'dropdownhide', this.focus);
@@ -1066,11 +1073,12 @@ define([
             'mousedown': 'onMouseDown'
         },
         defaultmodel: SliderModel,
+        mixins: [ControlView],
         initialize: function(config) {
             config = config || {};
             if(!this.model)
                 this.model = new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
-            
+            ControlView.initialize.call(this, config);
             this.listenTo(this.model, 'change', this.render);
         },
         render: function() {
