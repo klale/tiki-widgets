@@ -21,6 +21,7 @@ define([
             this.save = config.save || {};
             this.scope = config.scope;
             this.domChangeEventName = config.domChangeEventName || 'change';
+            this.binder = new glue.Binder();
             _.defaults(this, config);
             this.setupListeners();
             
@@ -36,22 +37,6 @@ define([
             if(this.model)
                 this.listenTo(this.model, 'change', this.onModelChange);
             this.$el.on(this.domChangeEventName, this.onDOMChange.bind(this));
-        },
-        bind: function(model1, prop1, parse1, model2, prop2, parse2) {
-            this.listenTo(model1, 'change:'+prop1, function(model, newval, opt) {
-                opt || (opt = {});
-                if(opt.frombind) return;
-                if(parse1) 
-                    newval = parse1(newval)
-                model2.set(prop2, newval, {frombind:true});
-            });
-            this.listenTo(model2, 'change:'+prop2, function(model, newval, opt) {
-                opt || (opt = {});                
-                if(opt.frombind) return;
-                if(parse2)
-                    newval = parse2(newval)
-                model1.set(prop1, newval, {frombind: true});
-            });
         },
         drawDefault: function(el, v, model, key, options) {
             var tagName = el.tagName.toLowerCase();
@@ -163,58 +148,117 @@ define([
         },        
     });
     
-    
-    
+        
+    glue.Binder = Tools.Events.extend('Glue.Binder', {
+        bind: function(a, b) {
+            if(a.model && b.model)
+                this._bindModel(a, b);
+            else if(a.collection && b.collection)
+                this._bindCollection(a, b);
+            else
+                throw new Error('Invalid Glue.Binder arguments');
+        },
+        _bindModel:function(a, b) {            
+            if(a.attr) {
+                // Bind a single attribute
+                this.listenTo(a.model, 'change:'+a.attr, _.partial(this.onModelChangeOne, b.model, a.send, b.attr));
+                this.listenTo(b.model, 'change:'+b.attr, _.partial(this.onModelChangeOne, a.model, b.send, a.attr));
+            }
+            else {
+                // Bind all attribute changes
+                this.listenTo(a.model, 'change', _.partial(this.onModelChange, b.model, a.send));
+                this.listenTo(b.model, 'change', _.partial(this.onModelChange, a.model, b.send));
+            }            
+        },
+        _bindCollection: function(a, b) {
+            this.listenTo(a.collection, {
+                'add': _.partial(this.onCollectionAdd, b.collection, a.send),
+                'change': _.partial(this.onCollectionChange, b.collection, a.send)
+            });
+            this.listenTo(b.collection, {
+                'add': _.partial(this.onCollectionAdd, a.collection, b.send),
+                'change': _.partial(this.onCollectionChange, a.collection, b.send)
+            });
+        },
+
+        onModelChange: function(target, send, model, opt) {
+            opt || (opt = {});
+            if(opt.frombind) return;
+            var attrs = model.changedAttributes(),
+                retval;
+            if(send) retval = send(attrs, model);
+            target.set(retval || attrs, Util.merge(opt, {frombind:true}));
+        },
+        onModelChangeOne: function(target, send, attrname, model, newval, opt) {
+            opt || (opt = {});
+            if(opt.frombind) return;
+            if(send) 
+                newval = send(newval, model)
+            target.set(attrname, newval, Util.merge(opt, {frombind:true}));
+        },
+        onCollectionChange: function(target, send, model, collection, opt) {
+            opt || (opt = {});
+            if(opt.frombind) return;
+            var attrs = model.changedAttributes(),
+                retval;
+            if(send) retval = send(attrs, model);            
+            var targetModel = target.get(model.id);
+            if(targetModel)
+                targetModel.set(retval || attrs, Util.merge(opt, {frombind:true}));
+        },        
+        onCollectionAdd: function(target, send, model, coll, opt) {
+            opt || (opt = {});
+            if(opt.frombind) return;            
+            var attrs = _.clone(model.attributes),
+                retval;
+            if(send)
+                retval = send(attrs, model);
+            target.add(retval || attrs, Util.merge(opt, {frombind:true}));
+        },
+        
+    })
     
 
     
     glue.text = function(el, v, model, key, options, glue) {
-        // Create a text control the first time..
         var text = glue.views[key]
         if(!text) {
+            // Create a control on the first draw..
             text = new Controls.Text({el: el});
             $(el).addClass('tiki-text');
-            glue.views[key] = text;  // XXX: make a property
+            glue.views[key] = text;
             text.render();
-            // ..also bind the models together here..
-            glue.bind(text.model, 'value', null, model, key);            
+            glue.binder.bind({model: text.model, attr: 'value'}, {model: model, attr: key});            
         }
         text.model.value = v;           
     };
 
     glue.textarea = function(el, v, model, key, options, glue) {
-        // Create a text control the first time..
         var textarea = glue.views[key];
         if(!textarea) {
+            // Create a control on the first draw..
             textarea = new Controls.TextArea({el: el});
             $(el).addClass('tiki-textarea');
-            glue.views[key] = textarea;  // XXX: make a property
+            glue.views[key] = textarea;
             textarea.render();
-            // ..also bind the models together here..
-            glue.bind(textarea.model, 'value', null, model, key);
+            glue.binder.bind({model: textarea.model, attr:'value'}, {model: model, attr: key});
         }
         textarea.model.value = v;
     };
-    
-    
-    glue.wikitextarea = glue.textarea;
-
 
     glue.date = function(el, v, model, key, options, glue) {
         var date = glue.views[key];
         if(!date) {
+            // Create a control on the first draw..
             date = new Controls.Date({el: el});
             $(el).addClass('tiki-date');
-            glue.views[key] = date;  // XXX: make a property
+            glue.views[key] = date;
             date.render();
-            date.delegateEvents();
-            // ..also bind the models together here..
-            glue.bind(date.model, 'value', null, model, key);
+            // date.delegateEvents();
+            glue.binder.bind({model: date.model, attr: 'value'}, {model: model, attr: key});
         }
         date.model.value = v;
     };
-
-    
     
     glue.dropdown = function(el, v, model, key, options, glue) {
         var dropdown = glue.views[key];
@@ -227,16 +271,28 @@ define([
                 dropdown.model.options = glue[options];
             }
             dropdown.render();
-            
-            // Implicitly bind value
-            glue.bind(dropdown.model, 'value', function(val) { return val.id }, model, key)
+            glue.binder.bind(
+                {model: dropdown.model, attr: 'value', send: function(val) { return val.id }}, 
+                {model: model, attr: key});
 
         }
         dropdown.model.value = v;
     };
-    
-    glue.filteringdropdown = glue.dropdown;
 
+    glue.dropdownmulti = function(el, v, model, key, options, glue) {
+        var dropdown = glue.views[key];
+        if(!dropdown) {
+            dropdown = new Controls.DropdownMulti({el: el});
+            $(el).addClass('tiki-dropdown');
+            glue.views[key] = dropdown;
+            var options = $(el).attr('options');
+            if(options) {
+                dropdown.model.options = glue[options];
+            }
+            dropdown.render();                
+        }
+    };    
+    
     glue.checkbox = function(el, v, model, key, options, glue) {
         var checkbox = glue.views[key];
         if(!checkbox) {
@@ -244,34 +300,28 @@ define([
             $(el).addClass('tiki-checkbox');
             glue.views[key] = checkbox;
             var text = $(el).attr('text');
+            if(!text)
+                text = $(el).html();
             if(text)
                 checkbox.model.text = text;
 
+            // Todo: abstract this for all controls
             var disabled = $(el).attr('data-disabled');
             if(disabled) {
                 var s = disabled.split('.'), modelname = s[0], propname = s[1];
-                // Setup binding
-                glue.bind(Util.getkey(glue, s[0]), s[1], null, checkbox.model, 'disabled');
+                glue.binder.bind(
+                    {model: Util.getkey(glue, s[0]), attr: s[1]}, 
+                    {model: checkbox.model, attr: 'disabled'});
                 // Set initial disabled state
                 checkbox.model.disabled = Util.getkey(glue, disabled);
             }
-
-            // Implicitly bind value
-            glue.bind(checkbox.model, 'value', null, model, key);
+            glue.binder.bind({model: checkbox.model, attr: 'value'}, {model: model, attr: key});
             checkbox.render();
         }
         checkbox.model.value = v;
-    }
-    glue.checkboxGroup = function(el, v, model, key, options, glue) {
-        var group = glue.views[key];
-        if(!group) {
-            group = new Controls.CheckboxGroup({el: el});
-            $(el).addClass('tiki-checkboxgroup');
-            glue.views[key] = group;
-            group.render();
-        }
-        checkbox.model.value = v;
-    }
+    };
+    
+
    
     return glue;
     
