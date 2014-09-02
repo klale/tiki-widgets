@@ -491,7 +491,9 @@ define([
             this.Collection = Backbone.Collection;
             this.options = options;
 
-            if(_.isFunction(config))
+            if(Util.isModelSubclass(config))
+                this.Collection = Util.Collection.extend('ImplicitCollection', {model: config})
+            else if(_.isFunction(config))
                 this.Collection = config;                
         },        
         parse: function(v, obj, attrs, key) {            

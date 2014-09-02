@@ -11,6 +11,12 @@ define([
     var util = {};
 
 
+
+    util.isModelSubclass = function(f) {
+        // Has idAttribute && not an instance of Model
+        return f && f.prototype && f.prototype.idAttribute && !f.attributes;
+    };
+
     
     /* `Util.withModule` currently requires the Q promise library */
     util.withModule = function(path, callback) {
