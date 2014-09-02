@@ -166,7 +166,7 @@ define([
             }
         },     
         onBlur: function(e) {
-            var text = this.$el.getPreText();
+            var text = this.$el.getPreText().trim();
             this.model.set({'value': text}, {validate: true});
 
             // It might require a render now even if the model is untouched
@@ -179,7 +179,7 @@ define([
             e.preventDefault();            
             // Set value immediately when pressing Return, as the event
             // may continue upwards to a form, triggering a submit.
-            var v = this.$el.getPreText();
+            var v = this.$el.getPreText().trim();
             this.model.set('value', v);
             this.render();
         },
