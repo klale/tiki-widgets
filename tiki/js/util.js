@@ -319,6 +319,12 @@ define([
     
     
 
+    /*
+    A vanilla collection, using Tiki's Util.extend. */
+    util.Collection = Backbone.Collection.extend();
+    util.Collection.extend = util.extend;
+
+    
     var tests = {
         dateManip: /^([\+\-])?(\d{0,3})(\w)?$/,
         iscompactdate: /^(\d{2,4})(\d{2})(\d{2})$/,

@@ -285,10 +285,11 @@ define([
     });
 
 
-    /*
-    A vanilla collection, using Tiki's Util.extend. */
-    tools.Collection = Backbone.Collection.extend();
-    tools.Collection.extend = Util.extend;
+
+    // legacy. Tools.Collection has moved to Util.Collection
+    tools.Collection = Util.Collection;
+
+
 
 
     tools.Events = function() {
