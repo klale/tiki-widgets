@@ -702,6 +702,12 @@ define([
             return [obj];
         return obj;
     };    
+    
+    util.collectionify = function(obj, klass) {
+        if(obj instanceof Backbone.Collection)
+            return obj;
+        return new (klass || Backbone.Collection)(obj);        
+    };
 
     util.pad = function(value, padlen, padchar) {
         var pad = new Array(1 + padlen).join(padchar);
