@@ -587,55 +587,61 @@ define([
           });
         };
 
+        var makeFunction = function(text, keys) {
+            if(text && !_.isString(text))
+                text = $(text).text(); // Assume dom node (commonly a script element)
+            var source = "__p+='" + text
+              .replace(escaper, function(match) {
+                return '\\' + escapes[match];
+              })
+              .replace(settings.escape || noMatch, function(match, code) {
+                return "'+\n_.escape(" + unescape(code) + ")+\n'";
+              })
+              .replace(settings.interpolate || noMatch, function(match, code) {
+                return "'+\n(" + unescape(code) + ")+\n'";
+              })
+              .replace(settings.evaluate || noMatch, function(match, code) {
+                return "';\n" + unescape(code) + "\n;__p+='";
+              }) + "';\n";
+        
+            // If a variable is not specified, place data values in local scope.
+            if (!settings.variable) source = 'with(obj||{}){\n' + source + '}\n';
+        
+            source = "var __p='';" +
+              "var print=function(){__p+=Array.prototype.join.call(arguments, '')};\n" +
+              source + "return __p;\n";
+        
+            // build argument list
+            var args = [settings.variable || 'obj', '_', 'settings'].concat(keys);
+            return [new Function(args, source), source];
+        }
 
         Util.template = function(text, helpers) {
           // Compile the template source, taking care to escape characters that
           // cannot be included in a string literal and then unescape them in code
           // blocks.
-      
+                
           // Don't trust ordering of keys in `helpers` object
           helpers = _.map(helpers || {}, function(v,k) { return {k:k,v:v}; });
           var keys = _.map(helpers, function(v) { return v.k; });
           var helpersArgs = _.map(helpers, function(v) { return v.v; });
-      
-          var source = "__p+='" + text
-            .replace(escaper, function(match) {
-              return '\\' + escapes[match];
-            })
-            .replace(settings.escape || noMatch, function(match, code) {
-              return "'+\n_.escape(" + unescape(code) + ")+\n'";
-            })
-            .replace(settings.interpolate || noMatch, function(match, code) {
-              return "'+\n(" + unescape(code) + ")+\n'";
-            })
-            .replace(settings.evaluate || noMatch, function(match, code) {
-              return "';\n" + unescape(code) + "\n;__p+='";
-            }) + "';\n";
-
-          // If a variable is not specified, place data values in local scope.
-          if (!settings.variable) source = 'with(obj||{}){\n' + source + '}\n';
-
-          source = "var __p='';" +
-            "var print=function(){__p+=Array.prototype.join.call(arguments, '')};\n" +
-            source + "return __p;\n";
-
-          // build argument list
-          var args = [settings.variable || 'obj', '_', 'settings'].concat(keys);
-          var render = new Function(args, source);
+          var render;
       
           var template = function(data) {
+            if(!render) {
+                var ret = makeFunction(text, keys);
+                render = ret[0];
+                // Provide the compiled function source as a convenience for build time
+                // precompilation.
+                this.source = 'function(' + (settings.variable || 'obj') + '){\n' +
+                    ret[1] + '}';                
+            }
             var args = [data, _, settings].concat(helpersArgs);
             return render.apply(this, args);
           };
 
-          // Provide the compiled function source as a convenience for build time
-          // precompilation.
-          template.source = 'function(' + (settings.variable || 'obj') + '){\n' +
-            source + '}';
-
           return template;
         };
-
 
     })(util);
 
