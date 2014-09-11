@@ -858,6 +858,7 @@ define([
             this.atBottom = Util.pop(config, 'atBottom', false);
             this.atTop = Util.pop(config, 'atTop', true);
             this.doClone = config.doClone;
+            this.recalcOffset = config.recalcOffset;
             
             if(config.scrollX) {
                 this.scrollX = $(config.scrollX)[0];
@@ -955,6 +956,9 @@ define([
             this.width = this.$el.width();
             this.height = this.$el.height();
             this.position = this.$el.css('position');
+
+            if(this.recalcOffset)
+                this._recalcOffset();
         
             var scrollTop = this.scrollYTopEl.scrollTop,
                 viewportHeight = $(window).height(),
@@ -973,7 +977,11 @@ define([
             else if(!above && !below && this.isFlying) {
                 this.land();
             }
-        },        
+        },
+        _recalcOffset: _.throttle(function() {
+            if(!this.isFlying)
+                this.pos = this.$el.offset();
+        }, 100)
     });
 
 
