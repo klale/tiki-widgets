@@ -560,7 +560,8 @@ define([
         var settings = {
           evaluate    : /\[\[([\s\S]+?)\]\]/g,
           interpolate : /\$\{([\s\S]+?)\}/g,
-          escape      : /\$\{-([\s\S]+?)\}/g      
+          escape      : /\$\{-([\s\S]+?)\}/g,
+          variable: 'obj'
         };
 
         // Certain characters need to be escaped so that they can be put into a
