@@ -379,9 +379,26 @@ define([
         this.on('wheel', function(e) {
             e.preventDefault();
             e.currentTarget.scrollTop += e.deltaY;
+            e.currentTarget.scrollLeft += e.deltaX;
         });
         return this;
     };
+    $.fn.scrollMeOnlyHorizontal = function() {
+        this.on('wheel', function(e) {
+            e.preventDefault();
+            e.currentTarget.scrollLeft += e.deltaX;
+        });
+        return this;
+    };
+    $.fn.scrollMeOnlyVertical = function() {
+        this.on('wheel', function(e) {
+            e.preventDefault();
+            e.currentTarget.scrollTop += e.deltaY;
+        });
+        return this;
+    };
+
+
     
     $.fn.scrollIntoView = function(alignWithTop, scrollable) {
         if(!this[0]) return this;
