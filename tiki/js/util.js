@@ -46,6 +46,21 @@ define([
     };
 
 
+    util.getkey = function(obj, desc) {
+        /*
+        >>> var foo = {a: {b: {c: 'd'}}}
+        >>> util.getkey(foo, 'a.b.c')
+        'd'
+        >>> util.getkey(foo, 'bar')
+        undefined
+        */
+        var arr = desc.split(".");
+        while(arr.length && (obj = obj[arr.shift()]));
+        return obj;
+    };
+        
+    
+
     util.arrayToObject = function(array, key) {
         return _.object(_.map(array, function(item) {
             return [item[key], item];
