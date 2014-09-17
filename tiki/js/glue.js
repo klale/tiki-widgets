@@ -25,6 +25,7 @@ define([
             _.defaults(this, config);
             this.setupListeners();
             
+            this.$el.attr('data-glue', 'true');
         },
         setupListeners: function(config) {
             if(this.collection)
@@ -60,12 +61,21 @@ define([
                 draw = this.draw,
                 drawDefault = this.drawDefault;
 
+
             if(model) {
                 this.$(this.modelSelector + ' *[data-bind]').each(function(i, el) {
                     var key = $(el).attr('data-bind');
-                    (draw[key] || drawDefault).call(this.scope, el, model.get(key), model, key, options || {}, this);
+                    // Ignore elements with data-bind inside any nested Glues.
+                    // Todo: is there any other way of skipping ceritain DOM branches? already in the selector?
+                    var isNested = false;
+                    $(el).parentsUntil(this.el).each(function() {
+                        if(this.attributes['data-glue']) 
+                            isNested=true;
+                    });
+                    if(!isNested)
+                        (draw[key] || drawDefault).call(this.scope, el, model.get(key), model, key, options || {}, this);
                 }.bind(this));
-            }
+            }                        
             if(collection) {
                 this.$(this.collectionSelector + ' *[data-id]').each(function(i, el) {
                     var id = $(el).attr('data-id'),
@@ -128,6 +138,10 @@ define([
             // fetch the value from el.value.
             // If it's a Tiki.Control or Tiki.Control-compliant event, pull the value
             // from the event object instead.
+            
+            // Stop the event entering any parent glues
+            e.stopPropagation();
+            
             var model = this.model;
             if(this.collection) {
                 var id = $(e.target).closest('*[data-id]').attr('data-id'),
