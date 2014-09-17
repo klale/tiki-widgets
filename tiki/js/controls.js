@@ -76,7 +76,7 @@ define([
             if(config.el) {
                 // Prepend class, eg "tiki-text", if missing on supplied el
                 if(!this.$el.hasClass(this.className)) 
-                    this.$el.attr('class', [this.className, this.$el.attr('classs')].join(' '));            
+                    this.$el.attr('class', [this.className, this.$el.attr('class')].join(' '));            
                 // Set attributes for supplied el
                 if(this.attributes)
                     this.$el.attr(this.attributes);
