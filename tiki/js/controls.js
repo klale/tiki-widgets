@@ -1207,6 +1207,9 @@ define([
             options: []
         },
         setorder: ['options', 'value'],
+        initialize: function() {
+            this.listenTo(this.options, 'change:selected', this.onSelectedChange, this);
+        },
         get_value: function() {
             return this.options.where({selected:true});
         },
@@ -1256,6 +1259,9 @@ define([
             _.each(Util.pop(this, '_select', null), function(opt) {
                 opt.set('selected', true);
             });
+        },
+        onSelectedChange: function(option, selected) {
+            this.trigger('change:value', this, this.value);
         }
     });
     
