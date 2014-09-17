@@ -191,10 +191,15 @@ define([
                 Backbone.Model.prototype.set.call(this, attrs, options);
                 if(!_.isEmpty(success))
                     _.each(success, function(f) { f(); });                
+                if(this.success)
+                    this.success(attrs, options);
                 return this;
             }
             else if(!_.isEmpty(rollbacks)) {
                 _.each(rollbacks, function(f) { f(); });
+
+                if(this.rollback)
+                    this.rollback(attrs, options);                
             }
             
             this.validationError = errors;
