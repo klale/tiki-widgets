@@ -288,6 +288,13 @@ define([
             glue.binder.bind(
                 {model: dropdown.model, attr: 'value', send: function(val) { return val.id }}, 
                 {model: model, attr: key});
+            
+            var onChangeValue = $(el).attr('change-value');
+            if(onChangeValue) {
+                onChangeValue = Util.getkey(glue, onChangeValue);
+                glue.binder.listenTo(dropdown.model, 'change:value', _.partial(onChangeValue, glue));
+            }
+            
 
         }
         dropdown.model.value = v;
