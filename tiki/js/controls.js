@@ -181,7 +181,6 @@ define([
             // may continue upwards to a form, triggering a submit.
             var v = this.$el.getPreText().trim();
             this.model.set('value', v);
-            this.render();
         },
         onKeyPress: function(e) {
             // On eg future numeric text control, type is supposed to only 
