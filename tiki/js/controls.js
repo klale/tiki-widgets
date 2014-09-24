@@ -704,18 +704,19 @@ define([
             config = config || {};
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
             ControlView.initialize.call(this, config);
-            // Pass this.model into the text control
+
+            // Add the button
+            this.$el.append('<button class="calendar" tabindex="-1"></button>');
+
+            // and the text control
             this.textcontrol = new Text({model: this.model});
+            this.$el.append(this.textcontrol.render().el);
             this.listenTo(this.textcontrol, 'controlblur', this.onTextControlBlur, this);
             this.listenTo(this.model, 'change:value', this.onModelChangeValue, this);
         },
         render: function() {
-            this.$el.empty().append('<button class="calendar" tabindex="-1"></button>');
-            this.$el.append(this.textcontrol.render().el);
-            this.textcontrol.delegateEvents();
             this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
             this.$el.toggleClass('invalid', !!this.model.validationError);
-            this.delegateEvents();
             return this;
         },
         onModelChangeValue: function(model, value) {
@@ -770,7 +771,6 @@ define([
         },        
         focus: function(e) {
             this.textcontrol.focus();
-            this.textcontrol.el.focus();
         },
         attackElement: attackElement,
         leaveElement: leaveElement,        
