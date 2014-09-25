@@ -480,9 +480,9 @@ define([
         toJSON: function(v, obj) {
             // 'v' is a Collection
             if(v && v.each)
-                return _.map(v.each(function(item) {
+                return v.map(function(item) {
                     return item.toJSON();
-                }));
+                });
         }
     });
     
