@@ -866,7 +866,7 @@ define([
             }
             else {
                 this.scrollX = $(window.document)[0];
-                this.scrollXTopEl = window.document.body;
+                this.scrollXTopEl = window.document;
             }
             if(config.scrollY) {
                 this.scrollY = $(config.scrollY)[0];
@@ -874,7 +874,7 @@ define([
             }
             else {
                 this.scrollY = $(window.document)[0];
-                this.scrollYTopEl = window.document.body;
+                this.scrollYTopEl = window.document;
             }            
 
 
@@ -909,26 +909,28 @@ define([
             this.clone.css({
                 position: 'fixed',
                 top: this.offsetTop,
-                left: this.pos.left + (this.scrollXTopEl.scrollLeft*-1),
+                left: this.pos.left + ($(this.scrollXTopEl).scrollLeft()*-1),
                 width: this.width,
                 height: this.height
             });
             this.insertClone();
             this.isFlying = true;
             this.trigger('fly');
+            this.$el.trigger('fly', this);
         },
         flyBottom: function() {
             this.clone = this.createClone();            
             this.clone.css({
                 position: 'fixed',
                 bottom: 0,
-                left: this.pos.left + (this.scrollXTopEl.scrollLeft*-1),
+                left: this.pos.left + ($(this.scrollXTopEl).scrollLeft()*-1),
                 width: this.width,
                 height: this.height
             });
             this.insertClone();
             this.isFlying = true;
             this.trigger('fly');
+            this.$el.trigger('land', this);
         },        
         removeClone: function() {
             if(this.doClone) {
@@ -960,13 +962,13 @@ define([
             if(this.recalcOffset)
                 this._recalcOffset();
         
-            var scrollTop = this.scrollYTopEl.scrollTop,
+            var scrollTop = $(this.scrollYTopEl).scrollTop(),
                 viewportHeight = $(window).height(),
                 above = this.pos.top < scrollTop+this.offsetTop,
                 below = this.pos.top+this.height > scrollTop + viewportHeight;             
             
             if(this.isFlying)
-                this.clone.css('left', (this.scrollXTopEl.scrollLeft*-1)+this.pos.left);
+                this.clone.css('left', ($(this.scrollXTopEl).scrollLeft()*-1)+this.pos.left);
 
             if(this.atTop && above && !this.isFlying) {
                 this.flyTop();
