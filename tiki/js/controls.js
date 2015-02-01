@@ -1253,11 +1253,12 @@ define([
         },
         success: function(attrs, options) {
             _.each(Util.pop(this, '_deselect', null), function(opt) {
-                opt.set('selected', false)
+                opt.set('selected', false, {silent:true})
             });
             _.each(Util.pop(this, '_select', null), function(opt) {
-                opt.set('selected', true);
+                opt.set('selected', true, {silent:true});
             });
+            this.trigger('change:value', this, this.value);            
         },
         onSelectedChange: function(option, selected) {
             this.trigger('change:value', this, this.value);
@@ -1295,9 +1296,8 @@ define([
             this.ui.ul.append(el);
         },
         onLIClick: function(e) {
-            var model = this.getModel(e.currentTarget);
-            model.set('selected', !model.get('selected'));
-            this.render();
+            var li = $(e.currentTarget);
+            li.toggleClass('checked', !li.hasClass('checked'));
         }
     });
             
@@ -1331,9 +1331,15 @@ define([
                 target: this.el,
                 makeDropdown: this.makeDropdown.bind(this),
             });            
-            
+            this.listenTo(this.dd, 'dropdownhide', this.onDropdownHide)   
             this.listenTo(this.model, 'change', this.render);
-            this.listenTo(this.model.options, 'change:selected', this.render);
+            this.listenTo(this.model, 'change:value', this.render);
+        },   
+        onDropdownHide: function() {
+            var ids = this.dd.dropdown.$('li.checked').map(function() {
+                return $(this).attr('data-id');
+            }).get();            
+            this.model.value = ids;
         },   
         render: function() {
             this.$el.attr('name', this.model.get('name'));
