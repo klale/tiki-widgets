@@ -95,7 +95,7 @@ define([
     // ============
     // = Controls =
     // ============
-    var Text = Tools.View.extend({
+    var Text = Tools.View.extend('Controls.Text', {
         className: 'tiki-text',
         attributes: {
             tabindex: 0, 
