@@ -11,6 +11,18 @@ define([
     var util = {};
 
 
+    
+    util.retriggerAll = function(source, target, prefix) {        
+        target.listenTo(source, 'all', function() {
+            var eventName = arguments[0],
+                args = Array.prototype.slice.call(arguments, 1);
+            if(prefix)
+                eventName = prefix + '.' + eventName;
+            
+            target.trigger.apply(target, [eventName].concat(args));
+        });
+    };
+
 
     util.isModelSubclass = function(f) {
         // Has idAttribute && not an instance of Model
