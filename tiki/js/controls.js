@@ -1235,7 +1235,7 @@ define([
                     // assume v is a model id 
                     var m = opts.get(v); 
                     if(!m) {
-                        throw new ValueError('"'+v+'" not in options');
+                        throw new Traits.ValueError('"'+v+'" not in options');
                     }
                     obj._select[m.id] = m;
                 }
