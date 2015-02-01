@@ -1348,6 +1348,7 @@ define([
             var text = _.map(value, function(m) { return m.get('text'); }).join(', ');
             this.$el.html(this.template({text: text}));
             this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
+            this.$el.toggleClass('invalid', !!this.model.validationError);
         
             if($.browser.ltie10) {
                 this.$('*').add(this.el).attr('unselectable', 'on');
