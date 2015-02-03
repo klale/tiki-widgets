@@ -1253,14 +1253,15 @@ define([
         },
         success: function(attrs, options) {
             _.each(Util.pop(this, '_deselect', null), function(opt) {
-                opt.set('selected', false, {silent:true})
+                opt.set('selected', false, {mute:true})
             });
             _.each(Util.pop(this, '_select', null), function(opt) {
-                opt.set('selected', true, {silent:true});
+                opt.set('selected', true, {mute:true});
             });
             this.trigger('change:value', this, this.value);            
         },
-        onSelectedChange: function(option, selected) {
+        onSelectedChange: function(option, selected, options) {
+            if(!options.mute)
             this.trigger('change:value', this, this.value);
         }
     });
