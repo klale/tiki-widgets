@@ -42,12 +42,12 @@ define([
         drawDefault: function(el, v, model, key, options) {
             var tagName = el.tagName.toLowerCase();
             var control = $(el).attr('control')
-            if(tagName == 'input' || tagName == 'select' || tagName == 'textarea') {
-                $(el).val(v);
-            }
-            else if(control) {
+            if(control) {
                 if(!glue[control]) throw new Error('Glue["'+control+'"] does not exist')
                 glue[control].apply(this, arguments);
+            }
+            else if(tagName == 'input' || tagName == 'select' || tagName == 'textarea') {
+                $(el).val(v);
             }
             else    
                 $(el).text(v);
