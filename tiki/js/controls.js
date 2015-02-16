@@ -1340,7 +1340,15 @@ define([
             var ids = this.dd.dropdown.$('li.checked').map(function() {
                 return $(this).attr('data-id');
             }).get();            
+
+            var existingIds = _.map(Util.idArray(this.model.value || []), function(id) {
+                return ''+id;
+            });
+
+            var hasChanged = !_.isEqual(existingIds,  ids);
+            if(hasChanged) {
             this.model.value = ids;
+            }
         },   
         render: function() {
             this.$el.attr('name', this.model.get('name'));
