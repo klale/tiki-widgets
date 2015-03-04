@@ -129,7 +129,7 @@ define([
             if(!isInvalid)
                 this.$el.html(html);
             this.$el.toggleClass('invalid', isInvalid);
-            this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
+            this.$el.toggleClass('tiki-disabled', !!this.model.get('disabled'));
             this.$el.attr({
                 'name': this.model.get('id'),
                 'contenteditable': this.model.get('disabled') ? 'false':'true'
