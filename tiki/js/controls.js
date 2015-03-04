@@ -249,7 +249,7 @@ define([
                 this.$el.html(Util.makePreText(html || ''));
                         
             this.$el.toggleClass('invalid', isInvalid);
-            this.$el.toggleClass('tiki-disabled', disabled);
+            this.$el.toggleClass('tiki-disabled', !!disabled);
             this.$el.attr({
                 'name': this.model.get('id'),
                 'contenteditable': disabled ? 'false':'true'
@@ -628,7 +628,7 @@ define([
             var value = this.model.get('value');
             var text = value ? value.get('text') : '';            
             this.$el.html(this.template({text: text}));
-            this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
+            this.$el.toggleClass('tiki-disabled', !!this.model.get('disabled'));
         
             if($.browser.ltie9) {
                 this.$('*').add(this.el).attr('unselectable', 'on');
@@ -716,7 +716,7 @@ define([
             this.listenTo(this.model, 'change:value', this.onModelChangeValue, this);
         },
         render: function() {
-            this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
+            this.$el.toggleClass('tiki-disabled', !!this.model.get('disabled'));
             this.$el.toggleClass('invalid', !!this.model.validationError);
             return this;
         },
@@ -1358,7 +1358,7 @@ define([
             var value = this.model.value;
             var text = _.map(value, function(m) { return m.get('text'); }).join(', ');
             this.$el.html(this.template({text: text}));
-            this.$el.toggleClass('tiki-disabled', this.model.get('disabled'));
+            this.$el.toggleClass('tiki-disabled', !!this.model.get('disabled'));
             this.$el.toggleClass('invalid', !!this.model.validationError);
         
             if($.browser.ltie10) {
