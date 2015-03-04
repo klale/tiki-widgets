@@ -72,6 +72,21 @@ define([
     };
         
     
+    util.setattr = function(model, key, value, options) {
+        // Example: setkey(model, 'nestedmodel.myprop', 123);
+        var arr = key.split(".");
+        var propName = arr.pop();
+
+        while(arr.length && (model = model.get(arr.shift())));
+        model.set(propName, value, options);
+    }
+
+    util.getattr = function(model, key, value) {
+        var arr = key.split(".");
+        while(arr.length && (model = model.get(arr.shift())));
+        return model;
+    };
+
 
     util.arrayToObject = function(array, key) {
         return _.object(_.map(array, function(item) {
