@@ -118,6 +118,7 @@ define([
         initialize: function(config) {
             config = config || {};
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
+            this.valueField = config.valueField || 'value';
             this.listenTo(this.model, 'change', this.render, this);
             ControlView.initialize.call(this, config);
         },
@@ -138,7 +139,7 @@ define([
         },
         renderValue: function() {
             var format = this.model.get('format'),
-                value = this.model.get('value');
+                value = Util.getattr(this.model, this.valueField)
             
             if(format)
                 return Globalize.format(value, format);                
@@ -167,7 +168,8 @@ define([
         },     
         onBlur: function(e) {
             var text = this.$el.getPreText().trim();
-            this.model.set({'value': text}, {validate: true});
+            Util.setattr(this.model, this.valueField, text, {validate: true})
+
 
             // It might require a render now even if the model is untouched
             this.render();
@@ -180,7 +182,7 @@ define([
             // Set value immediately when pressing Return, as the event
             // may continue upwards to a form, triggering a submit.
             var v = this.$el.getPreText().trim();
-            this.model.set('value', v);
+            Util.setattr(this.model, this.valueField, v, {validate: true});
         },
         onKeyPress: function(e) {
             // On eg future numeric text control, type is supposed to only 
