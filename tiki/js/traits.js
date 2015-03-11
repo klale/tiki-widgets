@@ -387,11 +387,14 @@ define([
     });
     
     Traits.Instance = Trait.extend('Traits.Instance', {
-        constructor: function(config) {
-            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Instance(config);
+        constructor: function(type, config) {
+            if (this instanceof Trait) this.initialize.apply(this, arguments); else return new Traits.Instance(type, config);
         },
-        initialize: function(type) {
+        initialize: function(type, config) {
+            config || (config = {});
             this.type = type;
+            if(config.makeFromJSON)
+                this.makeFromJSON = config.makeFromJSON;
         },
         parse: function(v) {
             var type = this.type;
@@ -400,6 +403,8 @@ define([
             }
             if(v instanceof type)
                 return v;
+            if(this.makeFromJSON)
+                return this.makeFromJSON(v)
             return new type(v, {parse: true});
         },
         toJSON: function(v) {
