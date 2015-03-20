@@ -16,13 +16,14 @@ define([
                 disabled: Traits.Bool(),
                 submenu: Traits.Instance(function() { return Menu.Model; }),
                 expanded: Traits.Bool()
-            }
+            };
         },
         defaults: {
             disabled: false,
             expanded: false
         }
     });
+
     Option.View = Tools.View.extend('Menu.Option.View', {
         className: 'selectable',
         tagName: 'li',
@@ -30,32 +31,37 @@ define([
 
         initialize: function() {
             // Todo: assumes id extists on creation and never changes. OK?
-            this.$el.attr('data-id', this.model.id)
+            this.$el.attr('data-id', this.model.id);
         },
         render: function() {
-            this.$el.html(this.template(this.model.toJSON()));
+            var text = this.renderText();
+            var html = $('<span></span>').text(text).append('<i>&#xe10a;</i>');
+            this.$el.html(html);
             if(this.model.get('disabled'))
                 this.$el.addClass('disabled').removeClass('selectable');
 
             if(this.model.get('selected'))
-                this.$el.addClass('active')
-            
+                this.$el.addClass('active');
+
             this.$el.toggleClass('submenu', !!this.model.get('submenu'));
             if($.browser.ltie9) {
                 this.$('>a').attr('unselectable', 'on');
             }
             return this;
+        },
+        renderText: function() {
+            var textField = this.model.collection.textField;
+            return Util.getattr(this.model, textField);
         }
-        
-    });    
-        
-    
+    });
+
+
     var Options = Tools.Collection.extend('Menu.Options', {
         model: Option.Model
     });
-    
 
-    
+
+
 
     var Spacer = Backbone.View.extend({
         tagName: 'li',
@@ -83,20 +89,20 @@ define([
                     {id: 'foo2', text: 'Foo 2'},
                     {id: 'bar2', text: 'Bar 2'},
                     {id: 'lax2', text: 'Lax 2'},
-                ]            
+                ]
             }}
         ]
     })
-    
-    
+
+
     // Hide any other active menu, render and if necessary, append to body.
     m.show();  triggers "show"
 
-    // Align to otherEl 
+    // Align to otherEl
     m.alignTo(otherEl, alignment_options);
 
     // detach menu view, triggers "hide"
-    m.hide(); 
+    m.hide();
 
     // Play with the options
     var opt = m.options.at(4);
@@ -108,16 +114,16 @@ define([
     m.on('select', function(e) {
         consolse.log('you chose: ', e);
     });
-    
+
     */
     var Menu = {};
     Menu.Model = Traits.Model.extend({
         traits: {
             options: new Traits.CollectionM() // Options
         }
-    });    
+    });
     Menu.BaseView = Tools.View.extend({
-        tagName: 'div', 
+        tagName: 'div',
         className: 'tiki-menu',
         attributes: {
             tabindex: 0
@@ -142,24 +148,24 @@ define([
         },
         initialize: function(config) {
             config = config || {};
-            _.bindAll(this, 'onShowTimeout');            
+            _.bindAll(this, 'onShowTimeout');
             this.views = {};
-            
+
             if(!this.model) {
                 if(!config.options)
-                    config.options = []
+                    config.options = [];
                 this.model = new Menu.Model(config);
             }
-            
+
             var options = this.model.get('options');
             this.collection = options;
-                
+
             // Observe the options-collection
             options.on('add', this.addOne, this);
             options.on('remove', this.removeOne, this);
             options.on('reset', this.render, this);
             options.on('change:expanded', this.onExpandedChange, this);
-            
+
             this.selector = 'li.selectable';
             // Create a Selectable
             this.navigable = new Tools.Navigable({
@@ -170,7 +176,7 @@ define([
 
             this.$el.scrollMeOnly();
             if($.browser.ltie10)
-                this.$el.attr('unselectable', 'on');                     
+                this.$el.attr('unselectable', 'on');
         },
         render: function() {
             this.empty().$el.html('<ul></ul>');
@@ -185,7 +191,7 @@ define([
                 view = new View({model: option});
             this.views[option.cid] = view;
             this.ui.ul.append(view.render().el);
-            
+
             // render a submenu as well?
             if(option.get('submenu') && option.get('expanded'))
                 this._showSubmenu(option);
@@ -193,7 +199,7 @@ define([
         removeOne: function(option) {
             this.views[option.cid].remove();
         },
-        
+
         _showSubmenu: function(model) {
             var menu = new Menu.View(model.get('submenu'));
             menu.show({hideOther:false, focus:false}).alignTo(this.views[model.cid].el, {at: 'right top'});
@@ -201,30 +207,30 @@ define([
             // set silly properties, factor away these
             menu._isroot = false;
             menu._parentmenu = this;
-            this._submenu = menu;            
+            this._submenu = menu;
         },
         _hideSubmenu: function(model) {
             this._submenu.hide();
             this._submenu = null;
-        },        
+        },
         _hideAll: function() {
-            if(this._submenu) 
+            if(this._submenu)
                 this._submenu.hide();
-            for(var menu=this; menu; menu=menu._parentmenu) 
+            for(var menu=this; menu; menu=menu._parentmenu)
                 menu.hide();
         },
         _select: function() {
             var el = this.$('.active:first');
             var model = this.getModel(el);
             if(!model) return;
-            
+
             this._lock = true;
             el.blink(_.bind(function() {
                 this._hideAll();
                 this._lock = false;
                 this.trigger('select', model);
             }, this), {className: 'active'});
-        },              
+        },
         show: function(options) {
             var opt = Util.defs(options, {
                 hideOther: true,
@@ -232,15 +238,15 @@ define([
                 alignTo: false,
                 left: false,
                 top: false});
-               
-                           
+
+
             var availHeight = $(window).height();
             this.$el.css('max-height', availHeight);
-                        
-            if(opt.hideOther && Menu.BaseView.active) 
+
+            if(opt.hideOther && Menu.BaseView.active)
                 Menu.BaseView.active.hide();
             Menu.BaseView.active = this;
-            
+
             // implicit dom insert
             if(!this.el.parentElement)
                 $(document.body).append(this.render().el);
@@ -248,14 +254,14 @@ define([
             if(opt.alignTo) {
                 this.alignTo(opt.alignTo.of, opt.alignTo);
                 if(opt.focus)
-                    this.$el.focus();                
-            } 
+                    this.$el.focus();
+            }
             else if(opt.left !== false && opt.top !== false) {
                 this.$el.css({left: opt.left, top: opt.top});
                 if(opt.focus)
-                    this.$el.focus();                
+                    this.$el.focus();
             }
-            
+
 
             // Scroll down to options.active
             if(opt.alignTo && opt.active) {
@@ -267,22 +273,22 @@ define([
                     this.$el.scrollTop(active.position().top - spanOffset);
                 }
             }
-            
+
             this._okMouseUp = false;
-            window.setTimeout(this.onShowTimeout, 350);            
+            window.setTimeout(this.onShowTimeout, 350);
             this.trigger('show', this);
             return this;
         },
-        hide: function() {  
+        hide: function() {
             if(!this.$el.is(':visible'))
                 return;
-        
+
             this.$el.fadeOutFast({detach:true});
             this.trigger('hide', this);
             if(this._isroot)
                 Menu.BaseView.active = null;
         },
-        alignTo: function(el, options) {            
+        alignTo: function(el, options) {
             this.$el.position(_.defaults(options || {}, {
                 my: 'left top',
                 at: 'left bottom',
@@ -296,15 +302,15 @@ define([
             if(this._parentmenu)
                 this._parentmenu.trigger.apply(this._parentmenu, arguments);
         },
-        
+
         onExpandedChange: function(model) {
-            if(!model.get('submenu')) 
+            if(!model.get('submenu'))
                 return;
             if(model.get('expanded'))
                 this._showSubmenu(model);
             else
                 this._hideSubmenu(model);
-        },        
+        },
 
         onSelectableMouseEnter: function(e) {
             // todo: detach mouseover listener instead of _lock property
@@ -314,11 +320,11 @@ define([
         },
         onRightKeyDown: function(e) {
             var model = this.selectable.getFirstSelected();
-            if(!model)  
+            if(!model)
                 return;
             model.set('expanded', true);
             model.get('submenu').get('options').at(0);
-            this._submenu.el.focus();                
+            this._submenu.el.focus();
             this._submenu.selectable.selectOne();
         },
         onLeftKeyDown: function(e) {
@@ -348,7 +354,7 @@ define([
             this._lock = false;
         }, 150),
         onMouseDown: function(e) {
-            this._mousedown = e
+            this._mousedown = e;
         },
         onMouseUp: function(e) {
             if(this._okMouseUp && !$(e.target).closest('li.disabled').length)
@@ -366,13 +372,13 @@ define([
             'blur': 'onBlur'
         },
         merge: ['events'],
-        
+
         onBlur: function() {
             // When a focused menu loses focus to anything but another menu,
             // hide this menu and any sub/parent menus.
             window.setTimeout(_.bind(function(e) {
                 var focused = this.el.ownerDocument.activeElement;
-                if(!$(focused).is('.tiki-menu')) 
+                if(!$(focused).is('.tiki-menu'))
                     this._hideAll();
             }, this), 1);
         }
