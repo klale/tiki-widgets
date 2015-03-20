@@ -610,13 +610,14 @@ define([
             config = config || {};
             _.bindAll(this, 'onMenuSelect', 'onMenuHide', 'render');
             if(!this.model)
-                this.model = new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
+                this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
 
             ControlView.initialize.call(this, config);
             this.textField = config.textField || "text";
 
             var options = this.model.get('options');
             options.textField = this.textField;
+            options.valueField = this.valueField;
 
             this.listenTo(this.model, 'change', this.render);
 
@@ -633,7 +634,7 @@ define([
 
             var value = this.model.get('value');
             var text = this.renderText();
-            this.$el.html(this.template({text: text}));
+            this.$el.html(this.template({text: text, emptyText: this.model.emptyText}));
             this.$el.toggleClass('tiki-disabled', !!this.model.get('disabled'));
             if($.browser.ltie9) {
                 this.$('*').add(this.el).attr('unselectable', 'on');
