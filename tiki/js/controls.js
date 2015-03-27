@@ -605,6 +605,7 @@ define([
         // defaultmodel: ControlModels.SingleSelectionM,
         defaultmodel: Dropdown.Model,
         mixins: [ControlView],
+        MenuClass: Menu,
 
         initialize: function(config) {
             config = config || {};
@@ -622,7 +623,7 @@ define([
             this.listenTo(this.model, 'change', this.render);
 
             // Create the dropdown menu
-            this.menu = new Menu.Menu({
+            this.menu = new this.MenuClass.Menu({
                 options: options
             });
             this.menu.on('select', this.onMenuSelect);

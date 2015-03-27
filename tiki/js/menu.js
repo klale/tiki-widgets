@@ -27,15 +27,15 @@ define([
     Option.View = Tools.View.extend('Menu.Option.View', {
         className: 'selectable',
         tagName: 'li',
-        template: Util.template('<span>${obj.text}</span><i>&#xe10a;</i>'),
+        template: _.template('<span>Hej: <%=obj.text%></span><i>&#xe10a;</i>'),
 
-        initialize: function() {
+        initialize: function(config) {
             // Todo: assumes id extists on creation and never changes. OK?
             this.$el.attr('data-id', this.model.id);
         },
         render: function() {
-            var text = this.renderText();
-            var html = $('<span></span>').text(text).append('<i>&#xe10a;</i>');
+            var obj = _.extend(this.model.toJSON(), {text: this.renderText()});
+            var html = this.template(obj);
             this.$el.html(html);
             if(this.model.get('disabled'))
                 this.$el.addClass('disabled').removeClass('selectable');
@@ -146,6 +146,8 @@ define([
         ui: {
             'ul': '>ul'
         },
+        OptionClass: Option,
+
         initialize: function(config) {
             config = config || {};
             _.bindAll(this, 'onShowTimeout');
@@ -187,8 +189,16 @@ define([
             return this;
         },
         addOne: function(option) {
-            var View = (option.get('text') == '-' ? Spacer : Option.View),
-                view = new View({model: option});
+            // var View = (option.get('text') == '-' ? Spacer : Option.View),
+            //     view = new View({model: option});
+
+            var view;
+            if (option.get('text') == '-') {
+                view = new Spacer({model: option});
+            } else {
+                view = new this.OptionClass.View({model: option});
+            }
+
             this.views[option.cid] = view;
             this.ui.ul.append(view.render().el);
 
