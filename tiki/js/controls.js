@@ -139,7 +139,7 @@ define([
         },
         renderValue: function() {
             var format = this.model.get('format'),
-                value = Util.getattr(this.model, this.valueField)
+                value = Util.getattr(this.model, this.valueField);
 
             if(format)
                 return Globalize.format(value, format);
@@ -715,16 +715,17 @@ define([
         initialize: function(config)  {
             config = config || {};
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
+            this.valueField = config.valueField || 'value';
             ControlView.initialize.call(this, config);
 
             // Add the button
             this.$el.append('<button class="calendar" tabindex="-1"></button>');
 
             // and the text control
-            this.textcontrol = new Text({model: this.model});
+            this.textcontrol = new Text({model: this.model, valueField: this.valueField});
             this.$el.append(this.textcontrol.render().el);
             this.listenTo(this.textcontrol, 'controlblur', this.onTextControlBlur, this);
-            this.listenTo(this.model, 'change:value', this.onModelChangeValue, this);
+            this.listenTo(this.model, 'change:' + this.valueField, this.onModelChangeValue, this);
         },
         render: function() {
             this.$el.toggleClass('tiki-disabled', !!this.model.get('disabled'));
@@ -732,11 +733,13 @@ define([
             return this;
         },
         onModelChangeValue: function(model, value) {
-            if(model.previous('value') == null && value == null)  // traits2
+            if(model.previous(this.valueField) == null && value == null)  // traits2
                 return;
             this.hideDatePicker();
             this.render();
-            this.$el.trigger('change', {value: value})
+            var valueToSend = {};
+            valueToSend[this.valueField] = value;
+            this.$el.trigger('change', valueToSend);
         },
         onTextControlBlur: function() {
             this.$el.toggleClass('invalid', !!this.model.validationError);
@@ -746,7 +749,8 @@ define([
             // Lazy-create a DatePicker
             if(!this.datepicker) {
                 this.datepicker = new DatePicker({
-                    model: this.model
+                    model: this.model,
+                    valueField: this.valueField
                 });
                 var body = this.el.ownerDocument.body;
 
@@ -829,15 +833,17 @@ define([
         initialize: function(config)  {
             config = config || {};
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
+            this.valueField = config.valueField || "value";
             ControlView.initialize.call(this, config);
 
-            this.calendar = new Calendar.MonthCalendar({date: this.model.get('value') || new window.Date()});
+            var date = Util.getattr(this.model, this.valueField);
+            this.calendar = new Calendar.MonthCalendar({date: date || new window.Date()});
             this.listenTo(this.calendar, 'dropdownhide', this.focus);
             this.$el.append(this.calendar.render().el);
-            this.listenTo(this.model, 'change:value', this.onModelChange, this);
+            this.listenTo(this.model, 'change' + this.valueField, this.onModelChange, this);
         },
         render: function() {
-            var date = this.model.get('value');
+            var date = Util.getattr(this.model, this.valueField);
             this.calendar.$('.day.selected').removeClass('selected');
             if(date) {
                 var ymd = Util.dateToYMD(date);
@@ -862,7 +868,8 @@ define([
             this.el.focus();
         },
         onModelChange: function(model) {
-            this.calendar.model.set('date', model.get('value'));
+            var date = Util.getattr(this.model, this.valueField);
+            this.calendar.model.set('date', date);
             this.render();
         },
         onMouseEnterDay: function(e) {
@@ -920,7 +927,7 @@ define([
         onClickDay: function(e) {
             var el = $(e.currentTarget);
             if(el[0]) {
-                this.model.set('value', el.attr('data-ymd'));
+                this.model.set(this.valueField, el.attr('data-ymd'));
             }
         }
     });
