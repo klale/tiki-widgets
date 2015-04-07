@@ -50,7 +50,7 @@ define([
             return this;
         },
         renderText: function() {
-            var textField = this.model.collection.textField;
+            var textField = this.model.collection.textField || "text";
             return Util.getattr(this.model, textField);
         }
     });
