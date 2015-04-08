@@ -354,9 +354,12 @@ define([
             this._okMouseUp = true;
         },
         onScroll: function(e) {
-            if(this._mousedown)
+            if(this._mousedown) {
                 // This means we're dragging the scrollbar. Ignore the upcoming mouseup
-                this._okMouseUp = false;
+                // IE correctly fires mousedown on a scrollbar, but it does not fire a mouseup.
+                if(!$.browser.msie)
+                    this._okMouseUp = false;
+            }
             this._lock = true;
             this.onScrollDebounce();
         },
