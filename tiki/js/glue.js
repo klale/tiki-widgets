@@ -324,7 +324,7 @@ define([
             if(!text)
                 text = $(el).html();
             if(text)
-                checkbox.model.text = text;
+                checkbox.model.set('text', text);
 
             // Todo: abstract this for all controls
             var disabled = $(el).attr('data-disabled');
