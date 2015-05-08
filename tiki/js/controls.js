@@ -1329,6 +1329,7 @@ define([
         onLIClick: function(e) {
             var li = $(e.currentTarget);
             li.toggleClass('checked', !li.hasClass('checked'));
+            this.trigger("change");
         }
     });
 
@@ -1350,6 +1351,7 @@ define([
         },
         defaultmodel: DropdownMulti.Model,
         mixins: [ControlView],
+        instantUpdate: false,
 
         initialize: function(config) {
             config = config || {};
@@ -1357,16 +1359,23 @@ define([
                 this.model = new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
             ControlView.initialize.call(this, config);
 
+            if (config.instantUpdate) {
+                this.instantUpdate = true;
+            }
+
             // Create the dropdown
             this.dd = new Tools.Dropdown({
                 target: this.el,
                 makeDropdown: this.makeDropdown.bind(this),
             });
-            this.listenTo(this.dd, 'dropdownhide', this.onDropdownHide)
+            this.listenTo(this.dd, 'dropdownhide', this.updateValue);
+            if (this.instantUpdate) {
+                this.listenTo(this.dd.dropdown, 'change', this.updateValue);
+            }
             this.listenTo(this.model, 'change', this.render);
             this.listenTo(this.model, 'change:value', this.render);
         },
-        onDropdownHide: function() {
+        updateValue: function() {
             var ids = this.dd.dropdown.$('li.checked').map(function() {
                 return $(this).attr('data-id');
             }).get();
