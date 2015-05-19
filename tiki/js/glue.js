@@ -299,20 +299,6 @@ define([
         }
         dropdown.model.value = v;
     };
-
-    glue.dropdownmulti = function(el, v, model, key, options, glue) {
-        var dropdown = glue.views[key];
-        if(!dropdown) {
-            dropdown = new Controls.DropdownMulti({el: el});
-            $(el).addClass('tiki-dropdown');
-            glue.views[key] = dropdown;
-            var options = $(el).attr('options');
-            if(options) {
-                dropdown.model.options = glue[options];
-            }
-            dropdown.render();                
-        }
-    };    
     
     glue.checkbox = function(el, v, model, key, options, glue) {
         var checkbox = glue.views[key];
