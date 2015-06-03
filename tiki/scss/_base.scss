@@ -87,7 +87,7 @@
                 &::after {
                     content: '\00a0▼';
                     font-size: 8px;
-                }                
+                }
             }
             .month {
                 &::after {
@@ -96,7 +96,7 @@
                 }
                 padding-right: 10px;
             }
-            
+
         }
     }
     .nextyear,
@@ -119,7 +119,7 @@
     }
     .nextyear {
         left: auto;
-        right: 5px;        
+        right: 5px;
     }
     .nextmonth {
         left: auto;
@@ -176,16 +176,16 @@
     box-sizing: border-box;
     cursor: text;
     border: 1px solid #ccc;
-    padding: 2px 5px;   
+    padding: 2px 5px;
     outline: none;
     background-color: #fff;
     line-height: 20px;
-    height: 25px;    
-    
+    height: 25px;
+
     white-space: nowrap;
     overflow: hidden;
-    
-    
+
+
     // disabled-style
     .tiki-disabled &,
     &.tiki-disabled {
@@ -204,14 +204,14 @@
 
 %base-password {
     @extend %base-text;
-    -webkit-text-security: disc;    
+    -webkit-text-security: disc;
 }
 
 %base-textarea {
     @extend %base-text;
     height: auto;
     line-height: 16px;
-    white-space: normal;    
+    white-space: normal;
     div, p {
         margin: 0 !important; /* ie required important, todo: who's overriding? */
     }
@@ -230,16 +230,16 @@
     display: inline-block;
     width: 15px;
     height: 15px;
-    content: '\00a0';        
+    content: '\00a0';
     border: 1px solid #999;
-    
+
     text-align: center;
     font-size: 11px;
     line-height: 16px;
     margin-right: 6px;
     margin-left: 3px;
     color: #333;
-    @include gradient(#fff, #e0e0e0);    
+    @include gradient(#fff, #e0e0e0);
     border-radius: 3px;
 }
 
@@ -259,18 +259,18 @@
     @include user-select(none);
     height: 17px;
     display: inline-block;
-    
+
     // icon
     &:before {
         // draw a checkbox
         @include base-checkbox-bg();
         .ie9 & {
-            background-color: #fff;  
+            background-color: #fff;
             box-shadow: inset 0 -8px 13px -2px rgba( 0, 0, 0, .15);
             @include border-radius(4px);
         }
     }
-    
+
     &.checked:before,
     &[checked]:before {
         content: "\e0fe";
@@ -288,7 +288,7 @@
             border: 1px solid #ccc !important;
             box-shadow: none;
         }
-    }    
+    }
 }
 
 
@@ -298,7 +298,7 @@
     padding-left: 25px;
     position: relative;
     line-height: 18px;
-    
+
     &:before {
         // draw a circle
         border-radius: 13px;
@@ -306,11 +306,11 @@
         left: 0px;
         top: 0px;
         font-size: 8px;
-        line-height: 15px;        
+        line-height: 15px;
     }
     &.checked:before {
-      content: "\f111";        
-    }    
+      content: "\f111";
+    }
 
 }
 
@@ -319,7 +319,7 @@
     @include user-select(none);
     position: relative;
     display: inline-block;
-    
+
     > i {
         display: none;
     }
@@ -332,7 +332,7 @@
         overflow: hidden;
         display: block;
         position: relative;
-        text-shadow: none;        
+        text-shadow: none;
     }
     button {
         position: absolute;
@@ -350,7 +350,7 @@
     &.editable span {
         background-color: #fff;
         border-top: 1px solid #ddd;
-        border-left: 1px solid #ddd;    
+        border-left: 1px solid #ddd;
         border-bottom: 1px solid #ddd;
         height: 20px;
         margin: 0px;
@@ -378,16 +378,16 @@
         margin-left: 22px;
         border-color: #aaa;
         @include border-radius(0);
-    }    
-    
+    }
+
     // disabled-style
     .tiki-disabled &,
     &.tiki-disabled {
         color: #aaa;
         span {
-            color: #999;            
+            color: #999;
         }
-        @include gradient(#f4f4f4, #f4f4f4);        
+        @include gradient(#f4f4f4, #f4f4f4);
         border: 1px solid #ccc !important;
         button {
             opacity: 0.4;
@@ -397,7 +397,7 @@
             border: 1px solid #ccc !important;
             box-shadow: none;
         }
-    }    
+    }
 }
 
 %base-hidden {
@@ -417,7 +417,7 @@
 
 %base-radiogroup {
     padding: 0px;
-    list-style-type: none;    
+    list-style-type: none;
     li {
         margin-bottom: 3px;
     }
@@ -428,7 +428,7 @@
     position: relative;
     display: inline-block;
     width: 150px;
-    
+
     > button {
         position: absolute;
         right: 4px;
@@ -448,7 +448,7 @@
                 @include glowoutlineinvalid();
             }
         }
-    }    
+    }
 }
 
 %base-datepicker {
@@ -493,7 +493,7 @@
         .label {
             padding: 3px;
             color: #777;
-            text-shadow: #fff 0px 2px;            
+            text-shadow: #fff 0px 2px;
         }
     }
     &.horizontal {
@@ -507,8 +507,8 @@
                 width: 75%;
                 float: left;
             }
-        }        
-        
+        }
+
     }
 }
 
@@ -518,7 +518,7 @@
     outline: none;
     height: 20px;
     position: relative;
-    height: 20px;    
+    height: 20px;
 
     &:focus {
         outline: none;
@@ -554,7 +554,7 @@
     }
     .handle div {
         height: 20px;
-    }    
+    }
 }
 
 
@@ -566,4 +566,47 @@
 %base-spaceholder {
     visibility: hidden;
 }
+
+
+// ==========
+// = Sticky =
+// ==========
+%base-stickystack {
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    right: 0;
+
+    >.row {
+        margin: 0; /* bootstr */
+        overflow: hidden;
+        position: relative;
+        >* {
+            // temp
+            width: auto !important;
+            float: none !important;
+
+            position: relative;
+            bottom: 0;
+        }
+    }
+
+    >.group {
+        overflow: hidden;
+        >.row {
+            // Temp
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+
+            position: relative;
+            vertical-align: top;
+            display: inline-block;
+            > * {
+                position: relative;
+            }
+        }
+    }
+}
+
 
