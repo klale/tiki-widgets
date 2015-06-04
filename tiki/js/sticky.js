@@ -338,11 +338,7 @@ var Sticky = StickyBase.extend('Sticky', {
         this.orgEl = null;
         this.row.remove(); // remove the empty <div class="row">
     },
-    beginStick: function() {
-        this.row = this.doClone ? this.createRowClone() : this.createRow();
-        this.insertRow();
-
-        // Position the clone before inserting it
+    positionRow: function() {
         var rect = this.state.rect;
         this.row.css({
             width: rect.width,
@@ -350,8 +346,12 @@ var Sticky = StickyBase.extend('Sticky', {
             left: rect.left + this.scrollEvent.scrollLeft,
             marginRight: rect.width * -1
         });
+    },
+    beginStick: function() {
+        this.row = this.doClone ? this.createRowClone() : this.createRow();
+        this.insertRow();
+        this.positionRow();
 
-        // console.log('beginSttick manual onScroll', document.body.scrollTop, this.orgEl)
         this.scrollEvent.addMutated(this.cid)
         this.viewport.triggerScrollEvent(this.scrollEvent);
     },
@@ -363,7 +363,6 @@ var Sticky = StickyBase.extend('Sticky', {
             this.group.remove();
         }
 
-        // console.log('endStick manual onScroll', document.body.scrollTop, this.el)
         this.scrollEvent.addMutated(this.cid)
         this.viewport.triggerScrollEvent(this.scrollEvent);
     },
