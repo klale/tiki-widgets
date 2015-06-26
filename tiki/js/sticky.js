@@ -473,7 +473,7 @@ var Sticky = StickyBase.extend('Sticky', {
     },
     endStick: function(newpos, oldpos) {
         if (this.doClone) {
-            this.removeRowClone()
+            this.removeRowClone();
         } else {
             this.removeRow();
         }
