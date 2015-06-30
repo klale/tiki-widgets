@@ -13,7 +13,9 @@ var makeSpaceholder = function(el) {
     spaceholder.css({
         width: $(el).outerWidth(),
         height: $(el).outerHeight(),
-        margin: $(el).css('margin')
+        margin: $(el).css('margin'),
+        position: 'relative',
+        left: el.getBoundingClientRect().left
     });
     return spaceholder;
 };
@@ -152,13 +154,15 @@ var ElementViewport = AbstractViewport.extend('ElementViewport', {
 var StickyBase = Tools.View.extend('Sticky', {
 
     initialize: function(options) {
+        _.bindAll(this, 'onViewportScroll');
+        this.enabled = options.enabled === undefined ? true : options.enabled;
         // Set scrollable, default to document
         this.setViewport($(options.viewport || document));
         this.state = {};
     },
     setViewport: function(viewportEl) {
         viewportEl = $(viewportEl);
-        if (this.viewport) {
+        if (this.enabled && this.viewport) {
             this.viewport.off('scroll', this.onViewportScroll);
         }
         var viewport = viewportEl.data('viewport');
@@ -170,7 +174,24 @@ var StickyBase = Tools.View.extend('Sticky', {
         }
 
         this.viewport = viewport;
-        this.listenTo(viewport, 'scroll', this.onViewportScroll);
+        if (this.enabled) {
+            this.listenTo(viewport, 'scroll', this.onViewportScroll);
+        }
+    },
+    enable: function() {
+        this.enabled = true;
+        if (this.viewport) {
+            this.viewport.on('scroll', this.onViewportScroll);
+        }
+    },
+    disable: function() {
+        if (this.row) {
+            this.endStick();
+        }
+        if (this.viewport) {
+            this.viewport.off('scroll', this.onViewportScroll);
+        }
+        this.enabled = false;
     },
     getStackHeight: function(scrollEvent) {
         return scrollEvent.stackHeight;
@@ -505,10 +526,8 @@ var Sticky = StickyBase.extend('Sticky', {
         else if(this.rowStatus == 'above') {
             if (scrollEvent.direction == 'up') {
                 rect = this.context[0].getBoundingClientRect();
-
-                if (rect.bottom > this.state.stackHeight) {
+                if (rect.bottom > this.stackHeight) {
                     this.rowStatus = 'scrollingIn';
-                    this.stackHeight = this.state.stackHeight;
                     this.onScrollIn(scrollEvent);
                 }
             }
@@ -546,7 +565,7 @@ var Sticky = StickyBase.extend('Sticky', {
         }
 
         var rect = this.context[0].getBoundingClientRect();
-        var top = rect.bottom - this.stackHeight - this.rowHeight;
+        var top = (rect.bottom - this.stackHeight - this.rowHeight);
         top = Math.max(this.rowHeight * -1, top);
 
         this.row.css('top', top);
@@ -566,8 +585,11 @@ var Sticky = StickyBase.extend('Sticky', {
         var ofWhichIsVisible = rect.bottom - this.stackHeight;
         var top = (boxHeight - ofWhichIsVisible) * -1;
         top = Math.min(0, top);
-        this.row.css('top', top);
-        if (top === 0) {
+        if(this.row) {
+            this.row.css('top', top);
+        }
+
+        if (top === 0 || !this.row) {
             this.rowStatus = 'hepp';
         }
     },
