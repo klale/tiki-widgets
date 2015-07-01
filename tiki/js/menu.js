@@ -30,6 +30,9 @@ define([
         template: _.template('<span><%=obj.text%></span><i>&#xe10a;</i>'),
 
         initialize: function(config) {
+            if(config.optionTemplate) {
+                this.template = config.optionTemplate;
+            }
             // Todo: assumes id extists on creation and never changes. OK?
             this.$el.attr('data-id', this.model.id);
         },
@@ -159,6 +162,10 @@ define([
                 this.model = new Menu.Model(config);
             }
 
+            if(config.options.optionTemplate) {
+                this.optionTemplate = config.options.optionTemplate;
+            }
+
             var options = this.model.get('options');
             this.collection = options;
 
@@ -196,7 +203,11 @@ define([
             if (option.get('text') == '-') {
                 view = new Spacer({model: option});
             } else {
-                view = new this.OptionClass.View({model: option});
+                var conf = { model: option };
+                if(this.optionTemplate) {
+                    conf.optionTemplate = this.optionTemplate;
+                }
+                view = new this.OptionClass.View(conf);
             }
 
             this.views[option.cid] = view;

@@ -606,6 +606,7 @@ define([
         defaultmodel: Dropdown.Model,
         mixins: [ControlView],
         MenuClass: Menu,
+        optionTemplate: null,
 
         initialize: function(config) {
             config = config || {};
@@ -619,6 +620,10 @@ define([
             var options = this.model.get('options');
             options.textField = this.textField;
             options.valueField = this.valueField;
+
+            if(this.optionTemplate) {
+                options.optionTemplate = this.optionTemplate;
+            }
 
             this.listenTo(this.model, 'change', this.render);
 
