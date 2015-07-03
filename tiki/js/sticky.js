@@ -218,11 +218,11 @@ var StickyBase = Tools.View.extend('Sticky', {
         if (rect.top > scrollEvent.viewportHeight) {
             position = 'fullybelow';
         }
+        else if (bottomToFloor >= 0 && topToStack >= 0 && bottomToStack >= 0) {
+            position = 'fullyvisible';
+        }
         else if (bottomToStack <= 0) {
             position = 'fullyabove';
-        }
-        else if (bottomToFloor >= 0 && topToStack >= 0) {
-            position = 'fullyvisible';
         }
         else if (bottomToFloor < 0 && topToStack >= 0) {
             position = 'partiallybelow';
