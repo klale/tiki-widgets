@@ -87,6 +87,7 @@ var AbstractViewport = Tools.View.extend({
 
 var DocumentViewport = AbstractViewport.extend('DocumentViewport', {
     initialize: function() {
+        this.groups = {};
         this.stack = $('<div class="tiki-stickystack fixed"></div>');
         $(this.el.body).insertAt(0, this.stack);
         this.scrollEvent = this.createScrollEvent();
@@ -118,6 +119,7 @@ var DocumentViewport = AbstractViewport.extend('DocumentViewport', {
 
 var ElementViewport = AbstractViewport.extend('ElementViewport', {
     initialize: function() {
+        this.groups = {};
         this.stack = $('<div class="tiki-stickystack absolute"></div>');
         $(this.el).insertAt(0, this.stack);
         this.scrollEvent = this.createScrollEvent();
@@ -399,19 +401,28 @@ var StickyGroup = Tools.View.extend('StickyGroup', {
 
 var Sticky = StickyBase.extend('Sticky', {
     initialize: function(options) {
-        Sticky.__super__.initialize.call(this, options);
-
-        this.context = options.context;
-
         if (options.group) {
             this.group = options.group;
         }
+
+        Sticky.__super__.initialize.call(this, options);
+        this.context = options.context;
+
         this.doClone = !!options.doClone;
         this.on('partiallyabove fullyabove', this.onAbove, this);
         this.on('partiallybelow fullybelow fullyvisible', this.onBelow, this);
     },
     setViewport: function(viewportEl) {
         Sticky.__super__.setViewport.call(this, viewportEl);
+
+        if (typeof(this.group) == 'string') {
+            if (!this.viewport.groups[this.group]) {
+                var group = this.createGroup(this.group);
+                this.viewport.groups[this.group] = group;
+            }
+            this.group = this.viewport.groups[this.group];
+        }
+
         this.listenTo(this.viewport, 'horizontalscroll', this.onHorizontalViewportScroll);
     },
     getStackHeight: function(scrollEvent) {
@@ -441,6 +452,9 @@ var Sticky = StickyBase.extend('Sticky', {
         this.setElement(this.spaceholder);
 
         return row;
+    },
+    createGroup: function(groupName) {
+        return new StickyGroup({name: groupName});
     },
     insertRow: function() {
         if (this.group) {
