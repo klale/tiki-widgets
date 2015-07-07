@@ -373,9 +373,10 @@ define([
             }
             this.searchLastKeyPress = now;
 
+            var textField = this.model.options.textField;
             var searchString = this.searchString;
             var match = this.model.options.find(function(option) {
-                return option.get("title").substring(0,searchString.length).toUpperCase() === searchString;
+                return option.get(textField).substring(0,searchString.length).toUpperCase() === searchString;
             });
             if (match) {
                 this.$el.find('.active').removeClass('active');
