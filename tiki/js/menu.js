@@ -361,8 +361,26 @@ define([
         onReturnKeyDown: function(e) {
             this._select();
         },
+        searchString: '',
+        searchLastKeyPress: Date.now(),
         onKeyDown: function(e) {
             this._okMouseUp = true;
+            var now = Date.now();
+            if (now - this.searchLastKeyPress > 500) {
+                this.searchString = String.fromCharCode(e.keyCode);
+            } else {
+                this.searchString += String.fromCharCode(e.keyCode);
+            }
+            this.searchLastKeyPress = now;
+
+            var searchString = this.searchString;
+            var match = this.model.options.find(function(option) {
+                return option.get("title").substring(0,searchString.length).toUpperCase() === searchString;
+            });
+            if (match) {
+                this.$el.find('.active').removeClass('active');
+                this.views[match.cid].$el.addClass("active");
+            }
         },
         onScroll: function(e) {
             if(this._mousedown) {
