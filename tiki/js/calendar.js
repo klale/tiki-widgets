@@ -36,7 +36,7 @@ define([
         template: _.template(''+
             '<table>'+
                 '<thead>'+
-                    '<tr><td class="header" colspan="7"></td></tr>'+
+                    '<tr><td class="header" colspan="<%= colspan %>"></td></tr>'+
                 '</thead>'+
                 '<tbody></tbody>'+
             '</table>'
@@ -143,7 +143,8 @@ define([
             m.subtract('days', firstWeekdayOfMonth);
 
             // Create the main table
-            var table = $(this.template());
+            var colspan = this.weeks ? 8 : 7;
+            var table = $(this.template({colspan:colspan}));
             var tbody = table.children('tbody');
 
             // Render the header
