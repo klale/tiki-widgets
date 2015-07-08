@@ -1,5 +1,5 @@
 define([
-    'jquery', 
+    'jquery',
     'underscore',
     'backbone',
     'moment',
@@ -9,12 +9,12 @@ define([
     './traits'
 ], function($, _, Backbone, moment, Globalize, Tools, Menu, Traits) {
     'use strict';
-    var exp = {};    
+    var exp = {};
 
     // =================
     // = MonthCalendar =
     // =================
-    var MonthCalendarModel = Traits.Model.extend({    
+    var MonthCalendarModel = Traits.Model.extend({
         traits: {
             date: new Traits.Date(),
             fill: new Traits.Bool()
@@ -32,7 +32,7 @@ define([
      */
     exp.MonthCalendar = Tools.View.extend({
         className: 'tiki-calendar',
-    
+
         template: _.template(''+
             '<table>'+
                 '<thead>'+
@@ -75,6 +75,7 @@ define([
         initialize: function(config) {
             config = config || {};
             this.model = config.model || new MonthCalendarModel(config, {parse:true});
+            this.weeks = config.weeks || false;
             this.listenTo(this.model, 'change', this.onModelChange, this);
         },
         onModelChange: function(model) {
@@ -96,9 +97,9 @@ define([
         showPrevYear: function() {
             var date = this.model.get('date');
             this.model.set('date', moment(date).clone().subtract({years: 1}).toDate());
-        },        
+        },
         showMonthDropdown: function(e) {
-            e.preventDefault();                
+            e.preventDefault();
             if(!this.monthDropdown) {
                 var names = Globalize.cultures.default.calendar.months.names;
                 this.monthDropdown = new Menu.Menu({
@@ -133,37 +134,43 @@ define([
                 today_month = today.month(),
                 today_date = today.date(),
                 dayNames = Globalize.cultures.default.calendar.days.namesShort;
-        
+
             // Start at first day of month
             m.date(1);
             var firstWeekdayOfMonth = m.day() - 1;
             if(firstWeekdayOfMonth == -1)
-                firstWeekdayOfMonth = 6;        
+                firstWeekdayOfMonth = 6;
             m.subtract('days', firstWeekdayOfMonth);
-    
+
             // Create the main table
             var table = $(this.template());
             var tbody = table.children('tbody');
-    
+
             // Render the header
             table.find('thead .header').html(this.templateHeader({
                 monthname: date.format('MMMM'),
                 year: date.format('YYYY')
             }));
-            
-    
+
+
             // Add the weekday names
             var tr = $('<tr class="weekdays"></tr>').appendTo(table.find('thead'));
+            if(this.weeks) {
+                tr.append('<th></th>');
+            }
             for(var i=0,days=[1,2,3,4,5,6,0]; i<days.length; i++) {
                 tr.append($('<th>'+dayNames[days[i]]+'</th>'));
             }
-        
+
             // Add all the days
             for(i=0; i<42; i++) {
                 if(i % 7 === 0) {
-                   tr = $('<tr></tr>').appendTo(tbody);
+                    tr = $('<tr></tr>').appendTo(tbody);
+                    if(this.weeks) {
+                        tr.append('<td class="weeknumber">'+m.week()+'</td>');
+                    }
                 }
-        
+
                 // Add optional cell styling
                 var cls = ['day'],
                     day = m.day();
@@ -173,10 +180,11 @@ define([
                 if(day == 6 || day === 0) { // saturday or sunday
                     cls.push('weekend');
                 }
+
                 if(m.date() == today_date && m.month() == today_month) {
                     cls.push('today');
                 }
-        
+
                 // Draw the cell
                 if(!this.fill && m.month() !== month) {
                     // Only show days in this month
@@ -191,11 +199,11 @@ define([
                 }
                 m.add('days', 1);
             }
-        
-            $(this.el).empty().append(table);    
-        
+
+            $(this.el).empty().append(table);
+
             this.bindUI();
-            return this;    
+            return this;
         },
         onDropdownHide: function(e) {
             this.trigger('dropdownhide');
@@ -206,10 +214,10 @@ define([
         },
         onYearDropdownSelect: function(e) {
             var date = moment(this.model.date);
-            this.model.date = date.year(e.id).toDate();            
+            this.model.date = date.year(e.id).toDate();
         },
 
-    
+
     });
 
 

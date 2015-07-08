@@ -719,6 +719,7 @@ define([
 
         initialize: function(config)  {
             config = config || {};
+            this.weeks = config.weeks || false;
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
             this.valueField = config.valueField || 'value';
             ControlView.initialize.call(this, config);
@@ -755,7 +756,8 @@ define([
             if(!this.datepicker) {
                 this.datepicker = new DatePicker({
                     model: this.model,
-                    valueField: this.valueField
+                    valueField: this.valueField,
+                    weeks: this.weeks
                 });
                 var body = this.el.ownerDocument.body;
 
@@ -837,12 +839,13 @@ define([
 
         initialize: function(config)  {
             config = config || {};
+            var weeks = config.weeks || false;
             this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config, {parse:true});
             this.valueField = config.valueField || "value";
             ControlView.initialize.call(this, config);
 
             var date = Util.getattr(this.model, this.valueField);
-            this.calendar = new Calendar.MonthCalendar({date: date || new window.Date()});
+            this.calendar = new Calendar.MonthCalendar({date: date || new window.Date(), weeks: weeks });
             this.listenTo(this.calendar, 'dropdownhide', this.focus);
             this.$el.append(this.calendar.render().el);
             this.listenTo(this.model, 'change' + this.valueField, this.onModelChange, this);
