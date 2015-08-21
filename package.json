@@ -1,16 +1,21 @@
 {
-    "name": "gui",
-    "description": "A collection of GUI widgets built on top of Backbone.",
-    "keywords": [],
-    "dependencies": {
-        "underscore": ">=1.4.3",
-        "backbone": ">=0.5.3"
-    },
-    "devDependencies": {
-    },
-   "scripts": {
-    },
-    "main": "",
-    "version": "0.1.0",
-    "license": "MIT"
+  "name": "gui",
+  "description": "A collection of GUI widgets built on top of Backbone.",
+  "keywords": [],
+  "dependencies": {
+    "underscore": ">=1.4.3",
+    "backbone": ">=0.5.3"
+  },
+  "devDependencies": {
+    "babelify": "^6.2.0",
+    "browserify": "^11.0.1",
+    "gulp": "^3.9.0",
+    "gulp-buffer": "0.0.2",
+    "gulp-replace": "^0.5.4",
+    "vinyl-source-stream": "^1.1.0"
+  },
+  "scripts": {},
+  "main": "",
+  "version": "0.1.0",
+  "license": "MIT"
 }
