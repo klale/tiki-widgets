@@ -85,6 +85,8 @@ var ContextMixin = (function () {
           this.frozenStackHeight = scrollData.stackHeight;
           this.rowStatus = 'scrolling';
           this.onVerticalScroll(scrollData);
+        } else if (distance < 0 && this.rowStatus !== 'above') {
+          this.onScrollOut(scrollData);
         }
       }
 

@@ -60,6 +60,9 @@ export default class ContextMixin {
         this.rowStatus = 'scrolling';
         this.onVerticalScroll(scrollData);
       }
+      else if (distance < 0 && this.rowStatus !== 'above') {
+        this.onScrollOut(scrollData);
+      }
     }
 
     if (this.rowStatus == 'scrolling') {
