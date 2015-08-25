@@ -1,26 +1,40 @@
-import _ from 'underscore';
-import { getRelativeRect } from './util';
+// ES6
+// import _ from 'underscore';
+// import { getRelativeRect } from './util';
 
+define([
+  'underscore',
+  'tiki/tools',
+  './util'
+], function(_, Tools, StickyUtils) {
+'use strict';
 
-export default class ContextMixin {
+// ES5
+var getRelativeRect = StickyUtils.getRelativeRect;
 
-  initialize(options) {
+// ES6
+// export default class ContextMixin {
+
+var ContextMixin = {
+
+  // This one is called initialize in es6 as well
+  initialize: function(options) {
     _.bindAll(this, 'onVerticalScroll');
     this.context = options.context;
     this.watcher.on('verticalscroll', this.onVerticalScroll);
-  }
+  },
 
-  getDistanceToStack(scrollData) {
+  getDistanceToStack: function(scrollData) {
     var contextBottom = getRelativeRect(this.context, scrollData.scrollEvent).bottom;
     var distance = (contextBottom - (this.frozenStackHeight || scrollData.stackHeight)) + scrollData.rect.height;
     return distance;
-  }
+  },
 
-  getContextRect(scrollEvent) {
+  getContextRect: function(scrollEvent) {
     return getRelativeRect(this.context, scrollEvent);
-  }
+  },
 
-  onScrollOut(scrollData) {
+  onScrollOut: function(scrollData) {
     var scrollEvent = scrollData.scrollEvent;
     var distance = this.getDistanceToStack(scrollData);
     var rowHeight = scrollData.rect.height
@@ -32,8 +46,8 @@ export default class ContextMixin {
     if (marginTop === rowHeight) {
       this.rowStatus = 'above';
     }
-  }
-  onScrollIn(scrollData) {
+  },
+  onScrollIn: function(scrollData) {
     var distance = this.getDistanceToStack(scrollData);
     var marginTop = scrollData.rect.height - distance;
     marginTop = Math.max(0, marginTop);
@@ -43,9 +57,9 @@ export default class ContextMixin {
       this.rowStatus = null;
       this.frozenStackHeight = null;
     }
-  }
+  },
 
-  onVerticalScroll(scrollData) {
+  onVerticalScroll: function(scrollData) {
     if (!this.context || !this.row) {
       return;
     }
@@ -74,5 +88,12 @@ export default class ContextMixin {
       }
     }
   }
-}
+};
 
+
+
+// ES5
+return ContextMixin;
+
+
+});

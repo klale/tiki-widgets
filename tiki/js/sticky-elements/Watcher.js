@@ -1,23 +1,47 @@
-import _ from 'underscore';
-import $ from 'jquery';
-import Events from 'events';
-import { ElementViewport, DocumentViewport }  from './viewport';
-import { getRelativeRect, extend } from './util';
+// ES6
+// import _ from 'underscore';
+// import $ from 'jquery';
+// import Events from 'events';
+// import { ElementViewport, DocumentViewport }  from './viewport';
+// import { getRelativeRect, extend } from './util';
 
 
+
+// ES5
+define([
+    'jquery',
+    'underscore',
+    'backbone',
+    'tiki/tools',
+    './viewport',
+    './util'
+], function($, _, Backbone, Tools, Viewport, StickyUtils) {
+    'use strict';
 
 var idCounter = 0;
 
+// ES5
+var ElementViewport = Viewport.ElementViewport;
+var DocumentViewport = Viewport.DocumentViewport;
+var getRelativeRect = StickyUtils.getRelativeRect;
+var extend = StickyUtils.extend;
 
-export default class Watcher extends Events.EventEmitter {
 
-  constructor(options) {
-    super();
+/// export default class Watcher extends Events.EventEmitter {
+var Watcher = Tools.View.extend('Watcher', {
+
+  /// constructor(options) {
+  initialize: function(options) {
+    // ES6
+    /// super();
+
     this.id = idCounter;
     idCounter += 1;
 
-    this.$el = $(options.el);
-    this.el = this.$el[0];
+    // ES6
+    // this.$el = $(options.el);
+    // this.el = this.$el[0];
+
     this.onVerticalScroll = options.onVerticalScroll;
     if (options.getStackHeight) {
       this.getStackHeight = options.getStackHeight;
@@ -30,16 +54,21 @@ export default class Watcher extends Events.EventEmitter {
 
     _.bindAll(this, '_onVerticalScroll');
     this.enabled = options.enabled === undefined ? true : options.enabled;
-  }
+  },
 
-  remove() {
+  remove: function() {
     // Stop receiveng events from the viewport
     this.viewport.removeWatcher(this);
-    // Remove all listeners attached to this watcher
-    this.removeAllListeners();
-  }
 
-  setViewport(viewportEl) {
+    // ES6 removed
+    // // Remove all listeners attached to this watcher
+    // this.removeAllListeners();
+
+    // ES5 added
+    Watcher.__super__.remove.call(this);
+  },
+
+  setViewport: function(viewportEl) {
     viewportEl = $(viewportEl);
     if (this.viewport) {
       this.viewport.removeWatcher(this);
@@ -53,30 +82,35 @@ export default class Watcher extends Events.EventEmitter {
     }
     viewport.addWatcher(this);
     this.viewport = viewport;
-  }
+  },
 
-  setElement(el) {
-    this.$el = $(el);
-    this.el = this.$el[0];
-  }
+  // ES6 removed
+  // setElement(el) {
+  //   this.$el = $(el);
+  //   this.el = this.$el[0];
+  // }
 
-  getRect(scrollEvent) {
+  getRect: function(scrollEvent) {
     return getRelativeRect(this.el, scrollEvent);
-  }
+  },
 
-  getStackHeight(scrollEvent) {
+  getStackHeight: function(scrollEvent) {
     return scrollEvent.stackHeight;
-  }
+  },
 
-  _onHorizontalScroll(scrollEvent) {
+  _onHorizontalScroll: function(scrollEvent) {
     var scrollData = {
       scrollEvent: scrollEvent
     }
-    this.emit('horizontalscroll', scrollData);
-  }
+    // ES6
+    // this.emit('horizontalscroll', scrollData);
+
+    // ES5
+    this.trigger('horizontalscroll', scrollData);
+  },
 
 
-  _onVerticalScroll(scrollEvent) {
+  _onVerticalScroll: function(scrollEvent) {
     if (!this.enabled) {
       return;
     }
@@ -132,14 +166,28 @@ export default class Watcher extends Events.EventEmitter {
 
     if (oldPosition != position) {
       // Trigger an event when the position changes
-      this.emit(position, scrollData, oldPosition);
+      // ES6
+      // this.emit(position, scrollData, oldPosition);
+
+      // ES5
+      this.trigger(position, scrollData, oldPosition);
     }
 
-    this.emit('verticalscroll', scrollData);
+    // ES6
+    // this.emit('verticalscroll', scrollData);
+
+    // ES5
+    this.trigger('verticalscroll', scrollData);
   }
 
-}
+});
 
+// ES5
+return Watcher;
 
-// ES5 extend function
-Watcher.extend = extend;
+});
+
+// ES6
+// // ES5 extend function
+// Watcher.extend = extend;
+

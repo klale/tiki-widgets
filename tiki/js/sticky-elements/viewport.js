@@ -1,55 +1,84 @@
-import $ from 'jquery';
-import { ScrollEvent } from './util';
-import Events from 'events';
+// ES6
+// import $ from 'jquery';
+// import { ScrollEvent } from './util';
+// import Events from 'events';
 
-function skipDisabled(watcher) {
-  return watcher.enabled;
-}
 
-class AbstractViewport extends Events.EventEmitter {
 
-  constructor() {
-    super();
+// ES5
+define([
+    'jquery',
+    'tiki/tools',
+    './util'
+], function($, Tools, StickyUtils) {
+    'use strict';
+
+var ScrollEvent = StickyUtils.ScrollEvent;
+
+
+var exp = {};
+// class AbstractViewport extends Events.EventEmitter {
+
+var AbstractViewport = Tools.View.extend({
+
+  // ES6
+  // constructor() {
+  initialize: function() {
+    // ES6
+    // super();
     this.watchers = [];
-  }
+  },
 
-  triggerNewScrollEvent() {
+  triggerNewScrollEvent: function() {
     // Create and dispatch a new scroll event artificially
     // Reuse the same browser event
     this.onScroll(this.scrollEvent.e);
-  }
+  },
 
-  broadcastScrollEvent(scrollEvent) {
+  broadcastScrollEvent: function(scrollEvent) {
     if (scrollEvent.direction === 'up') {
+      // ES6
+      // this.watchers
+      // .filter(watcher => watcher.enabled)
+      // .sort((a, b) => b.stackPos - a.stackPos)
+      // .forEach(watcher => this.triggerOne(watcher, scrollEvent));
+
+      // ES5
       this.watchers
-      .filter(watcher => watcher.enabled)
-      .sort((a, b) => b.stackPos - a.stackPos)
-      .forEach(watcher => this.triggerOne(watcher, scrollEvent));
+      .filter(function(watcher) { return watcher.enabled; })
+      .sort(function(a, b) { return b.stackPos - a.stackPos; })
+      .forEach(function(watcher) { this.triggerOne(watcher, scrollEvent); }.bind(this));
     }
     else {
-      this.watchers
-      .filter(watcher => watcher.enabled)
-      .sort((a, b) => a.stackPos - b.stackPos)
-      .forEach(watcher => this.triggerOne(watcher, scrollEvent));
-    }
-  }
+      // ES6
+      // this.watchers
+      // .filter(watcher => watcher.enabled)
+      // .sort((a, b) => a.stackPos - b.stackPos)
+      // .forEach(watcher => this.triggerOne(watcher, scrollEvent));
 
-  addWatcher(watcher) {
-    // console.log('Adding a new watcher: ', watcher);
+      // ES5
+      this.watchers
+      .filter(function(watcher) { return watcher.enabled; })
+      .sort(function(a, b) { return a.stackPos - b.stackPos; })
+      .forEach(function(watcher) { this.triggerOne(watcher, scrollEvent); }.bind(this));
+    }
+  },
+
+  addWatcher: function(watcher) {
     if (watcher.stackPos === undefined) {
       watcher.stackPos = this.watchers.length;
     }
     this.watchers.push(watcher);
-  }
+  },
 
-  removeWatcher(watcher) {
+  removeWatcher: function(watcher) {
     var index = this.watchers.indexOf(watcher);
     if (index !== -1) {
       this.watchers.splice(index, 1);
     }
-  }
+  },
 
-  triggerOne(watcher, scrollEvent) {
+  triggerOne: function(watcher, scrollEvent) {
 
     if (!scrollEvent.hasMutated(watcher.id)) {
       scrollEvent.addMutated(watcher.id);
@@ -62,9 +91,9 @@ class AbstractViewport extends Events.EventEmitter {
         watcher._onHorizontalScroll(scrollEvent);
       }
     }
-  }
+  },
 
-  retriggerScrollEvent() {
+  retriggerScrollEvent: function() {
     // TODO: ..well, retrigger is only necessary if stackheight has changed
 
     // Update the scrollHeight and dispatch scrollEvent
@@ -72,13 +101,13 @@ class AbstractViewport extends Events.EventEmitter {
       this.scrollEvent.stackHeight = this.barStack[0].getBoundingClientRect().height;
       this.broadcastScrollEvent(this.scrollEvent);
     }
-  }
+  },
 
-  refreshStackHeight(scrollEvent) {
+  refreshStackHeight: function(scrollEvent) {
     scrollEvent.stackHeight = this.barStack[0].getBoundingClientRect().height;
-  }
+  },
 
-  getScrollDirection(scrollLeft, scrollTop) {
+  getScrollDirection: function(scrollLeft, scrollTop) {
     // Get scroll direction
     var direction = null;
     if (this.scrollEvent) {
@@ -93,23 +122,30 @@ class AbstractViewport extends Events.EventEmitter {
       }
     }
     return direction;
-  }
+  },
 
-  onScroll(e) {
+  onScroll: function(e) {
     var scrollEvent = this.createScrollEvent(e);
 
     // Keep a reference to the most recent scroll event
     this.scrollEvent = scrollEvent;
     this.broadcastScrollEvent(scrollEvent);
   }
-}
+});  // ES5
 
+// ES6
+// export class DocumentViewport extends AbstractViewport {
+var DocumentViewport = AbstractViewport.extend('DocumentViewport', {
 
-export class DocumentViewport extends AbstractViewport {
-  constructor(config) {
-    super();
-    this.el = document;
-    this.$el = $(document);
+  // constructor(config) {
+  //   super();
+  //   this.el = document;
+  //   this.$el = $(document);
+
+  initialize: function(config) {
+    // ES5
+    DocumentViewport.__super__.initialize.call(this, config);
+
 
     this.groups = {};
     this.stack = $('<div class="stickystack fixed"><div class="bar-stack"></div><div class="inline-stack"></div></div>');
@@ -118,9 +154,9 @@ export class DocumentViewport extends AbstractViewport {
     this.el.body.insertBefore(this.stack[0], this.el.body.firstChild);
     this.scrollEvent = this.createScrollEvent();      // this.$el.on('scroll', _.throttle(this.onScroll, 5).bind(this));
     this.$el.on('scroll', this.onScroll.bind(this));
-  }
+  },
 
-  createScrollEvent(e) {
+  createScrollEvent: function(e) {
     var scrollTop = this.el.body.scrollTop || this.el.documentElement.scrollTop || 0;
     var scrollLeft = this.el.body.scrollLeft || this.el.documentElement.scrollLeft || 0;
 
@@ -139,14 +175,22 @@ export class DocumentViewport extends AbstractViewport {
       e: e
     });
   }
-}
+}); // ES5
 
 
-export class ElementViewport extends AbstractViewport {
-  constructor(config) {
-    super();
-    this.$el = $(config.el);
-    this.el = this.$el[0];
+// ES6
+// export class ElementViewport extends AbstractViewport {
+var ElementViewport = AbstractViewport.extend('ElementViewport', {
+  // ES6
+  // constructor(config) {
+  initialize: function(config) {
+    // ES5
+    ElementViewport.__super__.initialize.call(this, config);
+
+    // ES6
+    // super();
+    // this.$el = $(config.el);
+    // this.el = this.$el[0];
 
     this.groups = {};
     this.stack = $('<div class="stickystack absolute"><div class="bar-stack"></div><div class="inline-stack"></div></div>');
@@ -155,9 +199,10 @@ export class ElementViewport extends AbstractViewport {
     this.el.insertBefore(this.stack[0], this.el.firstChild);
     this.scrollEvent = this.createScrollEvent();
     this.$el.on('scroll', this.onScroll.bind(this));
-  }
+  },
 
-  createScrollEvent(e) {
+
+  createScrollEvent: function(e) {
     var scrollTop = this.el.scrollTop;
     var scrollLeft = this.el.scrollLeft;
     var rect = this.el.getBoundingClientRect();
@@ -175,12 +220,27 @@ export class ElementViewport extends AbstractViewport {
       stackHeight: this.barStack[0].getBoundingClientRect().height,
       e: e
     });
-  }
+  },
 
-  onScroll(e) {
+  onScroll: function(e) {
     this.stack.css('top', this.el.scrollTop);
     // this.stack.css('left', this.el.scrollLeft);
-    super.onScroll(e);
+
+    // ES6
+    // super.onScroll(e);
+
+    // ES5
+    ElementViewport.__super__.onScroll.call(this, e);
   }
+});
+
+// ES5
+return {
+  ElementViewport: ElementViewport,
+  DocumentViewport: DocumentViewport
 }
+
+
+});
+
 

@@ -1,8 +1,15 @@
-import $ from 'jquery';
+// ES6
+// import $ from 'jquery';
+
+define([
+  'jquery'
+], function($) {
 
 
 
-export function extend(protoProps) {
+// ES6
+// export function extend(protoProps) {
+function extend(protoProps) {
   var parent = this;
   var child;
 
@@ -27,23 +34,25 @@ export function extend(protoProps) {
 }
 
 
+// ES6
+// export function mixin(Parent, Mixin) {
+//   Mixin = Mixin.prototype;
 
-export function mixin(Parent, Mixin) {
-  Mixin = Mixin.prototype;
+//   class Mixed extends Parent {}
 
-  class Mixed extends Parent {}
+//   Object.getOwnPropertyNames(Mixin).forEach(function (name) {
+//     if (name !== "constructor") {
+//       Object.defineProperty(Mixed.prototype, name, Object.getOwnPropertyDescriptor(Mixin, name));
+//     }
+//   });
 
-  Object.getOwnPropertyNames(Mixin).forEach(function (name) {
-    if (name !== "constructor") {
-      Object.defineProperty(Mixed.prototype, name, Object.getOwnPropertyDescriptor(Mixin, name));
-    }
-  });
-
-  return Mixed;
-}
+//   return Mixed;
+// }
 
 
-export function getRelativeRect(el, scrollEvent) {
+// ES6
+// export function getRelativeRect(el, scrollEvent) {
+function getRelativeRect(el, scrollEvent) {
   var rect = cloneRect(el.getBoundingClientRect());
   rect.top -= scrollEvent.viewportRect.top;
   rect.bottom = rect.top + rect.height;
@@ -51,8 +60,9 @@ export function getRelativeRect(el, scrollEvent) {
   return rect;
 }
 
-
-export function cloneRect(rect) {
+// ES6
+// export function cloneRect(rect) {
+function cloneRect(rect) {
   return {
     bottom: rect.bottom,
     height: rect.height,
@@ -64,8 +74,11 @@ export function cloneRect(rect) {
 }
 
 
-export class ScrollEvent {
-  constructor(config) {
+// ES6
+// export class ScrollEvent {
+  // constructor(config) {
+
+function ScrollEvent(config) {
     this._mutated = [];
 
     this.direction = config.direction;
@@ -77,13 +90,25 @@ export class ScrollEvent {
     this.scrollLeft = config.scrollLeft;
     this.scrollWidth = config.scrollWidth;
     this.e = config.e;
-  }
-  hasMutated(cid) {
-    return this._mutated.indexOf(cid) !== -1;
-  }
-  addMutated(cid) {
-    this._mutated.push(cid);
-  }
+
+}
+// ES6
+// Put methods inside class body
+ScrollEvent.prototype.hasMutated = function(cid) {
+  return this._mutated.indexOf(cid) !== -1;
+}
+ScrollEvent.prototype.addMutated = function(cid) {
+  this._mutated.push(cid);
 }
 
 
+// ES5
+return {
+  // extend: extend,
+  // mixin: mixin,
+  getRelativeRect: getRelativeRect,
+  cloneRect: cloneRect,
+  ScrollEvent: ScrollEvent
+};
+
+});

@@ -1,19 +1,44 @@
-import _ from 'underscore';
-import $ from 'jquery';
-import Events from 'events';
+// ES6
+// import _ from 'underscore';
+// import $ from 'jquery';
+// import Events from 'events';
 
-import ContextMixin from './ContextMixin'
-import Watcher from './Watcher';
-import { mixin, extend } from './util';
+// import ContextMixin from './ContextMixin'
+// import Watcher from './Watcher';
+// import { mixin, extend } from './util';
 
 
 
-export default class Sticky extends mixin(Events.EventEmitter, ContextMixin) {
+// ES5
+define([
+    'jquery',
+    'underscore',
+    'tiki/tools',
+    './ContextMixin',
+    './Watcher',
+], function($, _, Tools, ContextMixin, Watcher) {
+'use strict';
 
-  constructor(options) {
-    super();
-    _.bindAll(this, 'onVerticalScroll', 'getStackHeight', 'onAbove', 'onBelow');
-    this.setElement(options.el);
+
+// ES6
+// export default class Sticky extends mixin(Events.EventEmitter, ContextMixin) {
+
+// ES5
+var Sticky = Tools.View.extend('Sticky', {
+  // ES5
+  mixins: [ContextMixin],
+
+  // ES6
+  // constructor(options) {
+  //   super();
+
+  // ES5
+  initialize: function(options) {
+
+    _.bindAll(this, 'getStackHeight', 'onAbove', 'onBelow');
+
+    // ES6
+    // this.setElement(options.el);
 
     this.watcher = new Watcher({
       el: options.el,
@@ -29,33 +54,44 @@ export default class Sticky extends mixin(Events.EventEmitter, ContextMixin) {
     this.watcher.on('partiallybelow', this.onBelow);
 
     if (options.context) {
-      ContextMixin.prototype.initialize.call(this, options);
+      // ES6
+      // ContextMixin.prototype.initialize.call(this, options);
+      ContextMixin.initialize.call(this, options);
     }
-  }
+  },
 
-  remove() {
+  remove: function() {
     this.watcher.remove();
-    this.removeAllListeners();
+
+    // ES6
+    // this.removeAllListeners();
+
     if (this.row) {
       this.endStick();
     }
-    this.$el.remove();
-  }
 
-  setElement(el) {
-    this.$el = $(el);
-    this.el = this.$el[0];
-  }
+    // ES5
+    Sticky.__super__.remove.call(this);
 
-  getStackHeight(scrollEvent) {
+    // ES6
+    // this.$el.remove();
+  },
+
+  // ES5
+  // setElement(el) {
+  //   this.$el = $(el);
+  //   this.el = this.$el[0];
+  // }
+
+  getStackHeight: function(scrollEvent) {
     if (this.row) {
       return scrollEvent.stackHeight - this.row.height();
     }
     return scrollEvent.stackHeight;
-  }
+  },
 
 
-  createRow(scrollData) {
+  createRow: function(scrollData) {
     this.spaceholder = this.makeSpaceholder(scrollData);
     this.spaceholder.insertAfter(this.el);
 
@@ -67,9 +103,9 @@ export default class Sticky extends mixin(Events.EventEmitter, ContextMixin) {
     this.watcher.setElement(this.spaceholder);
 
     return row;
-  }
+  },
 
-  makeSpaceholder(scrollData) {
+  makeSpaceholder: function(scrollData) {
     var rect = scrollData.rect;
     var spaceholder = $('<div class="sticky-spaceholder"></div>');
     spaceholder.css({
@@ -78,51 +114,55 @@ export default class Sticky extends mixin(Events.EventEmitter, ContextMixin) {
         margin: $(this.el).css('margin'),
     });
     return spaceholder;
-  }
+  },
 
-  removeRow() {
+  removeRow: function() {
     this.watcher.setElement(this.orgEl);
     this.spaceholder.replaceWith(this.el);
     this.orgEl = null;
     this.row.remove();
-  }
+  },
 
-  insertRow(scrollData) {
+  insertRow: function(scrollData) {
     this.watcher.viewport.barStack.append(this.row);
-  }
+  },
 
-  beginStick(scrollData) {
+  beginStick: function(scrollData) {
     var viewport = this.watcher.viewport;
     this.row = this.createRow(scrollData);
     this.insertRow(scrollData);
     viewport.refreshStackHeight(scrollData.scrollEvent);
 
     viewport.retriggerScrollEvent();
-  }
+  },
 
-  endStick(scrollData) {
+  endStick: function(scrollData) {
     this.removeRow();
     this.row = null;
     this.stackPos = null;
     this.rowStatus = null;
     this.watcher.viewport.retriggerScrollEvent();
-  }
+  },
 
-  onAbove(scrollData, oldPos) {
+  onAbove: function(scrollData, oldPos) {
     if (!this.row) {
       this.beginStick(scrollData);
     }
-  }
+  },
 
-  onBelow(scrollData, oldPos) {
+  onBelow: function(scrollData, oldPos) {
     if (this.row) {
       this.endStick(scrollData);
     }
   }
-}
+});
 
-// ES5 extend function
-Sticky.extend = extend;
+// ES6
+// // ES5 extend function
+// Sticky.extend = extend;
+
+// ES5
+return Sticky;
 
 
-
+});
