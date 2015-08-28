@@ -109,6 +109,10 @@ var Watcher = Tools.View.extend('Watcher', {
     this.trigger('horizontalscroll', scrollData);
   },
 
+  retriggerScrollEvents: function() {
+    this._onHorizontalScroll(this.viewport.scrollEvent);
+    this._onVerticalScroll(this.viewport.scrollEvent);
+  },
 
   _onVerticalScroll: function(scrollEvent) {
     if (!this.enabled) {

@@ -44,7 +44,8 @@ var Sticky = Tools.View.extend('Sticky', {
       el: options.el,
       viewport: options.viewport,
       getStackHeight: this.getStackHeight,
-      stackPos: options.stackPos
+      stackPos: options.stackPos,
+      enabled: options.enabled === undefined ? true : options.enabled
     });
 
     this.watcher.on('partiallyabove', this.onAbove);
@@ -142,6 +143,18 @@ var Sticky = Tools.View.extend('Sticky', {
     this.stackPos = null;
     this.rowStatus = null;
     this.watcher.viewport.retriggerScrollEvent();
+  },
+
+  enable: function() {
+    this.watcher.enabled = true;
+    this.watcher.retriggerScrollEvents();
+  },
+
+  disable: function() {
+    this.watcher.enabled = false;
+    if (this.row) {
+      this.endStick();
+    }
   },
 
   onAbove: function(scrollData, oldPos) {
