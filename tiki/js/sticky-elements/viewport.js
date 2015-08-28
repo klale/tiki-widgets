@@ -35,6 +35,14 @@ var AbstractViewport = Tools.View.extend({
     this.onScroll(this.scrollEvent.e);
   },
 
+  recalculateAll: function() {
+    // ES5
+    this.watchers
+      .filter(function(watcher) { return watcher.enabled; })
+      .sort(function(a, b) { return b.stackPos - a.stackPos; })
+      .forEach(function(watcher) { watcher.trigger('recalculate', this.scrollEvent); }.bind(this));
+  },
+
   broadcastScrollEvent: function(scrollEvent) {
     if (scrollEvent.direction === 'up') {
       // ES6
