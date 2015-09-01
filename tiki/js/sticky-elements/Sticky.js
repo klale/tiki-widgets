@@ -135,6 +135,7 @@ var Sticky = Tools.View.extend('Sticky', {
     viewport.refreshStackHeight(scrollData.scrollEvent);
 
     viewport.retriggerScrollEvent();
+    this.trigger('beginstick', {scrollData: scrollData});
   },
 
   endStick: function(scrollData) {
@@ -143,6 +144,7 @@ var Sticky = Tools.View.extend('Sticky', {
     this.stackPos = null;
     this.rowStatus = null;
     this.watcher.viewport.retriggerScrollEvent();
+    this.trigger('endstick', {scrollData: scrollData});
   },
 
   enable: function() {
