@@ -202,6 +202,8 @@ define([
             }
 
             $(this.el).empty().append(table);
+            this.$el.attr("tabindex", "0");
+            this.el.focus();
 
             this.bindUI();
             return this;
