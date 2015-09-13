@@ -51,7 +51,7 @@ define([
 
       // Make sure element will be fully visible horizontally
       left = Math.max(left, 0);
-      var overflow = (targetLeft + dropdownWidth) - elementWidth;
+      var overflow = (targetLeft + elementWidth) - viewportWidth;
       if (overflow > 0) {
         left = targetLeft - overflow;
       }
