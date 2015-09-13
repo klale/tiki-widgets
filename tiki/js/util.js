@@ -12,6 +12,62 @@ define([
 
 
     
+    util.fitInViewport = function(target, elementWidth) {
+      /*
+      Given an element `target` to align to, return position
+      {left: N, top: N, bottom: N, height: N} to best fit
+      something `elementWidth` wide;
+
+      Todo: Add support for viewport other than window.
+      */
+      var scrollTop = document.body.scrollTop;
+      var scrollLeft = document.body.scrollLeft;
+
+      // Remove scrollTop/scrollLeft, add them again when done measuring.
+      var targetTop = $(target).offset().top - scrollTop;
+      var targetLeft = $(target).offset().left - scrollLeft;
+      var targetWidth = $(target).outerWidth();
+      var targetHeight = $(target).outerHeight();
+
+      var viewportWidth = $(window).width();
+      var viewportHeight = $(window).height();
+
+      var spaceAbove = targetTop;
+      var spaceBelow = viewportHeight - (targetTop + targetHeight);
+
+      var height, top, left, bottom;
+      if (spaceBelow > spaceAbove) {
+        height = spaceBelow;
+        top = targetTop + targetHeight;
+        left = targetLeft;
+        bottom = '';
+      }
+      else {
+        height = spaceAbove;
+        top = '';
+        bottom = viewportHeight - targetTop;
+        left = targetLeft;
+      }
+
+      // Make sure element will be fully visible horizontally
+      left = Math.max(left, 0);
+      var overflow = (targetLeft + dropdownWidth) - elementWidth;
+      if (overflow > 0) {
+        left = targetLeft - overflow;
+      }
+
+      var ret = {
+        left: left + scrollLeft,
+        top: top === '' ? '' : top + scrollTop,
+        bottom: bottom === '' ? '' : bottom - scrollTop,
+        height: height,
+      };
+
+      return ret;
+    };
+
+
+
     util.retriggerAll = function(source, target, prefix) {        
         target.listenTo(source, 'all', function() {
             var eventName = arguments[0],

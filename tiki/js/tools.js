@@ -23,6 +23,18 @@ define([
         return e.pageX > center ? 'tail' : 'head';
     }
 
+    /**
+     * Returns text, with any regular-expression-specific special control characters
+     * escaped.
+     */
+    var _reCache;
+    function escapeRegexp(text) {
+        if (!_reCache) {
+            var specials = [ '/', '.', '*', '+', '?', '|', '(', ')', '[', ']', '{', '}', '\\' ];
+            _reCache = new RegExp( '(\\' + specials.join('|\\') + ')', 'g' );
+        }
+        return text.replace(_reCache, '\\$1');
+    }
 
 
 
