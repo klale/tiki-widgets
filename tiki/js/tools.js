@@ -542,13 +542,16 @@ define([
             dd.$el.show();
             this.fitDropdown();
             
-            if(triggerEvent)
+            if(triggerEvent) {
+                dd.trigger('dropdownshow');
                 this.trigger('dropdownshow');
+            }
         },
-        hideDropdown: function() {
+        hideDropdown: function(e) {
             this.dropdown.$el.hide();
             this.strategy = null;
-            this.trigger('dropdownhide');
+            this.dropdown.trigger('dropdownhide', e);
+            this.trigger('dropdownhide', e);
         },
         fitDropdown: function() {
             // Call this every time you suspect the content of the dropdown has changed
@@ -598,8 +601,8 @@ define([
         },
         onEscKeyDown: function(e) {
             if(this.dropdown.$el.is(':visible')) {
-                this.hideDropdown();
-                this.focusTarget(e)
+                this.hideDropdown(e);
+                this.focusTarget(e);
             }
         },
         onTargetTabKeyDown: function(e) {
@@ -617,13 +620,13 @@ define([
         onTargetBlur: function(e) {
             setTimeout(_.bind(function(e) {
                 if(document.activeElement != this.dropdown.el)
-                    this.hideDropdown();
+                    this.hideDropdown(e);
             }, this), 1);
         },
         onDropdownBlur: function(e) {
             setTimeout(_.bind(function(e) {
                 if(document.activeElement != this.target[0])
-                    this.hideDropdown();
+                    this.hideDropdown(e);
             }, this), 1);
         },
         onTargetMouseDown: function(e) {
