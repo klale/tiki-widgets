@@ -603,9 +603,11 @@ define([
             }
         },
         onTargetTabKeyDown: function(e) {
+            if(this.dropdown.$el.is(':visible')) {
             e.preventDefault();
             e.stopPropagation();
             this.focusDropdown(e);
+            }
         },
         onDropdownTabKeyDown: function(e) {
             e.preventDefault();
