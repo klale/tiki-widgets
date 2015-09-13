@@ -868,6 +868,49 @@ define([
 
     
 
+    tools.Filterable = tools.Events.extend({
+
+      initialize: function(options) {
+        this._filter = options.filter || '';
+        this.textAttr = options.textAttr || 'text';
+        this.collection = options.collection;
+      },
+
+      setFilter: function(q, options) {
+        options = options || {};
+        q = q.toLowerCase().replace(/\s/g, '');
+        // leave early if the filter string is unchanged
+        if(q === this._filter) {
+          return q;
+        }
+        this._filter = q;
+
+        if (!q) {
+          this.collection.each(function(model) {
+            if (model.get('hidden')) {
+              model.set('hidden', false);
+            }
+          });
+        }
+        else {
+          var chars = $.map(q.split(''), escapeRegexp);
+          var re = new RegExp(chars.join('.*'), 'i');// "t.*e.*r.*m"
+          this.collection.each(function(model) {
+            var text = (model.get(this.textAttr) || '').toLowerCase();
+            var visible = text.indexOf(q) > -1 || re.test(text);
+            model.set('hidden', !visible);
+          }.bind(this));
+        }
+
+        this.trigger('filterchange', {filter: this._filter}, options);
+      },
+      getFilter: function() {
+        return this._filter;
+      }
+    });
+
+
+
     tools.Float = Backbone.View.extend({
     
         initialize: function(config) {
