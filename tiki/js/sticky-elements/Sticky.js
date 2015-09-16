@@ -149,7 +149,6 @@ var Sticky = Tools.View.extend('Sticky', {
 
   enable: function() {
     this.watcher.enabled = true;
-    this.watcher.retriggerScrollEvents();
   },
 
   disable: function() {
