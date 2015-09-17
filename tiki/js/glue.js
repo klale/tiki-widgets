@@ -145,19 +145,24 @@ define([
 
             var model = this.model;
             if(this.collection) {
-                var id = $(e.target).closest('*[data-id]').attr('data-id'),
-                    model = this.collection.get(id);
+                var id = $(e.target).closest('*[data-id]').attr('data-id');
+                model = this.collection.get(id);
             }
 
             var el = $(e.target).closest('*[data-bind]'),
-                key = el.attr('data-bind'),
-                save = this.save[key] || this.saveDefault,
-                value;
+                key = el.attr('data-bind');
+
+            // Nothing bound -> nothing can be dirty
+            if (!key){
+                return;
+            }
+
+            var save = this.save[key] || this.saveDefault;
 
             if(evt)
                 // custom control
                 save.call(this.scope, model, evt.value, el[0], key, e, this);
-            else if(e.target.value != undefined)
+            else if(e.target.value !== undefined)
                 // native control
                 save.call(this.scope, model, e.target.value, el[0], key, e, this);
         },
