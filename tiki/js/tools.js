@@ -298,6 +298,49 @@ define([
 
 
 
+
+
+    tools.ScrollbarWatcher = tools.View.extend('ScrollbarWatcher', {
+        tagName: 'iframe',
+        className: 'tiki-scrollbarwatcher',
+        initialize: function(options) {
+            options = options || {};
+            _.bindAll(this, 'onLoad', 'onIframeResize');
+            // Create an invisible iframe
+            var css = {
+                'background-color': 'transparent',
+                margin: 0,
+                padding: 0,
+                overflow: 'hidden',
+                'border-width': 0,
+                position: 'fixed',
+            };
+            if (options.horizontal) {
+                css.width = 0;
+                css.height = '100%';
+            } else {
+                css.height = 0;
+                css.width = '100%';
+            }
+            this.horizontal = !!options.horizontal;
+            this.window = options.window || window;
+            this.$el.css(css);
+            this.el.addEventListener('load', this.onLoad);
+        },
+        onLoad: function() {
+            this.el.contentWindow.addEventListener('resize', this.onIframeResize);
+        },
+        onIframeResize: function() {
+          try {
+              var evt = this.window.document.createEvent('UIEvents');
+              evt.initUIEvent('resize', true, false, this.window, 0);
+              this.window.dispatchEvent(evt);
+          } catch(e) {}
+        }
+    });
+
+
+
     // legacy. Tools.Collection has moved to Util.Collection
     tools.Collection = Util.Collection;
 
