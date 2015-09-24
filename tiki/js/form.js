@@ -1,5 +1,5 @@
 define([
-    'jquery', 
+    'jquery',
     'underscore',
     'backbone',
     'globalize/globalize',
@@ -27,14 +27,14 @@ define([
                     throw new Error('"'+attrs.type+'" is not found in Controls.register.');
                 Model = Controls.register[attrs.type].prototype.defaultmodel;
             }
-            
+
             options = options || {};
             options.parse = true;
-            return new Model(attrs, options);    
+            return new Model(attrs, options);
         }
     });
-    
-    
+
+
 
     var Form = Traits.Model.extend('Tiki.Form.Form', {
         /**
@@ -48,28 +48,28 @@ define([
                 bar: 'I am bar
             }
         })
-        */            
+        */
         initialize: function(config) {
-            _.bindAll(this, 'onControlChange', 'onControlInvalid', 'onValuesChange', 
+            _.bindAll(this, 'onControlChange', 'onControlInvalid', 'onValuesChange',
                      'onValuesInvalid');
-            
+
             var controls = config.controls || config.fields;
 
             this.controls = new ControlsCollection(controls);
             this.fields = this.controls; // legacy
             this.values = Util.modelify(config.values);
             this.setters = config.setters || {};
-            
+
             // Bind any setters
             _.each(this.setters, function(v,k) {
                 this.setters[k] = v.bind(this);
             }, this);
-                                    
+
             // Add and bind setters from short-hand syntax: set_myprop
             _.each(config, function(v, k) {
-                if(k.substr(0, 4) == 'set_') 
+                if(k.substr(0, 4) == 'set_')
                     this.setters[k.substr(4)] = v.bind(this);
-            }, this); 
+            }, this);
 
             // Set the value off all controls
             _.each(this.values.attributes, function(v,k) {
@@ -77,8 +77,8 @@ define([
                 if(controlmodel)
                     controlmodel.set('value', v);
             }, this);
-            
-            
+
+
             // Wire up change-listeners on all controls and `this.values`
             this.listenTo(this.controls, {
                 'change:value': this.onControlChange,
@@ -152,7 +152,7 @@ define([
         onShowError: function(model, error) {
             var view = this.views[model.cid];
             var el = view.$el.parent().find('.error');
-            if(el.length) 
+            if(el.length)
                 el.show().text(error.message);
             else {
                 $('<div class="error"></div>').text(error.message).insertAfter(view.el);
@@ -163,7 +163,7 @@ define([
             var view = this.views[model.cid];
             view.$el.parent().find('.error').fadeOutFast();
             view.$el.parent().removeClass('invalid');
-        }    
+        }
     };
 
 
@@ -175,7 +175,7 @@ define([
         -------
         // pass an existing Form.Form
         var myform = new SimpleForm({form: myform})
-        
+
         // or create one implicitly
         var myform = new SimpleForm({
             values: new Backbone.Model(null, {
@@ -188,8 +188,8 @@ define([
             metadata: {
                 'title': {label: 'Title'},
                 'description': {label: 'Description'},  // todo: add support for `renderer`?
-            }    
-        });    
+            }
+        });
         body.append(myform.render().el);
         myform.model.save()
         */
@@ -215,7 +215,7 @@ define([
             });
             this.$('>ul').append(view.render().el);
             this.views[control.cid] = view;
-            // this.model.set(model.get('name'), model.get('value'), {silent: true});            
+            // this.model.set(model.get('name'), model.get('value'), {silent: true});
         },
         removeOne: function(control) {
             this.views[control.cid].remove();
@@ -238,7 +238,7 @@ define([
             if(!this.metadata.label)
                 this.$('>.label').remove();
 
-            // ..and append the control subview    
+            // ..and append the control subview
             this._controlview = new Controls.register[this.control.get('type')]({model:this.control});
             this.$('>.control').append(this._controlview.render().el);
             return this;
@@ -253,9 +253,9 @@ define([
     // = CustomForm =
     // ==============
     var viewOptions = ['model', 'collection', 'el', 'id', 'attributes', 'className', 'tagName', 'events'];
-    
+
     var CustomForm = Tools.View.extend('Tiki.Form.CustomForm', {
-    
+
         initialize: function(config) {
             this.views = {};
 
@@ -275,12 +275,12 @@ define([
                 var div = $(this),
                     name = div.attr('name'),
                     Type, control;
-                
+
                 if(config.controls) {
-                    // Create the control from a json object spec, eg: 
+                    // Create the control from a json object spec, eg:
                     // {name: 'name', type: 'dropdown', options: myOptions},
-                    // Or control could be a ready-to-use ControlModel. 
-                    
+                    // Or control could be a ready-to-use ControlModel.
+
                     control = config.controls[name];
                     if(!(control instanceof ControlModels.ControlModel)) {
                         Type = control.modeltype;
@@ -290,7 +290,7 @@ define([
                             Type = ControlModels.register[Type];
 
                         control = new Type(_.extend({}, control, {id: name}));
-                    }   
+                    }
                 }
                 else {
                     // create the control config from a DOM element and its attributes
@@ -299,24 +299,24 @@ define([
                     Type = modeltype ? modeltype : Controls.register[type].prototype.defaultmodel;
                     if(_.isString(Type))
                         Type = ControlModels.register[Type];
-                
-                    control = Type.createFromElement(this, self);                    
+
+                    control = Type.createFromElement(this, self);
                 }
                 controls.push(control);
             });
 
-            // If config.values are given, these trumf any value="myvalue" 
+            // If config.values are given, these trumf any value="myvalue"
             // dom-element attributes etc.
             if(config.values)
                 _(controls).each(function(controlmodel) {
                     var value = config.values[controlmodel.id];
-                    if(value != null) // null or undefined 
+                    if(value != null) // null or undefined
                         controlmodel.set('value', value);
                 });
 
             config.controls = controls;
             this.form = config.form || new Form(config);
-            
+
             this.form.controls.each(function(model) {
                 var el = this.$('div[name="'+model.id+'"]'),
                     View = Controls.register[model.get('type')];
@@ -326,18 +326,18 @@ define([
                 if(View.prototype.attributes)
                     view.$el.attr(View.prototype.attributes)
                 view.$el.addClass(View.prototype.className)
-                
+
                 // view.attackElement(el);
                 view.render();
                 view.delegateEvents();
-            }, this);        
-        },    
+            }, this);
+        },
         render: function() {
             return this;
         },
         removeOne: function(control) {
             this.views[control.cid].remove();
-        }      
+        }
     });
 
 
@@ -345,6 +345,7 @@ define([
     return {
         Form: Form,
         SimpleForm: SimpleForm,
+        SimpleFormRow: SimpleFormRow,
         CustomForm: CustomForm
     };
 
