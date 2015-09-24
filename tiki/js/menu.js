@@ -44,7 +44,7 @@ define([
                 this.$el.addClass('disabled').removeClass('selectable');
 
             if(this.model.get('selected'))
-                this.$el.addClass('active');
+                this.$el.addClass('active selected');
 
             this.$el.toggleClass('submenu', !!this.model.get('submenu'));
             if($.browser.ltie9) {
@@ -242,6 +242,7 @@ define([
         },
         _select: function() {
             var el = this.$('.active:first');
+            this.$('.selected').removeClass('selected');
             var model = this.getModel(el);
             if(!model) return;
 
@@ -250,7 +251,7 @@ define([
                 this._hideAll();
                 this._lock = false;
                 this.trigger('select', model);
-            }, this), {className: 'active'});
+            }, this), {className: 'active selected'});
         },
         show: function(options) {
             var opt = Util.defs(options, {
