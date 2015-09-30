@@ -198,6 +198,7 @@ define([
       }
       this.$el.toggleClass('tiki-disabled', !!this.model.get('disabled'));
       this.$el.toggleClass('is-filtering', !!filter);
+      if (this.optionsView) this.optionsView.$el.toggleClass('is-filtering', !!filter);
       return this;
     },
 
