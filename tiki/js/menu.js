@@ -162,6 +162,8 @@ define([
                 this.model = new Menu.Model(config);
             }
 
+            this.textField = this.model.options.textField || "text";
+
             if(config.options.optionTemplate) {
                 this.optionTemplate = config.options.optionTemplate;
             }
@@ -200,7 +202,7 @@ define([
             //     view = new View({model: option});
 
             var view;
-            if (option.get('text') == '-') {
+            if (option.get(this.textField) == '-') {
                 view = new Spacer({model: option});
             } else {
                 var conf = { model: option };
