@@ -35,7 +35,7 @@ var Sticky = Tools.View.extend('Sticky', {
   // ES5
   initialize: function(options) {
 
-    _.bindAll(this, 'getStackHeight', 'onAbove', 'onBelow');
+    _.bindAll(this, 'getStackHeight', 'onAbove', 'onBelow', 'onFixedHorizontalScroll', 'onFixedVerticalScroll');
 
     // ES6
     // this.setElement(options.el);
@@ -48,6 +48,8 @@ var Sticky = Tools.View.extend('Sticky', {
       enabled: options.enabled === undefined ? true : options.enabled
     });
 
+    this.horizontallyFixed = options.horizontallyFixed;
+
     this.watcher.on('partiallyabove', this.onAbove);
     this.watcher.on('fullyabove', this.onAbove);
     this.watcher.on('fullyvisible', this.onBelow);
@@ -58,6 +60,11 @@ var Sticky = Tools.View.extend('Sticky', {
       // ES6
       // ContextMixin.prototype.initialize.call(this, options);
       ContextMixin.initialize.call(this, options);
+    }
+
+    if (this.horizontallyFixed) {
+      this.watcher.on('horizontalscroll', this.onFixedHorizontalScroll);
+      this.watcher.on('verticalscroll', this.onFixedVerticalScroll);
     }
   },
 
@@ -117,11 +124,16 @@ var Sticky = Tools.View.extend('Sticky', {
     return spaceholder;
   },
 
-  removeRow: function() {
+  removeRow: function(scrollData) {
     this.watcher.setElement(this.orgEl);
     this.spaceholder.replaceWith(this.el);
     this.orgEl = null;
     this.row.remove();
+
+    if (this.horizontallyFixed) {
+      this.$el.css('left', scrollData.scrollEvent.scrollLeft);
+    }
+
   },
 
   insertRow: function(scrollData) {
@@ -139,7 +151,7 @@ var Sticky = Tools.View.extend('Sticky', {
   },
 
   endStick: function(scrollData) {
-    this.removeRow();
+    this.removeRow(scrollData);
     this.row = null;
     this.stackPos = null;
     this.rowStatus = null;
@@ -168,7 +180,82 @@ var Sticky = Tools.View.extend('Sticky', {
     if (this.row) {
       this.endStick(scrollData);
     }
-  }
+  },
+
+
+
+  // ----------------- Horizontally sticky --------------------
+  fix: function(scrollData) {
+    // create a spaceholder
+    var rect = this.el.getBoundingClientRect();
+    this.spaceholder2 = $('<div></div>');
+    this.spaceholder2.css({
+      width: rect.width,
+      height: rect.height,
+      margin: this.$el.css('margin')
+    });
+
+    // this.$el.replaceWith(this.spaceholder);
+    this.orgStyles = {
+      position: this.$el.css('position'),
+      left: this.$el.css('left'),
+      right: this.$el.css('right'),
+      top: 'auto'
+    };
+
+    var scrollLeft = scrollData.scrollEvent.scrollLeft;
+    if (scrollLeft < 10) scrollLeft = 0;
+
+    // if (this.$el.is('#report-header')) {
+      // console.log('FIX: ', this.$el.offset().left, 'scrollLeft', scrollLeft, this.el);
+    // }
+
+    var left = this.$el.offset().left - scrollLeft;
+    if (left < 10) {
+      left = 0;
+    }
+
+    this.$el.css({
+      position: 'fixed',
+      // left: 0,
+      // right: 0,
+      left: left, // rect.left
+      width: rect.width,
+
+      top: rect.top
+    });
+    this.spaceholder2.insertAfter(this.el);
+
+
+    this.isFixed = true;
+  },
+  unfix: function(scrollData) {
+
+    this.$el.css(this.orgStyles);
+    this.spaceholder2.remove();
+
+    var scrollEvent = scrollData.scrollEvent;
+    var rect = this.watcher.getRect(scrollEvent);
+    var maxLeftAllowed = scrollEvent.scrollWidth - rect.width;
+
+    var left = Math.min(scrollEvent.scrollLeft, maxLeftAllowed);
+    left = Math.max(0, left);
+    this.$el.css('left', left);
+
+    this.isFixed = false;
+  },
+  onFixedHorizontalScroll: function(scrollData) {
+    if (!this.isFixed && !this.row) {
+      this.fix(scrollData);
+    }
+  },
+  onFixedVerticalScroll: function(scrollData) {
+    if (this.isFixed && !this.row) {
+      this.unfix(scrollData);
+    }
+  },
+
+
 });
 
 // ES6

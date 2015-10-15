@@ -166,7 +166,7 @@ var Watcher = Tools.View.extend('Watcher', {
       position: position
     };
     this.position = position;
-
+    this.scrollData = scrollData;
 
     if (oldPosition != position) {
       // Trigger an event when the position changes
