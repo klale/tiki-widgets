@@ -177,6 +177,7 @@ var DocumentViewport = AbstractViewport.extend('DocumentViewport', {
           left: 0
       },
       scrollWidth: this.el.body.scrollWidth,
+      scrollHeight: this.el.body.scrollHeight,
       scrollTop: scrollTop,
       scrollLeft: scrollLeft,
       stackHeight: this.barStack[0].getBoundingClientRect().height,

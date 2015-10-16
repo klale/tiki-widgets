@@ -89,6 +89,7 @@ function ScrollEvent(config) {
     this.scrollTop = config.scrollTop;
     this.scrollLeft = config.scrollLeft;
     this.scrollWidth = config.scrollWidth;
+    this.scrollHeight = config.scrollHeight;
     this.e = config.e;
 
 }
