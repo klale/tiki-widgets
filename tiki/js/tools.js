@@ -37,6 +37,85 @@ define([
     }
 
 
+    /*
+    Prevent scroll events of a scrollable element from leaking up to parents
+    when reaching an end.
+
+    Usage:
+    new LocalTouchScroll({el: document});
+
+     */
+    tools.LocalTouchScroll = Backbone.View.extend({
+      events: {
+        'touchstart': 'onTouchStart',
+        'touchmove': 'onTouchMove',
+        'touchend': 'onTouchEnd'
+      },
+      constructor: function(options) {
+        _.bindAll(this, 'onTick');
+        this.speedX = 0;
+        this.speedY = 0;
+      },
+      findFirstScrollable: function(el, horizontal) {
+        while(el) {
+          var style = window.getComputedStyle(el);
+          var overflow = style['overflow-' + horizontal ? 'x' : 'y'];
+          if ((overflow === 'auto' || overflow === 'scroll') && el.tagName !== 'TEXTAREA') {
+            return el;
+          }
+          el = el.parentNode;
+        }
+      },
+      onTouchStart: function(e) {
+
+        clearInterval(this.interval);
+        var elX = this.findFirstScrollable(e.target, true);
+        var elY = this.findFirstScrollable(e.target);
+
+        this.preventDefault = elX || elY;
+        this.elX = elX || this.el.body;
+        this.elY = elY || this.el.body;
+
+        var touch = e.touches[0];
+        this.touchX = touch.pageX;
+        this.touchY = touch.pageY;
+      },
+
+      onTouchMove: function(e) {
+        clearInterval(this.interval);
+        if (!this.preventDefault) return;
+        e.preventDefault();
+
+        var touch = e.touches[0];
+        this.elX.scrollLeft = elX.scrollLeft - (touch.pageX - touchX)
+        this.elY.scrollTop = elY.scrollTop - (touch.pageY - touchY)
+
+        this.touchX = touch.pageX;
+        this.touchY = touch.pageY;
+
+        this.speedX = touch.pageX - this.touchX;
+        this.speedY = touch.pageY - this.touchY;
+      },
+
+      onTouchEnd: function(e) {
+        clearInterval(this.interval);
+        if (!this.preventDefault) return;
+        this.interval = setInterval(this.onTick, 10);
+      },
+
+      onTick: function() {
+        this.elX.scrollLeft = this.elX.scrollLeft - this.speedX;
+        this.elY.scrollTop = this.elY.scrollTop - this.speedY;
+
+        this.speedX = this.speedX * 0.9;
+        this.speedY = this.speedY * 0.9;
+        var clear = this.speedX < 1 && this.speedX > -1 && this.speedY < 1 && this.speedY > -1;
+        if (clear) {
+          clearInterval(this.onTick);
+        }
+      }
+    });
+
 
     /*
     A tiki View adds:
