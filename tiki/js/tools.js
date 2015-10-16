@@ -1,8 +1,8 @@
 define([
-    'jquery', 
+    'jquery',
     'underscore',
     'backbone',
-    'moment',    
+    'moment',
     'globalize/globalize',
 
     './util',
@@ -14,7 +14,7 @@ define([
 
     var tools = {};
 
-    var delegateHotkeySplitter = /^(\S+)\s+(\S+)\s*(.*)$/;    
+    var delegateHotkeySplitter = /^(\S+)\s+(\S+)\s*(.*)$/;
 
 
     function headOrTail(e, el) {
@@ -51,7 +51,7 @@ define([
         'touchmove': 'onTouchMove',
         'touchend': 'onTouchEnd'
       },
-      constructor: function(options) {
+      initialize: function(options) {
         _.bindAll(this, 'onTick');
         this.speedX = 0;
         this.speedY = 0;
@@ -59,15 +59,14 @@ define([
       findFirstScrollable: function(el, horizontal) {
         while(el) {
           var style = window.getComputedStyle(el);
-          var overflow = style['overflow-' + horizontal ? 'x' : 'y'];
+          var overflow = style['overflow-' + (horizontal ? 'x' : 'y')];
           if ((overflow === 'auto' || overflow === 'scroll') && el.tagName !== 'TEXTAREA') {
             return el;
           }
-          el = el.parentNode;
+          el = el.parentElement;
         }
       },
       onTouchStart: function(e) {
-
         clearInterval(this.interval);
         var elX = this.findFirstScrollable(e.target, true);
         var elY = this.findFirstScrollable(e.target);
@@ -76,7 +75,7 @@ define([
         this.elX = elX || this.el.body;
         this.elY = elY || this.el.body;
 
-        var touch = e.touches[0];
+        var touch = e.originalEvent.touches[0];
         this.touchX = touch.pageX;
         this.touchY = touch.pageY;
       },
@@ -86,21 +85,21 @@ define([
         if (!this.preventDefault) return;
         e.preventDefault();
 
-        var touch = e.touches[0];
-        this.elX.scrollLeft = elX.scrollLeft - (touch.pageX - touchX)
-        this.elY.scrollTop = elY.scrollTop - (touch.pageY - touchY)
-
-        this.touchX = touch.pageX;
-        this.touchY = touch.pageY;
+        var touch = e.originalEvent.touches[0];
+        this.elX.scrollLeft = this.elX.scrollLeft - (touch.pageX - this.touchX)
+        this.elY.scrollTop = this.elY.scrollTop - (touch.pageY - this.touchY)
 
         this.speedX = touch.pageX - this.touchX;
         this.speedY = touch.pageY - this.touchY;
+
+        this.touchX = touch.pageX;
+        this.touchY = touch.pageY;
       },
 
       onTouchEnd: function(e) {
         clearInterval(this.interval);
         if (!this.preventDefault) return;
-        this.interval = setInterval(this.onTick, 10);
+        this.interval = setInterval(this.onTick, 15);
       },
 
       onTick: function() {
@@ -109,12 +108,42 @@ define([
 
         this.speedX = this.speedX * 0.9;
         this.speedY = this.speedY * 0.9;
+
         var clear = this.speedX < 1 && this.speedX > -1 && this.speedY < 1 && this.speedY > -1;
         if (clear) {
-          clearInterval(this.onTick);
+          clearInterval(this.interval);
         }
       }
     });
+
+
+
+
+    $.fn.scrollIntoView = function(alignWithTop, scrollable) {
+        if(!this[0]) return this;
+        if(scrollable && scrollable[0]) scrollable = scrollable[0];
+        var el = scrollable || this[0].parentNode,
+            item = this[0],
+            scrollTop = el.scrollTop;
+        if(!item)
+            return;
+
+        if(alignWithTop === null)
+            alignWithTop = item.offsetTop < scrollTop
+
+        // Only change scrollTop if the element is not showing
+        if(alignWithTop) {
+            if(item.offsetTop < scrollTop)
+                el.scrollTop = item.offsetTop;
+        }
+        else {
+            var height = $(this).outerHeight();
+            if(item.offsetTop + height > el.clientHeight + scrollTop)
+                el.scrollTop = item.offsetTop - el.clientHeight + height;
+        }
+    };
+
+
 
 
     /*
@@ -134,7 +163,7 @@ define([
             'keydown space .foo.bar': 'onFooBarSpaceDown'
         },
         // Merge this Class' events with any events of parent Class
-        merge: ['events']    
+        merge: ['events']
     })
     */
     tools.Hotkeys = {
@@ -142,7 +171,7 @@ define([
             Backbone.View.prototype.delegateEvents.call(this, events);
 
             // Add "hotkeys" support
-            if(!this.hotkeys) 
+            if(!this.hotkeys)
                 return;
 
             var hotkeys = _.result(this, 'hotkeys');
@@ -151,30 +180,30 @@ define([
                 if (!_.isFunction(method)) method = this[hotkeys[key]];
                 if (!method) throw new Error('Method "' + hotkeys[key] + '" does not exist');
                 var match = key.match(delegateHotkeySplitter);
-                var eventName = match[1], 
+                var eventName = match[1],
                     hotkey = match[2],
                     selector = match[3];
                 method = _.bind(method, this);
                 eventName += '.delegateEvents' + this.cid;
                 this.$el.on(eventName, selector || null, hotkey, method);
             }
-        }        
+        }
     };
-    
+
     tools.UI = {
         bindUI: function() {
             var proto = Object.getPrototypeOf(this)
             if(!proto.ui) return;
             // Populate this.ui with the result of each selector
-            this.ui = _.chain(proto.ui).map(function(v,k) { 
+            this.ui = _.chain(proto.ui).map(function(v,k) {
                 return [k, this.$(v)];
             }, this).object().value();
             return this;
         }
     };
-    
 
-    /* 
+
+    /*
     A mixin for the common scenario of associating elements with models
     using the attribute data-id */
     tools.ModelToElement = {
@@ -185,10 +214,10 @@ define([
             var id = model.id != null ? model.id : model;
             return this.$el.find(this.selector+'[data-id="'+id+'"]').filter(':first');
         }
-    };    
-    
-    
-    
+    };
+
+
+
     /*
     A selection-api implementation, using model.attributes['selection']
     to store the selection state. */
@@ -198,14 +227,14 @@ define([
         },
         getFirstSelected: function() {
             return this.collection.find(function(m) { return m.get('selected'); });
-        },        
-        getDisabled: function() {            
+        },
+        getDisabled: function() {
             return this.collection.filter(function(m) { return m.get('disabled'); });
         },
         reset: function(models, options) {
             options || (options = {});
             var coll = this.collection;
-                
+
             if(_.isEmpty(models))
                 models = [];
             else
@@ -217,9 +246,9 @@ define([
                     model.set('selected', false, {byreset: true});
                 else if(!isSelected && ~models.indexOf(model.id))
                     model.set('selected', true, {byreset: true});
-            });            
+            });
             this.trigger('selectionreset', models, options);
-        },        
+        },
         getAllSelectedIDs: function() {
             return _.pluck(this.collection.filter(function(m) {return m.get('selected'); }), 'id');
         },
@@ -229,23 +258,23 @@ define([
         },
         selectAll: function(options) {
             this.collection.each(function(m) { m.set('selected', true); });
-            this.trigger('selectionreset', this.collection.models, options);            
+            this.trigger('selectionreset', this.collection.models, options);
         },
         add: function(model, options) {
             model.set('selected', true, options);
             this.trigger('selectionadd', model, options);
         },
-        remove: function(model, options) {            
+        remove: function(model, options) {
             model.set('selected', false, options);
             this.trigger('selectionremove', model, options);
         },
         toggle: function(model, options) {
             var method = model.get('selected') ? 'remove' : 'add';
-            this[method](model, options)            
+            this[method](model, options)
         },
         isSelected: function(model) {
             return !!model.get('selected');
-        }        
+        }
     };
 
 
@@ -260,7 +289,7 @@ define([
     --------------------
     var MyTextField = form.Text.extend({
         mixins: [form.Field, tools.InterceptPaste],
-    
+
         initialize: function(config) {
             form.Text.prototype.initialize.call(this, config);
             tools.InterceptPaste.initialize.call(this);
@@ -297,15 +326,15 @@ define([
                     if(el.childNodes && el.childNodes.length > 0)
                         this.processPaste(el.innerHTML);
                     else
-                        setTimeout(wait,1000);         
+                        setTimeout(wait,1000);
                 };
                 wait();
                 return true;
-            }        
+            }
         }
     };
-    
-    
+
+
     /*
     A mixin for tabbing between elements within a single view.
     */
@@ -323,17 +352,17 @@ define([
             }
         }
     };
-    
-    
-    
-    
+
+
+
+
     /*
     Extension of Backbone.View adding support for "merge" and "hotkeys"
-    
+
     Example
     -------
     var MyView = SomeBaseView.extend({
-        
+
         events: {
             'click .foo': 'someHandler'
         },
@@ -341,25 +370,25 @@ define([
             'keydown shift+return': 'asdsad'
         },
         merge: ['events', 'hotkeys'],
-             
-        initialize: function() {   
+
+        initialize: function() {
         }
-    })    
+    })
     */
-    tools.View = Backbone.View.extend({        
+    tools.View = Backbone.View.extend({
         constructor: function() {
             this.views = {};
             Backbone.View.apply(this, arguments);
         },
         initcls: function() {
-            var proto = this.prototype, 
+            var proto = this.prototype,
                 constr = this;
-            
+
             // add "merge" support
             _.each(Util.arrayify(proto.merge), function(propname) {
                 var parentval = constr.__super__[propname] || {};
                 proto[propname] = _.extend({}, parentval, _.result(proto, propname));
-            });  
+            });
         },
         // Mixin support for `hotkeys` and `ui`
         delegateEvents: tools.Hotkeys.delegateEvents,
@@ -437,7 +466,7 @@ define([
     /*
     Rearrange elements by dragging and dropping them within a
     container.
-    
+
     Example
     -------
     [Put example here]
@@ -457,14 +486,14 @@ define([
             this.collection = config.collection; // optional
             this.idAttr = config.idAttr || 'data-id';
             _.bindAll(this, 'onDragInit', 'onDragEnd', 'onDropOverHead', 'onDropOverTail', 'onDropOn', 'abort');
-            
+
             this.$el.on('dragdown', config.selector, this.onDragDown);
             this.$el.on('draginit', config.selector, this.onDragInit);
             this.$el.on('dragend', config.selector, this.onDragEnd);
             this.$el.on('dropover', config.selector, this.onDropOver);
             this.$el.on('dropmove', config.selector, this.onDropMove);
             this.$el.on('dropoverhead', config.selector, this.onDropOverHead);
-            this.$el.on('dropovertail', config.selector, this.onDropOverTail);            
+            this.$el.on('dropovertail', config.selector, this.onDropOverTail);
             this.$el.on('dropon', this.onDropOn);
         },
         render: function() {
@@ -479,8 +508,8 @@ define([
         },
         cleanup: function() {
             $(this.drag.activeElement).off('keydown', null, 'esc', this.abort);
-            this.drag.ghostEl.remove();            
-            this.drag.spaceholder.remove();            
+            this.drag.ghostEl.remove();
+            this.drag.spaceholder.remove();
         },
 
         // Drag events
@@ -488,21 +517,21 @@ define([
             drag.distance(5);
             drag.mouseOffset = Util.mouseOffset(e, e.currentTarget);
             e.preventDefault();
-        },    
+        },
         onDragInit: function(e, drag) {
-            if(this.collection) 
+            if(this.collection)
                 drag.model = this.collection.get(drag.element.attr('data-id'));
-            
+
             this.drag = drag;
             drag.allowDrop = true;
             drag.orgIndex = drag.element.index();
             drag.spaceholder = drag.element.clone();
             drag.spaceholder.addClass('tiki-spaceholder');
             drag.orgContainer = drag.element.parent();
-            
+
             drag.ghostEl = drag.element.clone().addClass('tiki-ghost').appendTo(document.body);
             drag.ghostEl.css({position: 'absolute'});
-            drag.index = drag.element.index();            
+            drag.index = drag.element.index();
             drag.element.detach();
             drag.representative(drag.ghostEl, drag.mouseOffset.left, drag.mouseOffset.top);
             drag.name = 'tiki-sort';
@@ -514,27 +543,27 @@ define([
 
             this.trigger('draginit', e, drag);
         },
-        
+
         // Drop events
         onDropOver: function(e, drop, drag) {
-            if(!drag.allowDrop) 
+            if(!drag.allowDrop)
                 return;
             drag.currOver = {el: drop.element, part: null};
-        },        
+        },
         onDropMove: function(e, drop, drag) {
-            if(!drag.allowDrop) 
+            if(!drag.allowDrop)
                 return;
             var dragel = drag.element,
                 dropel = drop.element;
-                
+
             if(dropel[0] == dragel[0])
                 return;
-                        
+
             var part = headOrTail(e, drop.element);
             if(part != drag.currOver.part && part) {
                 drop.element.trigger('dropover'+part, [drop, drag]);
                 drag.currOver.part = part;
-            }            
+            }
         },
         onDropOverHead: function(e, drop, drag) {
             drag.index = drop.element.index();
@@ -542,7 +571,7 @@ define([
             var afterSpaceholder = !!drop.element.prevAll('*.tiki-spaceholder')[0];
             if(afterSpaceholder)
                 drag.index -= 1;
-                
+
             drag.spaceholder.insertBefore(drop.element);
         },
         onDropOverTail: function(e, drop, drag) {
@@ -552,11 +581,11 @@ define([
                 drag.index -= 1;
 
             drag.spaceholder.insertAfter(drop.element);
-        },        
+        },
         onDropOn: function(e, drop, drag) {
             if(!drag.allowDrop || drop.element[0] != drag.delegate)
                 return;
-            
+
             if(this.collection) {
                 this.collection.move(drag.model, drag.index);
             }
@@ -568,7 +597,7 @@ define([
             }
             else if(drag.success) {
                 if(drag.spaceholder[0].parentElement)
-                    drag.spaceholder.replaceWith(drag.element); 
+                    drag.spaceholder.replaceWith(drag.element);
                 else
                     drag.orgContainer.append(drag.element);
                 this.cleanup();
@@ -580,7 +609,7 @@ define([
         onEscKeyDown: function(e) {
             this.abort();
             e.preventDefault();
-        }        
+        }
     });
 
 
@@ -589,14 +618,14 @@ define([
         This is a very common pattern consisting of two elements
         - target
         - dropdown
-        
+
         The `dropdown` is shown below `target`.
         Pressing the tab key switches focus between the two. Also pressing down/up key
         might do the same.
-        
+
         If either of the two loses focus to something else on the page,
         hide the dropdown.
-        
+
         Use cases:
         - menu.js
         - The hypergene searchbox
@@ -604,11 +633,11 @@ define([
                                                                               Here the target is a <span class="user">carlpers</span>
         - Hypergene sheet, calculated column, eg "@mycol + 10" could show an auto-complete
           for the column name.
-          
-        
-        When i write "@", then immediately create both the <span>@</span> and a new auto-complete 
-        view (using a Dropdown internally). 
-        
+
+
+        When i write "@", then immediately create both the <span>@</span> and a new auto-complete
+        view (using a Dropdown internally).
+
         Example
         =======
         this.dd = new Dropdown({
@@ -616,13 +645,13 @@ define([
             target: targetEl,
             makeDropdown: this.makeDropdown
         });
-        
-        
+
+
         */
         initcls: function() {
-            var proto = this.prototype, 
-                constr = this;            
-            
+            var proto = this.prototype,
+                constr = this;
+
             Object.defineProperty(proto, 'dropdown', {
                 get: function() {
                     if(!this._dropdown)
@@ -634,15 +663,15 @@ define([
             });
         },
         initialize: function(config) {
-            _.bindAll(this, 'onDropdownTabKeyDown', 'onDropdownBlur', 'onTargetBlur', 
+            _.bindAll(this, 'onDropdownTabKeyDown', 'onDropdownBlur', 'onTargetBlur',
                 'onTargetTabKeyDown', 'onDropdownMouseDown', 'onTargetMouseDown', 'onEscKeyDown');
             this.target = $(config.target);
             this.target.on('keydown', null, 'tab shift+tab up down', this.onTargetTabKeyDown);
             this.target.on('keydown', null, 'esc', this.onEscKeyDown);
             this.target.on('blur', null, 'blur', this.onTargetBlur);
             this.target.on('mousedown', this.onTargetMouseDown);
-            
-            this.makeDropdown = config.makeDropdown
+
+            this.makeDropdown = config.makeDropdown;
         },
         _makeDropdown: function() {
             var dd = this.makeDropdown(this);
@@ -663,7 +692,7 @@ define([
             }
             dd.$el.show();
             this.fitDropdown();
-            
+
             if(triggerEvent) {
                 dd.trigger('dropdownshow');
                 this.trigger('dropdownshow');
@@ -678,7 +707,7 @@ define([
         fitDropdown: function() {
             // Call this every time you suspect the content of the dropdown has changed
             // to recalculate its size.
-            
+
             // Remove explicit height
             var dd = this.dropdown;
             dd.$el.css('height', 'auto');
@@ -691,24 +720,25 @@ define([
                 spaceAbove = targetOffset.top - scrollTop,
                 spaceBelow = winHeight - (spaceAbove + targetHeight),
                 ddHeight = dd.$el.outerHeight();
-            
-            if(!this.strategy)
+
+            if(!this.strategy) {
                 // If it does not fit below, choose the largest of above and below
                 this.strategy = ddHeight <= spaceBelow ? 'below' : (spaceAbove > spaceBelow ? 'above' : 'below');
-            
+            }
+
             // Now we know we have strategy, update the position and size
             var css = {
                 top: targetOffset.top + targetHeight,
                 left: targetOffset.left,
                 height: Math.min(ddHeight, spaceBelow)
             };
-            if(this.strategy == 'above') {   
+            if(this.strategy == 'above') {
                 css.height = Math.min(ddHeight, spaceAbove);
                 css.top = (spaceAbove - css.height) + scrollTop;
             }
             dd.$el.css(css);
             this.trigger('dropdownfit');
-        },      
+        },
         focusDropdown: function(e) {
             if(document.activeElement != this.dropdown.el) {
                 this.dropdown.el.focus();
@@ -729,9 +759,9 @@ define([
         },
         onTargetTabKeyDown: function(e) {
             if(this.dropdown.$el.is(':visible')) {
-            e.preventDefault();
-            e.stopPropagation();
-            this.focusDropdown(e);
+                e.preventDefault();
+                e.stopPropagation();
+                this.focusDropdown(e);
             }
         },
         onDropdownTabKeyDown: function(e) {
@@ -764,19 +794,19 @@ define([
     /*
     Make elements navigable by keyboard.
     Todo: Add support for 2-dimensional navigation.
-    */    
+    */
     tools.Navigable = tools.View.extend('Tools.Navigable', {
         mixins: [tools.ModelToElement],
         initialize: function(config) {
             _.bindAll(this, 'onItemMouseDown', 'onKeyDown', 'onKeyPress');
             // Item selector, eg "> ul > li"
             // this.selector = config.selector + ':visible';
-            this.selector = config.selector;            
+            this.selector = config.selector;
 
             // Poor-man's css selector splitter.
             var selector = this.selector.replace(/\s?>\s?=/g, '>');
             this.itemSelector = selector.split(/>|\s/).slice(-1)[0];
-            
+
             // The element with overflow: auto|scroll
             this.scrollable = config.scrollable || this.$el;
             // Name of a model attribute to use when navigating by typing the
@@ -784,7 +814,7 @@ define([
             this.textAttr = config.textAttr || 'text';
             this._typing = '';
 
-            
+
             this.$el.on('mousedown', this.selector, this.onItemMouseDown);
             this.$el.on('keydown', this.onKeyDown);
             this.$el.on('keypress', this.onKeyPress);
@@ -811,14 +841,14 @@ define([
         onKeyDown: function(e) {
             var sel = this.model,
                 upOrDown = e.which == Util.keys.UP || e.which == Util.keys.DOWN;
-                        
+
             if(Util.isArrowKey(e) && upOrDown) {
                 if(!e.ctrlKey && !e.metaKey && !e.altKey)
                     e.preventDefault();
 
                 var up = e.which == Util.keys.UP,
                     down = e.which == Util.keys.DOWN;
-                
+
                 if(!this.$(this.selector+'.active').length) {
                     this.$(this.selector+':'+(down ? 'first':'last')).addClass('active');
                     return;
@@ -826,7 +856,7 @@ define([
 
                 var el, active = this.$(this.selector+'.active'),
                     next = active.nextAll(this.itemSelector+':first');
-    
+
                 // Within visible viewport?
                 // Todo: Add option to specify the element to scroll instead of
                 // assuming parentNode of the selected element.
@@ -850,7 +880,7 @@ define([
             return Util.getClosestStartingWith(this.collection, text, this.textAttr);
         },
         onKeyPress: function(e) {
-            if(e.which < 48) 
+            if(e.which < 48)
                 return;
             this._typing += String.fromCharCode(e.charCode);
             this._onKeyPressDeb();
@@ -866,7 +896,7 @@ define([
             this._typing = '';
         }, 500)
     });
-    
+
 
     /*
     Make elements selectable.
@@ -876,7 +906,7 @@ define([
             'mouseup': 'onMouseUp'
         },
         hotkeys: {
-            'keydown meta+a': 'onMetaAKeyDown'            
+            'keydown meta+a': 'onMetaAKeyDown'
         },
         mixins: [
             tools.ModelToElement,
@@ -901,7 +931,7 @@ define([
             if(e.shiftKey) {
                 if(el.index() < this.anchor.index()) // above anchor
                     this.add(model);
-                else 
+                else
                     this.remove(this.getModel(prev));
             }
             else {
@@ -924,7 +954,7 @@ define([
         },
         onGoTo: function(e, el, model, prev) {
             if(!e.shiftKey)
-                this.anchor = el;            
+                this.anchor = el;
             if(e.type == 'mousedown' && e.shiftKey) {
                 var selector = this.$(this.selector),
                     // a = selector.index(this.anchor),
@@ -932,7 +962,7 @@ define([
                     b = this.collection.indexOf(model),
                     slice = this.collection.slice(Math.min(a,b), Math.max(a,b)+1);
 
-                this._isMouseDown = false;    
+                this._isMouseDown = false;
                 this.reset(slice);
                 e.preventDefault();
             }
@@ -945,25 +975,25 @@ define([
                     el.make('selected'); // fake it
                 }
                 else
-                    this.reset(model);                
+                    this.reset(model);
             }
         },
         onSelectedChange: function(model, selected) {
             this.getEl(model).toggleClass('selected', selected);
-        },   
+        },
         onMetaAKeyDown: function(e) {
             this.selectAll();
             e.preventDefault();
-        },             
+        },
         onMouseUp: function(e) {
             if(this._isMouseDown) {
                 this._isMouseDown = false;
                 var models = this.$(this.selector+'.selected').map(function(i, el) {
                     return this.getModel(el);
                 }.bind(this)).toArray();
-               
+
                 this.$el.css('user-select', 'text'); // restore text-selection
-                this.reset(models);    
+                this.reset(models);
             }
         },
         onSelectableMouseOver: function(e) {
@@ -974,11 +1004,11 @@ define([
                 // b = el.index(),
                 a = selectables.index(this.anchor),
                 b = selectables.index(el),
-            
-                
+
+
                 start = Math.min(a,b),
                 end = Math.max(a,b);
-            
+
             this.$(this.selector).removeClass('selected');
             this.$(this.selector).slice(start, end+1).addClass('selected');
             el.make('active');
@@ -988,7 +1018,7 @@ define([
     });
 
 
-    
+
 
     tools.Filterable = tools.Events.extend({
 
@@ -1034,14 +1064,14 @@ define([
 
 
     tools.Float = Backbone.View.extend({
-    
+
         initialize: function(config) {
             _.bindAll(this, 'onScroll');
             this.atBottom = Util.pop(config, 'atBottom', false);
             this.atTop = Util.pop(config, 'atTop', true);
             this.doClone = config.doClone;
             this.recalcOffset = config.recalcOffset;
-            
+
             if(config.scrollX) {
                 this.scrollX = $(config.scrollX)[0];
                 this.scrollXTopEl = this.scrollXTopEl;
@@ -1057,7 +1087,7 @@ define([
             else {
                 this.scrollY = $(window.document)[0];
                 this.scrollYTopEl = window.document;
-            }            
+            }
 
 
             this.pos = this.$el.offset();
@@ -1070,21 +1100,21 @@ define([
             $(this.scrollX).on('scroll', this.onScroll);
             if(this.scrollX != this.scrollY)
                 $(this.scrollY).on('scroll', this.onScroll);
-            // Call onScroll once to kick things off, in case page happens 
+            // Call onScroll once to kick things off, in case page happens
             // to be scrolled initially.
             this.onScroll();
         },
         createClone: function() {
-            // $el.clone() does a deep clone. 
+            // $el.clone() does a deep clone.
             // Passing true clones events and data as well.
             if(this.doClone)
                 return this.$el.clone(true).addClass('flying');
-            else 
+            else
                 return this.$el.addClass('flying')
-        },        
+        },
         insertClone: function() {
             if(this.doClone)
-                return this.clone.insertAfter(this.el)        
+                return this.clone.insertAfter(this.el)
         },
         flyTop: function() {
             this.clone = this.createClone();
@@ -1101,7 +1131,7 @@ define([
             this.$el.trigger('fly', this);
         },
         flyBottom: function() {
-            this.clone = this.createClone();            
+            this.clone = this.createClone();
             this.clone.css({
                 position: 'fixed',
                 bottom: 0,
@@ -1113,7 +1143,7 @@ define([
             this.isFlying = true;
             this.trigger('fly');
             this.$el.trigger('land', this);
-        },        
+        },
         removeClone: function() {
             if(this.doClone) {
                 this.clone.remove();
@@ -1123,7 +1153,7 @@ define([
                     position: 'inherit',
                     left: 'inherit',
                     top: 'inherit',
-                    bottom: 'inherit',                    
+                    bottom: 'inherit',
                     width: 'inherit',
                     height: 'inherit'
                 });
@@ -1136,19 +1166,19 @@ define([
             this.trigger('land');
         },
         onScroll: function(e) {
-            if(!this.el.parentElement) return;            
+            if(!this.el.parentElement) return;
             this.width = this.$el.width();
             this.height = this.$el.height();
             this.position = this.$el.css('position');
 
             if(this.recalcOffset)
                 this._recalcOffset();
-        
+
             var scrollTop = $(this.scrollYTopEl).scrollTop(),
                 viewportHeight = $(window).height(),
                 above = this.pos.top < scrollTop+this.offsetTop,
-                below = this.pos.top+this.height > scrollTop + viewportHeight;             
-            
+                below = this.pos.top+this.height > scrollTop + viewportHeight;
+
             if(this.isFlying)
                 this.clone.css('left', ($(this.scrollXTopEl).scrollLeft()*-1)+this.pos.left);
 
@@ -1156,7 +1186,7 @@ define([
                 this.flyTop();
             }
             else if(this.atBottom && below && !this.isFlying) {
-                this.flyBottom();                
+                this.flyBottom();
             }
             else if(!above && !below && this.isFlying) {
                 this.land();
