@@ -39,12 +39,8 @@ var HorizontallyFixed = Watcher.extend('HorizontallyFixed', {
     });
 
     // this.$el.replaceWith(this.spaceholder);
-    this.orgStyles = {
-      position: this.$el.css('position'),
-      left: this.$el.css('left'),
-      right: this.$el.css('right'),
-      top: 'auto'
-    };
+    // Get all inline styles
+    this.orgStyles = this.$el.attr('style') || '';
 
     var left = this.$el.offset().left - scrollData.scrollEvent.scrollLeft;
     if (left < 10) {
@@ -60,7 +56,9 @@ var HorizontallyFixed = Watcher.extend('HorizontallyFixed', {
     this.isFixed = true;
   },
   unfix: function(scrollData) {
-    this.$el.css(this.orgStyles);
+    // this.$el.css(this.orgStyles);
+    this.$el.attr('style', this.orgStyles);
+
     this.spaceholder.remove();
 
     var scrollEvent = scrollData.scrollEvent;

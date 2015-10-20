@@ -195,20 +195,10 @@ var Sticky = Tools.View.extend('Sticky', {
       margin: this.$el.css('margin')
     });
 
-    // this.$el.replaceWith(this.spaceholder);
-    this.orgStyles = {
-      position: this.$el.css('position'),
-      left: this.$el.css('left'),
-      right: this.$el.css('right'),
-      top: 'auto'
-    };
+    this.orgStyles = this.$el.attr('style') || '';
 
     var scrollLeft = scrollData.scrollEvent.scrollLeft;
     if (scrollLeft < 10) scrollLeft = 0;
-
-    // if (this.$el.is('#report-header')) {
-      // console.log('FIX: ', this.$el.offset().left, 'scrollLeft', scrollLeft, this.el);
-    // }
 
     var left = this.$el.offset().left - scrollLeft;
     if (left < 10) {
@@ -217,9 +207,7 @@ var Sticky = Tools.View.extend('Sticky', {
 
     this.$el.css({
       position: 'fixed',
-      // left: 0,
-      // right: 0,
-      left: left, // rect.left
+      left: left,
       width: rect.width,
 
       top: rect.top
@@ -231,7 +219,8 @@ var Sticky = Tools.View.extend('Sticky', {
   },
   unfix: function(scrollData) {
 
-    this.$el.css(this.orgStyles);
+    // this.$el.css(this.orgStyles);
+    this.$el.attr('style', this.orgStyles);
     this.spaceholder2.remove();
 
     var scrollEvent = scrollData.scrollEvent;
