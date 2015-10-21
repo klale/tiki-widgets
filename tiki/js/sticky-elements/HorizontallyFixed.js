@@ -5,9 +5,10 @@
 
 // ES5
 define([
+    'jquery',
     'underscore',
     './Watcher',
-], function(_, Watcher) {
+], function($, _, Watcher) {
 'use strict';
 
 
