@@ -130,7 +130,7 @@ var Sticky = Tools.View.extend('Sticky', {
     this.orgEl = null;
     this.row.remove();
 
-    if (this.horizontallyFixed) {
+    if (this.horizontallyFixed && scrollData && scrollData.scrollEvent) {
       this.$el.css('left', scrollData.scrollEvent.scrollLeft);
     }
 
