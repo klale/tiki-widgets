@@ -960,6 +960,11 @@ define([
             /* Optional: conf.distance, drag at least `distance` pixels to initate a drag
             Todo: Finish docs
             */
+
+            this._body.bind('touchmove', this._onbodymousemove);
+            this._body.bind('touchstart', this._onbodymousedown);
+            this._body.bind('touchend', this._onbodymouseup);
+
             this._body.bind('mousemove', this._onbodymousemove);
             this._body.bind('mouseover', this._onbodymouseover);
             this._body.bind('mouseout', this._onbodymouseout);
@@ -1097,7 +1102,8 @@ define([
         ),
         events: {
             'keydown': 'onKeyDown',
-            'mousedown': 'onMouseDown'
+            'mousedown': 'onMouseDown',
+            'touchstart': 'onMouseDown'
         },
         defaultmodel: SliderModel,
         mixins: [ControlView],
@@ -1151,7 +1157,11 @@ define([
                 tgt = $(e.target);
 
             // FF: e.offsetX === undefined
-            var offsetX = (e.offsetX || e.clientX - $(e.target).offset().left);
+            var clientX = e.clientX;
+            if (clientX === undefined && e.originalEvent.touches) {
+              clientX = e.originalEvent.touches[0].clientX;
+            }
+            var offsetX = (e.offsetX || clientX - $(e.target).offset().left);
 
             if(parent.hasClass('handle')) {
                 // clicking directly on the handle
@@ -1184,7 +1194,11 @@ define([
         },
         onSliderDrag: function(e, conf) {
             var pos = conf.pos;
-            var offsetleft = (e.clientX - pos.left) - pos.offsetX;
+            var clientX = e.clientX;
+            if (clientX === undefined && e.originalEvent.touches) {
+              clientX = e.originalEvent.touches[0].clientX;
+            }
+            var offsetleft = (clientX - pos.left) - pos.offsetX;
 
             // If we are in an element that is positioned, we need to count in how far we are scrolled.
             var isPositioned = this.$el.offsetParent().length>0;
