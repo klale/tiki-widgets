@@ -264,7 +264,7 @@ define([
                 top: false});
 
 
-            var availHeight = $(window).height();
+            var availHeight = $(window).height()-50;
             this.$el.css('max-height', availHeight);
 
             if(opt.hideOther && Menu.BaseView.active)
