@@ -264,7 +264,7 @@ define([
                 top: false});
 
 
-            var availHeight = $(window).height()-50;
+            var availHeight = $(window).height()-10;
             this.$el.css('max-height', availHeight);
 
             if(opt.hideOther && Menu.BaseView.active)
@@ -317,7 +317,13 @@ define([
                 my: 'left top',
                 at: 'left bottom',
                 of: el,
-                collision: 'flip fit'
+                collision: 'flip fit',
+                using: _.bind(function(coords) {
+                    this.$el.css({
+                        top: coords.top-5,
+                        left: coords.left
+                    });
+                }, this)
             }));
         },
         trigger: function() {
