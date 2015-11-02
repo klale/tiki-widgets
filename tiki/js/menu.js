@@ -319,8 +319,13 @@ define([
                 of: el,
                 collision: 'flip fit',
                 using: _.bind(function(coords) {
+                    // Fix for IE, where menus that reach the bottom of the screen
+                    // can sometimes make the window scroll
+                    var menuBottom = coords.top + this.$el.outerHeight();
+                    var windowBottom = window.scrollY + window.innerHeight;
+                    if (windowBottom - menuBottom < 5) coords.top -= 5;
                     this.$el.css({
-                        top: coords.top-5,
+                        top: coords.top,
                         left: coords.left
                     });
                 }, this)
