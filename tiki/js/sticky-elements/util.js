@@ -82,6 +82,7 @@ function ScrollEvent(config) {
     this._mutated = [];
 
     this.direction = config.direction;
+    this.directions = config.directions;
     this.viewportWidth = config.viewportWidth;
     this.viewportHeight = config.viewportHeight;
     this.viewportRect = config.viewportRect;
@@ -90,6 +91,7 @@ function ScrollEvent(config) {
     this.scrollLeft = config.scrollLeft;
     this.scrollWidth = config.scrollWidth;
     this.scrollHeight = config.scrollHeight;
+    this.isArtificial = config.isArtificial;
     this.e = config.e;
 
 }

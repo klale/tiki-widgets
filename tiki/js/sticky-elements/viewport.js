@@ -32,7 +32,7 @@ var AbstractViewport = Tools.View.extend({
   triggerNewScrollEvent: function() {
     // Create and dispatch a new scroll event artificially
     // Reuse the same browser event
-    this.onScroll(this.scrollEvent.e);
+    this.onScroll(this.scrollEvent.e, {isArtificial: true});
   },
 
   recalculateAll: function() {
@@ -44,7 +44,10 @@ var AbstractViewport = Tools.View.extend({
   },
 
   broadcastScrollEvent: function(scrollEvent) {
-    if (scrollEvent.direction === 'up') {
+    var directions = scrollEvent.directions || [];
+    var verticalDirection = directions[1];
+
+    if (verticalDirection === 'up') {
       // ES6
       // this.watchers
       // .filter(watcher => watcher.enabled)
@@ -57,7 +60,7 @@ var AbstractViewport = Tools.View.extend({
       .sort(function(a, b) { return b.stackPos - a.stackPos; })
       .forEach(function(watcher) { this.triggerOne(watcher, scrollEvent); }.bind(this));
     }
-    else {
+    else { // Horizontal stacking is not yet supported
       // ES6
       // this.watchers
       // .filter(watcher => watcher.enabled)
@@ -91,12 +94,23 @@ var AbstractViewport = Tools.View.extend({
     if (!scrollEvent.hasMutated(watcher.id)) {
       scrollEvent.addMutated(watcher.id);
 
-      var direction = scrollEvent.direction;
-      if (direction == 'up' || direction == 'down') {
+      var directions = scrollEvent.directions || [];
+      var horizontalDirection = directions[0];
+      var verticalDirection = directions[1];
+
+      if (scrollEvent.isArtificial) {
+        // For scroll events triggered manually by calling triggerNewScrollEvent,
+        // fire a "verticalscroll" event to keep the original behavior.
         watcher._onVerticalScroll(scrollEvent);
+        return;
       }
-      else {
+
+      if (horizontalDirection) {
         watcher._onHorizontalScroll(scrollEvent);
+      }
+
+      if (verticalDirection) {
+        watcher._onVerticalScroll(scrollEvent);
       }
     }
   },
@@ -132,8 +146,29 @@ var AbstractViewport = Tools.View.extend({
     return direction;
   },
 
-  onScroll: function(e) {
-    var scrollEvent = this.createScrollEvent(e);
+  getScrollDirections: function(scrollLeft, scrollTop) {
+    // Get scroll direction
+    var horizontalDirection = null;
+    var verticalDirection = null;
+    if (this.scrollEvent) {
+      var prevScrollLeft = this.scrollEvent.scrollLeft;
+      var prevScrollTop = this.scrollEvent.scrollTop;
+
+      if (scrollLeft != prevScrollLeft) {
+        horizontalDirection = scrollLeft > prevScrollLeft ? 'right' : 'left';
+      }
+      if (scrollTop != prevScrollTop) {
+        verticalDirection = scrollTop > prevScrollTop ? 'down' : 'up';
+      }
+    }
+    return [horizontalDirection, verticalDirection];
+  },
+
+
+  onScroll: function(e, options) {
+    options = options || {};
+
+    var scrollEvent = this.createScrollEvent(e, options);
 
     // Keep a reference to the most recent scroll event
     this.scrollEvent = scrollEvent;
@@ -160,16 +195,21 @@ var DocumentViewport = AbstractViewport.extend('DocumentViewport', {
     this.barStack = this.stack.find('>.bar-stack');
     this.inlineStack = this.stack.find('>.inline-stack');
     this.el.body.insertBefore(this.stack[0], this.el.body.firstChild);
-    this.scrollEvent = this.createScrollEvent();      // this.$el.on('scroll', _.throttle(this.onScroll, 5).bind(this));
+    this.scrollEvent = this.createScrollEvent(null, {isArtificial: true});      // this.$el.on('scroll', _.throttle(this.onScroll, 5).bind(this));
+    // this.$el.on('scroll', _.throttle(this.onScroll, 10).bind(this));
     this.$el.on('scroll', this.onScroll.bind(this));
   },
 
-  createScrollEvent: function(e) {
+  createScrollEvent: function(e, options) {
+    options = options || {};
     var scrollTop = this.el.body.scrollTop || this.el.documentElement.scrollTop || 0;
     var scrollLeft = this.el.body.scrollLeft || this.el.documentElement.scrollLeft || 0;
 
     return new ScrollEvent({
+
       direction: this.getScrollDirection(scrollLeft, scrollTop),
+      directions: this.getScrollDirections(scrollLeft, scrollTop),
+      isArtificial: !!options.isArtificial,
       viewportWidth: $(window).width(), //window.innerWidth,
       viewportHeight: $(window).height(), //window.innerHeight,
       viewportRect: {
@@ -206,12 +246,13 @@ var ElementViewport = AbstractViewport.extend('ElementViewport', {
     this.barStack = this.stack.find('>.bar-stack');
     this.inlineStack = this.stack.find('>.inline-stack');
     this.el.insertBefore(this.stack[0], this.el.firstChild);
-    this.scrollEvent = this.createScrollEvent();
+    this.scrollEvent = this.createScrollEvent(null, {isArtificial: true});
     this.$el.on('scroll', this.onScroll.bind(this));
   },
 
 
-  createScrollEvent: function(e) {
+  createScrollEvent: function(e, options) {
+    options = options || {};
     var scrollTop = this.el.scrollTop;
     var scrollLeft = this.el.scrollLeft;
     var rect = this.el.getBoundingClientRect();
@@ -219,6 +260,8 @@ var ElementViewport = AbstractViewport.extend('ElementViewport', {
 
     return new ScrollEvent({
       direction: this.getScrollDirection(scrollLeft, scrollTop),
+      directions: this.getScrollDirections(scrollLeft, scrollTop),
+      isArtificial: !!options.isArtificial,
       viewportWidth: rect.width,
       viewportHeight: rect.height,
       viewportRect: rect,
