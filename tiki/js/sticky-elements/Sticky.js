@@ -40,6 +40,8 @@ var Sticky = Tools.View.extend('Sticky', {
     // ES6
     // this.setElement(options.el);
 
+    this.fixLeftAt = options.fixLeftAt || 0;
+
     this.watcher = new Watcher({
       el: options.el,
       viewport: options.viewport,
@@ -183,7 +185,6 @@ var Sticky = Tools.View.extend('Sticky', {
   },
 
 
-
   // ----------------- Horizontally sticky --------------------
   fix: function(scrollData) {
     // create a spaceholder
@@ -197,23 +198,14 @@ var Sticky = Tools.View.extend('Sticky', {
 
     this.orgStyles = this.$el.attr('style') || '';
 
-    var scrollLeft = scrollData.scrollEvent.scrollLeft;
-    if (scrollLeft < 10) scrollLeft = 0;
-
-    var left = this.$el.offset().left - scrollLeft;
-    if (left < 10) {
-      left = 0;
-    }
-
     this.$el.css({
       position: 'fixed',
-      left: left,
+      left: this.fixLeftAt,
       width: rect.width,
 
       top: rect.top
     });
     this.spaceholder2.insertAfter(this.el);
-
 
     this.isFixed = true;
   },
@@ -239,12 +231,10 @@ var Sticky = Tools.View.extend('Sticky', {
     }
   },
   onFixedVerticalScroll: function(scrollData) {
-    if (this.isFixed && !this.row) {
+    if (this.isFixed) {
       this.unfix(scrollData);
     }
   },
-
-
 });
 
 // ES6

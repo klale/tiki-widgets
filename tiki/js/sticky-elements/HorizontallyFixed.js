@@ -23,6 +23,7 @@ var HorizontallyFixed = Watcher.extend('HorizontallyFixed', {
     HorizontallyFixed.__super__.initialize.call(this, options);
     _.bindAll(this, 'onHorizontalScroll', 'onVerticalScroll2');
 
+    this.fixLeftAt = options.fixLeftAt || 0;
     this.setViewport(options.viewport || document);
 
     this.on('horizontalscroll', this.onHorizontalScroll);
@@ -38,18 +39,13 @@ var HorizontallyFixed = Watcher.extend('HorizontallyFixed', {
       height: rect.height,
       margin: this.$el.css('margin')
     });
-
     // this.$el.replaceWith(this.spaceholder);
     // Get all inline styles
     this.orgStyles = this.$el.attr('style') || '';
 
-    var left = this.$el.offset().left - scrollData.scrollEvent.scrollLeft;
-    if (left < 10) {
-      left = 0;
-    }
     this.$el.css({
       position: 'fixed',
-      left: left,
+      left: this.fixLeftAt,
       width: rect.width,
       top: rect.top
     });
@@ -74,7 +70,7 @@ var HorizontallyFixed = Watcher.extend('HorizontallyFixed', {
   },
 
   onVerticalScroll2: function(scrollData) {
-    if (this.isFixed  && !this.$el.hasClass('is-cloned')) {
+    if (this.isFixed) {
       this.unfix(scrollData);
     }
   },
