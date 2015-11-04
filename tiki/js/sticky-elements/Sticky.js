@@ -65,6 +65,10 @@ var Sticky = Tools.View.extend('Sticky', {
     }
 
     if (this.horizontallyFixed) {
+      this.unfixDebounce = _.debounce(function() {
+        this.unfix(this.prevScrollData);
+      }.bind(this), 1000);
+
       this.watcher.on('horizontalscroll', this.onFixedHorizontalScroll);
       this.watcher.on('verticalscroll', this.onFixedVerticalScroll);
     }
@@ -186,32 +190,31 @@ var Sticky = Tools.View.extend('Sticky', {
 
 
   // ----------------- Horizontally sticky --------------------
+  getFixStyles: function() {
+    var rect = this.el.getBoundingClientRect();
+    return {
+      position: 'fixed',
+      left: this.fixLeftAt,
+      width: rect.width,
+      top: rect.top
+    }
+  },
   fix: function(scrollData) {
     // create a spaceholder
-    var rect = this.el.getBoundingClientRect();
     this.spaceholder2 = $('<div></div>');
     this.spaceholder2.css({
-      width: rect.width,
-      height: rect.height,
-      margin: this.$el.css('margin')
+      width: this.$el.outerWidth(true),
+      height: this.$el.outerHeight(true)
     });
 
     this.orgStyles = this.$el.attr('style') || '';
 
-    this.$el.css({
-      position: 'fixed',
-      left: this.fixLeftAt,
-      width: rect.width,
-
-      top: rect.top
-    });
+    this.$el.css(this.getFixStyles());
     this.spaceholder2.insertAfter(this.el);
 
     this.isFixed = true;
   },
   unfix: function(scrollData) {
-
-    // this.$el.css(this.orgStyles);
     this.$el.attr('style', this.orgStyles);
     this.spaceholder2.remove();
 
@@ -226,12 +229,18 @@ var Sticky = Tools.View.extend('Sticky', {
     this.isFixed = false;
   },
   onFixedHorizontalScroll: function(scrollData) {
-    if (!this.isFixed && !this.row) {
+    this.prevScrollData = scrollData;
+    if (!this.isFixed && !this.row && !scrollData.scrollEvent.isArtificial) {
       this.fix(scrollData);
+    }
+
+    if (this.isFixed) {
+      this.unfixDebounce();
     }
   },
   onFixedVerticalScroll: function(scrollData) {
-    if (this.isFixed) {
+    this.prevScrollData = scrollData;
+    if (this.isFixed && !scrollData.scrollEvent.isArtificial) {
       this.unfix(scrollData);
     }
   },

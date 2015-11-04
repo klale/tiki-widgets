@@ -26,6 +26,10 @@ var HorizontallyFixed = Watcher.extend('HorizontallyFixed', {
     this.fixLeftAt = options.fixLeftAt || 0;
     this.setViewport(options.viewport || document);
 
+    this.unfixDebounce = _.debounce(function() {
+      this.unfix(this.prevScrollData);
+    }.bind(this), 1000);
+
     this.on('horizontalscroll', this.onHorizontalScroll);
     this.on('verticalscroll', this.onVerticalScroll2);
   },
@@ -70,13 +74,19 @@ var HorizontallyFixed = Watcher.extend('HorizontallyFixed', {
   },
 
   onVerticalScroll2: function(scrollData) {
+    this.prevScrollData = scrollData;
     if (this.isFixed) {
       this.unfix(scrollData);
     }
   },
   onHorizontalScroll: function(scrollData) {
+    this.prevScrollData = scrollData;
     if (!this.isFixed && !this.$el.hasClass('is-cloned')) {
       this.fix(scrollData);
+    }
+
+    if (this.isFixed) {
+      this.unfixDebounce();
     }
   }
 });
