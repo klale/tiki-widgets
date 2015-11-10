@@ -81,6 +81,8 @@ define([
     $.browser.ltie8 = $.browser.msie && parseInt($.browser.version, 10) < 8;
     $.browser.ltie9 = $.browser.msie && parseInt($.browser.version, 10) < 9;
     $.browser.ltie10 = $.browser.msie && parseInt($.browser.version, 10) < 10;
+    $.browser.ltie11 = $.browser.msie && parseInt($.browser.version, 10) < 11;
+    $.browser.ie11 = $.browser.msie && parseInt($.browser.version, 10) === 11;
     $.browser.isTouchDevice = 'ontouchstart' in window || navigator.msMaxTouchPoints;
 
 
