@@ -681,9 +681,12 @@ define([
         },
         onMenuSelect: function(optionModel) {
             this.model.value = optionModel;
-        },
-        onMenuHide: function() {
             this.focus();
+        },
+        onMenuHide: function(menu, options) {
+            if (options.fromEsc){
+            this.focus();
+            }
         },
         onDownKeyDown: function(e) {
             this.showMenu();

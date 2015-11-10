@@ -236,11 +236,11 @@ define([
             this._submenu.hide();
             this._submenu = null;
         },
-        _hideAll: function() {
+        _hideAll: function(options) {
             if(this._submenu)
-                this._submenu.hide();
+                this._submenu.hide(options);
             for(var menu=this; menu; menu=menu._parentmenu)
-                menu.hide();
+                menu.hide(options);
         },
         _select: function() {
             var el = this.$('.active:first');
@@ -303,12 +303,13 @@ define([
             this.trigger('show', this);
             return this;
         },
-        hide: function() {
+        hide: function(options) {
+            options = options || {};
             if(!this.$el.is(':visible'))
                 return;
 
             this.$el.fadeOutFast({detach:true});
-            this.trigger('hide', this);
+            this.trigger('hide', this, options);
             if(this._isroot)
                 Menu.BaseView.active = null;
         },
@@ -370,7 +371,7 @@ define([
             this._parentmenu.el.focus();
         },
         onESCKeyDown: function(e) {
-            this._hideAll();
+            this._hideAll({fromEsc: true});
         },
         onReturnKeyDown: function(e) {
             this._select();
@@ -430,14 +431,8 @@ define([
         },
         merge: ['events'],
 
-        onBlur: function() {
-            // When a focused menu loses focus to anything but another menu,
-            // hide this menu and any sub/parent menus.
-            window.setTimeout(_.bind(function(e) {
-                var focused = this.el.ownerDocument.activeElement;
-                if(!$(focused).is('.tiki-menu'))
+        onBlur: function(e) {
                     this._hideAll();
-            }, this), 1);
         }
     });
 
