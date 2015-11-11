@@ -20,8 +20,10 @@ define([
 
       Todo: Add support for viewport other than window.
       */
-      var scrollTop = document.body.scrollTop;
-      var scrollLeft = document.body.scrollLeft;
+      var scrollTop = document.body.scrollTop || document.documentElement.scrollTop; // documentElement in IE
+      var scrollLeft = document.body.scrollLeft || document.documentElement.scrollLeft;
+
+      console.log('scrollTop: ', scrollTop);
 
       // Remove scrollTop/scrollLeft, add them again when done measuring.
       var targetTop = $(target).offset().top - scrollTop;
