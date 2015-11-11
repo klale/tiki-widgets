@@ -713,7 +713,7 @@ define([
             dd.$el.css('height', 'auto');
 
             var target = this.target,
-                scrollTop = document.body.scrollTop,
+                scrollTop = document.body.scrollTop || document.documentElement.scrollTop,
                 winHeight = $(window).height(),
                 targetOffset = target.offset(),
                 targetHeight = target.outerHeight(),
