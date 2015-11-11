@@ -23,8 +23,6 @@ define([
       var scrollTop = document.body.scrollTop || document.documentElement.scrollTop; // documentElement in IE
       var scrollLeft = document.body.scrollLeft || document.documentElement.scrollLeft;
 
-      console.log('scrollTop: ', scrollTop);
-
       // Remove scrollTop/scrollLeft, add them again when done measuring.
       var targetTop = $(target).offset().top - scrollTop;
       var targetLeft = $(target).offset().left - scrollLeft;
