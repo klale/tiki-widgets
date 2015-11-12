@@ -705,38 +705,12 @@ define([
             this.trigger('dropdownhide', e);
         },
         fitDropdown: function() {
-            // Call this every time you suspect the content of the dropdown has changed
-            // to recalculate its size.
-
-            // Remove explicit height
             var dd = this.dropdown;
-            dd.$el.css('height', 'auto');
-
-            var target = this.target,
-                scrollTop = document.body.scrollTop || document.documentElement.scrollTop,
-                winHeight = $(window).height(),
-                targetOffset = target.offset(),
-                targetHeight = target.outerHeight(),
-                spaceAbove = targetOffset.top - scrollTop,
-                spaceBelow = winHeight - (spaceAbove + targetHeight),
-                ddHeight = dd.$el.outerHeight();
-
-            if(!this.strategy) {
-                // If it does not fit below, choose the largest of above and below
-                this.strategy = ddHeight <= spaceBelow ? 'below' : (spaceAbove > spaceBelow ? 'above' : 'below');
-            }
-
-            // Now we know we have strategy, update the position and size
-            var css = {
-                top: targetOffset.top + targetHeight,
-                left: targetOffset.left,
-                height: Math.min(ddHeight, spaceBelow)
-            };
-            if(this.strategy == 'above') {
-                css.height = Math.min(ddHeight, spaceAbove);
-                css.top = (spaceAbove - css.height) + scrollTop;
-            }
-            dd.$el.css(css);
+            var pos = Util.fitInViewport(this.target, dd.$el.outerWidth());
+            // set max-height instead of height
+            pos['max-height'] = pos.height;
+            pos.height = '';
+            this.dropdown.$el.css(pos);
             this.trigger('dropdownfit');
         },
         focusDropdown: function(e) {
