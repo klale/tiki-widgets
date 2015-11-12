@@ -53,6 +53,7 @@ var HorizontallyFixed = Watcher.extend('HorizontallyFixed', {
       width: rect.width,
       top: rect.top
     });
+    this.$el.addClass('fixed');
     this.spaceholder.insertAfter(this.el);
     this.isFixed = true;
   },
@@ -69,6 +70,7 @@ var HorizontallyFixed = Watcher.extend('HorizontallyFixed', {
     var left = Math.min(scrollEvent.scrollLeft, maxLeftAllowed);
     left = Math.max(0, left);
     this.$el.css('left', left);
+    this.$el.removeClass('fixed');
 
     this.isFixed = false;
   },

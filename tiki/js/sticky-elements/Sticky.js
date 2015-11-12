@@ -210,6 +210,7 @@ var Sticky = Tools.View.extend('Sticky', {
     this.orgStyles = this.$el.attr('style') || '';
 
     this.$el.css(this.getFixStyles());
+    this.$el.addClass('fixed');
     this.spaceholder2.insertAfter(this.el);
 
     this.isFixed = true;
@@ -225,6 +226,7 @@ var Sticky = Tools.View.extend('Sticky', {
     var left = Math.min(scrollEvent.scrollLeft, maxLeftAllowed);
     left = Math.max(0, left);
     this.$el.css('left', left);
+    this.$el.removeClass('fixed');
 
     this.isFixed = false;
   },
