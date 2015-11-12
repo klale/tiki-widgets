@@ -322,8 +322,9 @@ define([
                 using: _.bind(function(coords) {
                     // Fix for IE, where menus that reach the bottom of the screen
                     // can sometimes make the window scroll
+                    var scrollTop = document.body.scrollTop || document.documentElement.scrollTop || 0;
                     var menuBottom = coords.top + this.$el.outerHeight();
-                    var windowBottom = window.scrollY + window.innerHeight;
+                    var windowBottom = scrollTop + window.innerHeight;
                     if (windowBottom - menuBottom < 5) coords.top -= 5;
                     this.$el.css({
                         top: coords.top,
