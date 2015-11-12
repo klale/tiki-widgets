@@ -283,7 +283,7 @@ define([
     onOptionsViewSelect: function(e) {
       this.model.value = e.model;
       this.hideOptionsView();
-      this.filterable.setFilter('')
+      this.filterable.setFilter('');
       this.focus();
     },
 
@@ -295,6 +295,7 @@ define([
     },
   });
 
+  Controls.register.filteringDropdown = View;
 
   return {
     ItemView: ItemView,
