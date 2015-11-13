@@ -27,7 +27,7 @@ define([
     Option.View = Tools.View.extend('Menu.Option.View', {
         className: 'selectable',
         tagName: 'li',
-        template: _.template('<span><%=obj.text%></span><i>&#xe10a;</i>'),
+        template: _.template('<span><%- obj.text %></span><i>&#xe10a;</i>'),
 
         initialize: function(config) {
             if(config.optionTemplate) {
