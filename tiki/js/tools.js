@@ -500,6 +500,8 @@ define([
             return this;
         },
         abort: function() {
+            this.drag.spaceholder.remove();
+
             var container = this.drag.orgContainer;
             container.insertAt(this.drag.orgIndex, this.drag.element[0]);
             this.drag.cancel();
@@ -532,7 +534,8 @@ define([
             drag.ghostEl = drag.element.clone().addClass('tiki-ghost').appendTo(document.body);
             drag.ghostEl.css({position: 'absolute'});
             drag.index = drag.element.index();
-            drag.element.detach();
+            drag.element.hide();
+
             drag.representative(drag.ghostEl, drag.mouseOffset.left, drag.mouseOffset.top);
             drag.name = 'tiki-sort';
             drag.sortmode = 'horizontal';
@@ -577,8 +580,9 @@ define([
         onDropOverTail: function(e, drop, drag) {
             drag.index = drop.element.index() + 1;
             var afterSpaceholder = !!drop.element.prevAll('*.tiki-spaceholder')[0];
-            if(afterSpaceholder)
+            if(afterSpaceholder) {
                 drag.index -= 1;
+            }
 
             drag.spaceholder.insertAfter(drop.element);
         },
@@ -586,12 +590,16 @@ define([
             if(!drag.allowDrop || drop.element[0] != drag.delegate)
                 return;
 
+            if (drag.index > drag.orgIndex) {
+              drag.index -= 1;
+            }
             if(this.collection) {
                 this.collection.move(drag.model, drag.index);
             }
             drag.success = true;
         },
         onDragEnd: function(e, drag) {
+            drag.element.show();
             if(drag.preventDefault) {
                 return;
             }
@@ -603,8 +611,9 @@ define([
                 this.cleanup();
                 this.trigger('sort', {drag: drag});
             }
-            else
+            else {
                 this.abort();
+            }
         },
         onEscKeyDown: function(e) {
             this.abort();
