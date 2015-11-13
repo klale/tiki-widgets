@@ -143,7 +143,7 @@ define([
     className: 'tiki-dropdown',
     attributes: {tabindex: 0},
     template: _.template(''+
-      '<span><%= text || emptyText %></span>'+
+      '<span><%- text || emptyText %></span>'+
       '<button tabindex="-1"></button>'
     ),
     events: {

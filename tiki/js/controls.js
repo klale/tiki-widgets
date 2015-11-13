@@ -392,14 +392,14 @@ define([
         render: function() {
             this.$el.toggleClass('checked', !!this.model.get('selected'));
             this.$el.toggleClass('tiki-disabled', !!this.model.get('disabled'));
-            this.$el.html(this.model.get('text') || '');
+            this.$el.text(this.model.get('text') || '');
             this.$el.attr('name', this.model.get('name'));
             return this;
         },
         attackElement: attackElement,
         leaveElement: leaveElement,
         onTextChange: function(model, text) {
-            this.$el.html(text);
+            this.$el.text(text);
         },
         onSelectedChange: function(model, selected) {
             this.$el.toggleClass('checked', selected);
