@@ -518,7 +518,14 @@ define([
             emptyText: ""
         },
         setorder: ['options', 'value'],
-        initialize: function() {
+        constructor: function(attrs, options) {
+            options = options || {};
+            if (options.missingValue !== undefined) {
+              this.missingValue = options.missingValue;
+            }
+            Backbone.Model.call(this, attrs, options);
+        },
+        initialize: function(attrs) {
             // If value is not specifield, look for a selected option.
             if(this.value == null) {
                 var selected = this.options.findWhere({selected: true});
@@ -555,9 +562,12 @@ define([
                 v = v.id || v.cid;
             if(_.isString(v) || _.isNumber(v)) {
                 var optionModel = (attrs.options || this.options).get(v);
-                if(!optionModel)
+                if(!optionModel && this.missingValue !== undefined) {
+                    optionModel = new Backbone.Model({id: this.missingValue, text: ''});
+                }
+                if (!optionModel) {
                     throw new Traits.ValueError('Option "'+v+'" does not exist');
-
+                }
                 attrs.value = optionModel;
             }
             else throw new TypeError('Invalid type: '+v);

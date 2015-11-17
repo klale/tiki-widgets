@@ -159,11 +159,11 @@ define([
     defaultmodel: Controls.DropdownModel,
     mixins: [Controls.ControlView],
 
-    initialize: function(config) {
+    initialize: function(config, modelOptions) {
       config = config || {};
       _.bindAll(this, 'render', 'onKeyPress', 'onBackspaceKeyDown');
-      if(!this.model)
-        this.model = config.model || new (Util.pop(config, 'modeltype', '') || this.defaultmodel)(config);
+      Util.initControlModel(this, config, modelOptions);
+
 
       Controls.ControlView.initialize.call(this, config);
       this.textField = config.textField || "text";

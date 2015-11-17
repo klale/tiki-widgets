@@ -10,6 +10,24 @@ define([
 
     var util = {};
 
+    util.initControlModel = function(view, config, modelOptions) {
+
+      if (!view.model) {
+        // Get model factory
+        var Type = util.pop(config, 'modeltype', null) || view.defaultmodel;
+        var isModelType = Type.prototype instanceof Backbone.Model || Type === Backbone.Model;
+
+        // Instantiate a model and set view.model
+        if (isModelType) {
+          view.model = new Type(config, modelOptions);
+        }
+        else {
+          view.model = Type(config, modelOptions);
+        }
+      }
+    }
+
+
 
     
     util.fitInViewport = function(target, elementWidth) {
