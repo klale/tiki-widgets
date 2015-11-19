@@ -63,21 +63,32 @@ define([
       else {
         height = spaceAbove;
         top = '';
-        bottom = viewportHeight - targetTop;
+        bottom = viewportHeight - targetTop - scrollTop;
         left = targetLeft;
       }
+
+      if ($.browser.msie) {
+        // Page scrolls a tiny bit if a dropdown is lined exactly at the bottom
+        // of the viewport. Occurs in all versions of IE. Add space as a workaround.
+        height -= 3;
+      }
+
 
       // Make sure element will be fully visible horizontally
       left = Math.max(left, 0);
       var overflow = (targetLeft + elementWidth) - viewportWidth;
       if (overflow > 0) {
         left = targetLeft - overflow;
+        if ($.browser.msie) {
+          left -= 1;
       }
+      }
+
 
       var ret = {
         left: left + scrollLeft,
         top: top === '' ? '' : top + scrollTop,
-        bottom: bottom === '' ? '' : bottom - scrollTop,
+        bottom: bottom,
         height: height,
       };
 
