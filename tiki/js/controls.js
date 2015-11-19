@@ -1216,7 +1216,7 @@ define([
             // If we are in an element that is positioned, we need to count in how far we are scrolled.
             var isPositioned = this.$el.offsetParent().length>0;
             if (isPositioned) {
-                offsetleft += $('body').scrollLeft();
+                offsetleft += $(window).scrollLeft();
             }
 
             var left = this._calculateLeft(offsetleft);
