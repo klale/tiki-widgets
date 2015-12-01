@@ -393,18 +393,51 @@ define([
         // Mixin support for `hotkeys` and `ui`
         delegateEvents: tools.Hotkeys.delegateEvents,
         bindUI: tools.UI.bindUI,
+        remove: function() {
+          // remove subviews if any
+          this.empty();
+          return tools.View.__super__.remove.call(this);
+        },
         empty: function() {
-            _(this.views).each(function(view) {
-                view.remove();
+          /*
+          this.views = {
+            foo: someView,
+            bar: {baz: someOtherView, baz2: [view1, view2]}
+          }
+          */
+          if (!_.isEmpty(this.views)) {
+            iterateSubviews(this, function(subview) {
+              subview.remove();
             });
             this.views = {};
+          }
             return this;
         }
     },{
         extend: Util.extend
     });
 
+    function iterateSubviews(view, visit) {
+      /* iterate nested arrays and non-view objects,
+      invoke `visit` for every Backbone.View passing the view
+      as the only argument. */
 
+      // Iterate subviews depth first
+      function f(views) {
+        if (!views) return;
+        _.each(views, function(v) {
+          var isView = v instanceof Backbone.View;
+          if (!isView && (_.isArray(v) || _.isObject(v))) {
+            f(v);
+          }
+          else if (isView) {
+            visit(v);
+          }
+        });
+      }
+
+      f(view.views);
+    }
 
 
 
