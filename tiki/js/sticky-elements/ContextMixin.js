@@ -46,6 +46,7 @@ var ContextMixin = {
     if (marginTop === rowHeight) {
       this.rowStatus = 'above';
     }
+    this.trigger('scrollout', {length: marginTop});
   },
   onScrollIn: function(scrollData) {
     var distance = this.getDistanceToStack(scrollData);
@@ -57,6 +58,7 @@ var ContextMixin = {
       this.rowStatus = null;
       this.frozenStackHeight = null;
     }
+    this.trigger('scrollin', {length: marginTop});
   },
 
   onVerticalScroll: function(scrollData) {
