@@ -982,7 +982,7 @@ define([
                 this.reset(slice);
                 e.preventDefault();
             }
-            else if(e.type == 'mousedown' && e.metaKey) {
+            else if(e.type == 'mousedown' && e.ctrlKey) {
                 this.toggle(model);
             }
             else {
