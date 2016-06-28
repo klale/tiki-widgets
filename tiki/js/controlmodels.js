@@ -30,7 +30,7 @@ define([
         },
         merge: ['defaults', 'traits'],
         catchErrors: true,
-        
+
 
         valueToJSON: function() {
             return this.get('value');
@@ -38,7 +38,7 @@ define([
         // legacy
         getValue: function() {
             return this.valueToJSON();
-        },     
+        },
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'value')
         }
@@ -54,19 +54,19 @@ define([
                 type: attr.type,
                 disabled: attr.disabled != null
             };
-        
+
         if(value)
             config.value = value;
         if(attr.format)
             config.format = attr.format;
         if(attr.options)
             config.options = obj[attr.options];
-        
-        
+
+
         return new this(config);
     };
 
-    exp.Bool = ControlModel.extend('ControlModels.Bool', {      
+    exp.Bool = ControlModel.extend('ControlModels.Bool', {
         traits: {
             value: new traits.Bool()
         },
@@ -78,7 +78,7 @@ define([
         }
     });
 
-    exp.Number = ControlModel.extend('ControlModels.Number', {      
+    exp.Number = ControlModel.extend('ControlModels.Number', {
         traits: {
             value: new traits.Number(),
             format: new traits.String()
@@ -90,7 +90,7 @@ define([
             return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
         }
     });
-    
+
 
 
 
@@ -122,12 +122,21 @@ define([
             return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
         }
     });
-    
-    
+
+    exp.BigInt = ControlModel.extend('ControlModels.BigInt', {
+        traits: {
+            value: new traits.BigInt(),
+            format: new traits.String()
+        },
+        toString: function() {
+            return Util.modelToStr(this, 'name', 'disabled', 'format', 'value');
+        }
+    });
+
     exp.Date = ControlModel.extend('ControlModels.Date', {
         /* Does not know about time and time zones */
         traits: {
-            format: new traits.String()            
+            format: new traits.String()
         },
         defaults: {
             format: 'd'
@@ -144,7 +153,7 @@ define([
         },
         valueToJSON: function() {
             var val = this.value;
-            if(val) 
+            if(val)
                 return traits.Date.prototype.toJSON.call(this, val)
         }
     });
@@ -152,7 +161,7 @@ define([
     exp.DateTime = ControlModel.extend('ControlModels.DateTime', {
         traits: {
             value: new traits.DateTime(),
-            format: new traits.String()            
+            format: new traits.String()
         },
         defaults: {
             format: 'd'
@@ -164,11 +173,11 @@ define([
             return this.traits.value.toJSON(this.get('value'));
         }
     });
-    
-    exp.DateTime.extend = Util.extend;    
+
+    exp.DateTime.extend = Util.extend;
 
 
-    exp.Selected = ControlModel.extend('ControlModels.Selected', {      
+    exp.Selected = ControlModel.extend('ControlModels.Selected', {
         initialize: function() {
             this.on('change:selected', this.onSelectedChange, this)
         },
@@ -275,7 +284,7 @@ define([
                 v = v.models;
             else
                 v = Util.arrayify(v);
-                        
+
             v = _.object(_(v).map(function(item) {
                 var k = item, v = true
                 if(item.attributes)
@@ -306,12 +315,12 @@ define([
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'options');
         }
-    });   
-    
+    });
+
 
 
     exp.SingleSelection = ControlModel.extend('ControlModels.SingleSelection', {
-        /*    
+        /*
         var sm = new SingleSelection({
             id: 'favcolor',
             options: [
@@ -322,7 +331,7 @@ define([
             value: 'blue'
         })
         */
-        defaults: {            
+        defaults: {
             value: null,
         },
         traits: {
@@ -337,7 +346,7 @@ define([
             if(val)
                 return val.id;
         }
-        
+
     },{
         createFromElement: function(el) {
             var attr = $(el).getAllAttributes();
@@ -350,8 +359,8 @@ define([
             });
         }
     });
-    
-    
+
+
     exp.SingleSelectionM = ControlModel.extend('ControlModels.SingleSelectionM', {
         traits: {
             options: new traits.CollectionM(),
@@ -378,15 +387,15 @@ define([
             var opt,
                 opts = attrs['options'] || this.get('options');
             if(v) {
-                opt = opts.get(v);            
+                opt = opts.get(v);
                 if(opt.get('selected'))
                     return;
             }
             // unselect current, if any
             var curr = opts.findWhere({selected: true});
-            if(curr) 
+            if(curr)
                 curr.set('selected', false);
-            
+
             // select new
             if(opt)
                 opt.set('selected', true, {mute:true})
@@ -399,10 +408,10 @@ define([
         onSelectedChange: function(model, selected, options)  {
             // ignore unselect events
             if(!selected || options.mute) return;
-            
+
             // unselect current, if any
             this.get('options').each(function(m) {
-                if(m.get('selected') && m.id != model.id) 
+                if(m.get('selected') && m.id != model.id)
                     m.set('selected', false);
             });
             this.trigger('change:value', this, this.get('value'), options);
@@ -413,9 +422,9 @@ define([
         },
         toString: function() {
             return Util.modelToStr(this, 'name', 'disabled', 'options');
-        }        
+        }
     });
-    
+
 
     exp.Instance = ControlModel.extend('ControlModels.Instance', {
         /*
@@ -426,7 +435,7 @@ define([
         > var Product = Backbone.Model.extend({
         >     toString: function() {
         >         return 'Product(name='+this.get('name')+', price='+this.get('price')+')';
-        >     }        
+        >     }
         > });
         >
         > var MyCoolControl = Backbone.View.extend({
@@ -438,11 +447,11 @@ define([
         > foo.set('value', {name: 'CaptainCrunch', price: 2.99})
         > foo.get('value')
         Product(name=CaptainCrunch, price=2.99)
-        
+
         */
         constructor: function() {
             if (this && this instanceof Backbone.Model) {
-                Backbone.Model.prototype.constructor.apply(this, arguments);            
+                Backbone.Model.prototype.constructor.apply(this, arguments);
             }
             else {
                 return exp.Instance.extend({
@@ -450,14 +459,14 @@ define([
                 });
             }
         },
-        validate: function(attrs, options) {  
+        validate: function(attrs, options) {
             if(!(attrs.value instanceof this.valuemodel))
                 return "Value is not instance of "+this.valuemodel;
         },
         valueToJSON: function() {
             /* Serialize to plain json */
             return _.object(_.map(this.get('value').attributes, function(val, key) {
-                if(val.valueToJSON) 
+                if(val.valueToJSON)
                     val = val.valueToJSON();
                 return [key, val];
             }, this));
@@ -473,7 +482,7 @@ define([
         parse: function(json) {
             if(json.value != null && !json.value.attributes)
                 json.value = new this.valuemodel(json.value, {parse:true});
-            
+
             // TODO: why is the defaults not kicking in here? even though json
             // does not contain a "value" key at all.
             if(!json.value) {
@@ -490,7 +499,8 @@ define([
             number: exp.Number,
             int: exp.Int,
             float: exp.Float,
-            date: exp.Date, 
+            bigint: exp.BigInt,
+            date: exp.Date,
             datetime: exp.DateTime,
             singleselection: exp.SingleSelectionM,
             selection: exp.Selection,
@@ -498,15 +508,16 @@ define([
             instance: exp.Instance
         },
         ControlModel: ControlModel,
-        
+
         // Deprecated names
         BoolModel: exp.Bool,
         StringModel: exp.String,
         NumberModel: exp.Number,
-        IntModel: exp.Int,      
-        FloatModel: exp.Float,  
+        BigIntModel: exp.BigInt,
+        IntModel: exp.Int,
+        FloatModel: exp.Float,
         DateTimeModel: exp.DateTime,
-        DateModel: exp.Date,         
+        DateModel: exp.Date,
         SelectionModel: exp.Selection,
         SingleSelectionModel: exp.SingleSelection,
         InstanceModel: exp.Instance
