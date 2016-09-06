@@ -81,6 +81,7 @@ define([
         onModelChange: function(model) {
             var attrs = model.changedAttributes();
             this.render();
+            this.trigger('calendarModelChanged');
         },
         showNextMonth: function() {
             var date = this.model.get('date');
@@ -137,6 +138,8 @@ define([
 
             // Start at first day of month
             m.date(1);
+            // Next month (so that no empty calendar row will be added)
+            var nextMonth = new Date(m.year(), m.month() + 1, 1);
             var firstWeekdayOfMonth = m.day() - 1;
             if(firstWeekdayOfMonth == -1)
                 firstWeekdayOfMonth = 6;
@@ -166,6 +169,10 @@ define([
             // Add all the days
             for(i=0; i<42; i++) {
                 if(i % 7 === 0) {
+                    if(m.month() === nextMonth.getMonth()){
+                        // make sure no empty weeks are added
+                        break;
+                    }
                     tr = $('<tr></tr>').appendTo(tbody);
                     if(this.weeks) {
                         tr.append('<td class="weeknumber">'+m.week()+'</td>');

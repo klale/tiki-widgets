@@ -860,10 +860,12 @@ define([
             var date = Util.getattr(this.model, this.valueField);
             this.calendar = new Calendar.MonthCalendar({date: date || new window.Date(), weeks: weeks });
             this.listenTo(this.calendar, 'dropdownhide', this.focus);
+            this.listenTo(this.calendar, 'calendarModelChanged', this.onCalendarModelChanged);
             this.$el.append(this.calendar.render().el);
             this.listenTo(this.model, 'change' + this.valueField, this.onModelChange, this);
         },
         render: function() {
+            this.calendar.$('.day.hovered').removeClass('hovered');
             var date = Util.getattr(this.model, this.valueField);
             this.calendar.$('.day.selected').removeClass('selected');
             if(date) {
@@ -893,13 +895,26 @@ define([
             this.calendar.model.set('date', date);
             this.render();
         },
+        onCalendarModelChanged: function(){
+            this.calendar.$('.day.selected').removeClass('selected');
+            var selectedDate = Util.getattr(this.model, this.valueField);
+            if(selectedDate){
+                var viewDate = this.calendar.model.date;
+                if(selectedDate.getYear() === viewDate.getYear()
+                    && selectedDate.getMonth() === viewDate.getMonth()){
+                    var ymd = Util.dateToYMD(selectedDate);
+                    this.calendar.$('.day[data-ymd="'+ymd+'"]').addClass('selected');
+                }
+            }
+        },
         onMouseEnterDay: function(e) {
-            this.$('.selected').removeClass('selected');
-            $(e.target).closest('td').addClass('selected');
+            this.$('.hovered').removeClass('hovered');
+            $(e.target).closest('td').addClass('hovered');
         },
         onKeyDown: function(e) {
             // Support keyboard navigation for selecting a day
-            var curr = this.$('.selected');
+            var curr = this.$('.hovered');
+            var didFindInitialHoverTarget = !!curr[0];
             if(!curr[0]) curr = this.$('.today');
             if(!curr[0]) curr = this.$('.day:first');
 
@@ -922,26 +937,48 @@ define([
             } else if(key == keys.DOWN && tr.next()[0]) {
                 select = tr.next().find('td:nth-child('+(curr.index()+1)+')');
             } else if(key == keys.ENTER) {
-                this.model.set('value', curr.attr('data-ymd'));
+                if(didFindInitialHoverTarget){
+                    this.model.set(this.valueField, curr.attr('data-ymd'));
+                }
                 e.preventDefault();
             }
             if(_.indexOf(arrows, key) !== -1)
                 e.preventDefault();
 
             if(select && select.hasClass('day')) {
-                curr.removeClass('selected');
-                select.addClass('selected');
+                curr.removeClass('hovered');
+                select.addClass('hovered');
             }
             else {
                 // Change month when navigating off the left or right edge.
 
                 if(left || right) {
-                    var rowNum = $(curr[0].parentElement).index(),
-                        cal = this.calendar;
-                    curr.removeClass('selected');
-                    cal[left ? 'showPrevMonth' : 'showNextMonth']();
-                    cal.$('tr:nth-child('+(rowNum+1)+') td.day:'+
-                        (left ? 'last' : 'first')).addClass('selected');
+                    var newHoverTarget;
+                    // First try to check if the previous/next week is in
+                    // the currently dusplayed month
+                    if(left){
+                        var previousWeek = $(curr[0].parentElement.previousSibling);
+                        if(previousWeek[0]){
+                            newHoverTarget = previousWeek.find('.day:last');
+                        }
+                    }else if(right){
+                        var nextWeek = $(curr[0].parentElement.nextSibling);
+                        if(nextWeek[0]){
+                            newHoverTarget = nextWeek.find('.day:first');
+                        }
+                    }
+                    // If the previous/next week is in the next/previous month
+                    if(!newHoverTarget){
+                        var cal = this.calendar;
+                        cal[left ? 'showPrevMonth' : 'showNextMonth']();
+                        if(left){
+                            newHoverTarget = cal.$('tr:last-child td.day:last');
+                        }else{
+                            newHoverTarget = cal.$('tr:first-child td.day:first');
+                        }
+                    }
+                    curr.removeClass('hovered');
+                    newHoverTarget.addClass('hovered');
                 }
             }
         },
