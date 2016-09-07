@@ -267,15 +267,15 @@ define([
     },
 
     onMouseDown: function(e) {
-      if(this.optionsView.$el.is(':visible')) {
-        this.optionsView.hide();
-      }
       if(this.$el.closest('.tiki-disabled').length) {
         e.preventDefault(); // don't focus
         return;
       }
-
-      this.showOptionsView();
+      if(this.optionsView.$el.is(':visible')) {
+        this.hideOptionsView();
+      }else{
+        this.showOptionsView();  
+      }
       e.stopPropagation();
       e.preventDefault();
     },
