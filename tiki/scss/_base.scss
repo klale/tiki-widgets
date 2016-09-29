@@ -34,7 +34,7 @@
             display: block;
             position: relative;
 
-            &.submenu > i {
+            &.submenu > i.submenu-icon {
                 display: block;
                 position: absolute;
                 right: 0px;
@@ -50,9 +50,12 @@
             display: block; // todo: <-- necessary?
         }
         // Right-arrow icon indicating a submenu
-        i {
+        i.submenu-icon {
             @include icon();
             display: none;
+            &::before {
+              content: '\25b6';
+            }
         }
     }
 }
