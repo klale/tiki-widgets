@@ -102,7 +102,7 @@ define([
         showMonthDropdown: function(e) {
             e.preventDefault();
             if(!this.monthDropdown) {
-                var names = Globalize.cultures.default.calendar.months.names;
+                var names = Globalize.culture().calendar.months.names;
                 this.monthDropdown = new Menu.Menu({
                     options: _.map(_.range(12), function(i) { return {id: i, text: names[i]}; })
                 })
@@ -134,7 +134,7 @@ define([
                 today = moment(new Date()),
                 today_month = today.month(),
                 today_date = today.date(),
-                dayNames = Globalize.cultures.default.calendar.days.namesShort;
+                dayNames = Globalize.culture().calendar.days.namesShort;
 
             // Start at first day of month
             m.date(1);
