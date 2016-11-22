@@ -471,11 +471,33 @@ define([
         onLoad: function() {
             this.el.contentWindow.addEventListener('resize', this.onIframeResize);
         },
+        getScrollbarSize: function() {
+          if (this.horizontal) {
+            return this.window.innerHeight - this.el.scrollHeight
+          }
+          return this.window.innerWidth - this.el.scrollWidth;
+        },
         onIframeResize: function() {
           try {
               var evt = this.window.document.createEvent('UIEvents');
               evt.initUIEvent('resize', true, false, this.window, 0);
               this.window.dispatchEvent(evt);
+
+              // If the scrollbar size changes, trigger a custom
+              // toggleverticalscrollbar or togglehorizontalscrollbar
+              // event.
+              var size = this.getScrollbarSize();
+              if (size !== this._scrollbarSize) {
+                this._scrollbarSize = size;
+                var name = 'toggleverticalscrollbar';
+                if (this.horizontal) {
+                  name = 'togglehorizontalscrollbar';
+                }
+                var evt2 = this.window.document.createEvent('UIEvents');
+                evt2.initUIEvent(name, true, false, this.window, 0);
+                evt2.scrollbarSize = this.getScrollbarSize();
+                this.window.dispatchEvent(evt2);
+              }
           } catch(e) {}
         }
     });
