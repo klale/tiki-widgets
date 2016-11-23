@@ -10,6 +10,48 @@ define([
 
     var util = {};
 
+    // caretRangeFromPoint for IE
+    util.caretRangeFromPoint = function(x, y, document) {
+      document = document || window.document;
+
+      function contains(range, x, y) {
+        var rects = range.getClientRects();
+        for (var i = 0, l = rects.length; i < l; i++) {
+          var r = rects[i];
+          if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+            return true;
+          }
+        }
+      }
+
+      function selectNode(node) {
+        var range = document.createRange();
+        range.selectNode(node);
+        return range
+      }
+
+      var iter = document.createNodeIterator(
+        document.elementFromPoint(x, y),
+        NodeFilter.SHOW_TEXT, null, false);
+
+      while (node = iter.nextNode()) {
+        if (contains(selectNode(node), x, y)) {
+          var r = document.createRange();
+          for (var i = 0, l = node.nodeValue.length; i < l; i++) {
+            r.setStart(node, i);
+            r.setEnd(node, i + 1);
+            if (contains(r, x, y)) {
+              r.setStart(node, i + 1);
+              r.setEnd(node, i + 1);
+              iter.detach();
+              return r;
+            }
+          }
+        }
+      }
+    }
+
+
     util.initControlModel = function(view, config, modelOptions) {
 
       if (!view.model) {
