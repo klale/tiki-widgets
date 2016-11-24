@@ -767,11 +767,7 @@ define([
         getDatePicker: function() {
             // Lazy-create a DatePicker
             if(!this.datepicker) {
-                this.datepicker = new DatePicker({
-                    model: this.model,
-                    valueField: this.valueField,
-                    weeks: this.weeks
-                });
+                this.datepicker = this.createDatePicker();
                 var body = this.el.ownerDocument.body;
 
                 this.datepicker.alignTo(this.$('button.calendar'), {my: 'left top', at: 'left bottom'});
@@ -780,6 +776,13 @@ define([
                 this.datepicker.$el.addClass('flying');
             }
             return this.datepicker;
+        },
+        createDatePicker: function() {
+            return new DatePicker({
+                model: this.model,
+                valueField: this.valueField,
+                weeks: this.weeks
+            });
         },
         showDatePicker: function() {
             var datepicker = this.getDatePicker(),
@@ -858,7 +861,7 @@ define([
             ControlView.initialize.call(this, config);
 
             var date = Util.getattr(this.model, this.valueField);
-            this.calendar = new Calendar.MonthCalendar({date: date || new window.Date(), weeks: weeks });
+            this.calendar = this.createCalendar(date, weeks);
             this.listenTo(this.calendar, 'dropdownhide', this.focus);
             this.listenTo(this.calendar, 'calendarModelChanged', this.onCalendarModelChanged);
             this.$el.append(this.calendar.render().el);
@@ -873,6 +876,9 @@ define([
                 this.calendar.$('.day[data-ymd="'+ymd+'"]').addClass('selected');
             }
             return this;
+        },
+        createCalendar: function(date, weeks) {
+            return new Calendar.MonthCalendar({date: date || new window.Date(), weeks: weeks });
         },
         attackElement: attackElement,
         leaveElement: leaveElement,
