@@ -83,6 +83,12 @@ define([
             this.render();
             this.trigger('calendarModelChanged');
         },
+        createMonthDropdown: function() {
+            var names = Globalize.culture().calendar.months.names;
+            return new Menu.Menu({
+                options: _.map(_.range(12), function(i) { return {id: i, text: names[i]}; })
+            })
+        },
         showNextMonth: function() {
             var date = this.model.get('date');
             this.model.set('date', moment(date).clone().add({months: 1}).toDate());
@@ -102,10 +108,7 @@ define([
         showMonthDropdown: function(e) {
             e.preventDefault();
             if(!this.monthDropdown) {
-                var names = Globalize.culture().calendar.months.names;
-                this.monthDropdown = new Menu.Menu({
-                    options: _.map(_.range(12), function(i) { return {id: i, text: names[i]}; })
-                })
+                this.monthDropdown = this.createMonthDropdown();
                 this.listenTo(this.monthDropdown, {
                     'select': this.onMonthDropdownSelect,
                     'hide': this.onDropdownHide
